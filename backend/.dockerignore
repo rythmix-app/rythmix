@@ -1,4 +1,4 @@
-# node_modules
-# .env
-# build
-# tmp
+node_modules
+.env
+build
+tmp
