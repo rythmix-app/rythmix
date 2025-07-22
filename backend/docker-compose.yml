@@ -1,0 +1,51 @@
+networks:
+  rythmix-backend:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:alpine
+    container_name: rythmix-backend_database
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - rythmix-backend
+
+  adonis-dev:
+    build:
+      context: .
+      target: dev
+    container_name: rythmix-backend_api_dev
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env.dev
+    ports:
+      - "3333:${PORT}"
+    networks:
+      - rythmix-backend
+
+  adonis-prod:
+    build:
+      context: .
+      target: prod
+    container_name: rythmix-backend_api_prod
+    depends_on:
+      - postgres
+    env_file:
+      - .env.prod
+    ports:
+      - "3334:${PORT}"
+    networks:
+      - rythmix-backend
+
+volumes:
+  pgdata:
