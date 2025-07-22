@@ -22,6 +22,5 @@ CMD ["npm", "run", "dev"]
 FROM base AS prod
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
-COPY .env.prod ./
 EXPOSE 3333
 CMD ["node", "build/bin/server.js"]
