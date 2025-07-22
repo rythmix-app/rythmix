@@ -1,7 +1,6 @@
 # Base stage
 FROM node:alpine AS base
 WORKDIR /app
-RUN apk add --no-cache
 
 # Dependencies stage
 FROM base AS deps
