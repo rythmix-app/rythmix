@@ -25,7 +25,6 @@ This is the backend of the **Rythmix** project, built with **AdonisJS** and **Po
 cp .env.example .env
 cp .env.dev.example .env.dev
 cp .env.prod.example .env.prod
-````
 
 Make sure to fill in the variables according to your environment.
 
