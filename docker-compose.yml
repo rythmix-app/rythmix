@@ -1,0 +1,61 @@
+networks:
+  database:
+    driver: bridge
+  backend:
+    driver: bridge
+  frontend:
+    driver: bridge
+
+services:
+  database:
+    image: postgres:alpine
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - database
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      - database
+    env_file:
+      - ./backend/.env
+    networks:      
+      - database
+      - backend
+
+  back-office:
+    build:
+      context: ./back-office
+    env_file:
+      - ./back-office/.env
+    networks:
+      - backend
+      #- frontend # Uncomment if using reverse-proxy
+
+  # reverse-proxy:
+  #   image: nginx:alpine
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  #     - ./nginx/conf.d:/etc/nginx/conf.d
+  #     - ./nginx/certs:/etc/nginx/certs
+  #   networks:
+  #     - rythmix-backend
+  #     - rythmix-frontend
+
+volumes:
+  pgdata:

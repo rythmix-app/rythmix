@@ -2,7 +2,7 @@ services:
   angular-dev:
     build:
       context: .
-      target: development
+      target: dev
     ports:
       - "4200:4200"
     volumes:
@@ -16,7 +16,7 @@ services:
   angular-prod:
     build:
       context: .
-      target: production
+      target: prod
     ports:
       - "8080:80"
     environment:
