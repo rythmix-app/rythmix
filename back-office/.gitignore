@@ -42,4 +42,6 @@ testem.log
 Thumbs.db
 .vscode/
 .env
+.env.dev
+.env.prod
 

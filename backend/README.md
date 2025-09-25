@@ -1,82 +1,63 @@
-# Rythmix Backend – AdonisJS API
+# Backend
 
-This is the backend of the **Rythmix** project, built with **AdonisJS** and **PostgreSQL**, fully containerized using **Docker** with multi-stage builds for development and production.
+AdonisJS 6 API with TypeScript and PostgreSQL.
 
----
-
-## 🛠 Tech Stack
-
-- [AdonisJS](https://adonisjs.com/)
-- [Node.js](https://nodejs.org/)
-- [PostgreSQL](https://www.postgresql.org/)
-- Docker + Docker Compose
-
----
-
-## 📦 Project Setup
-
-### 1. Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/)
-- Copy the environment examples:
+## Setup
 
 ```bash
-cp .env.example .env
+# Install dependencies
+npm install
+
+# Copy environment files
 cp .env.dev.example .env.dev
 cp .env.prod.example .env.prod
+cp .env.example .env
 
-Make sure to fill in the variables according to your environment.
+# Run migrations
+node ace migration:run
+```
 
----
-
-## 🚀 Running the Containers
-
-### 🧪 Development Mode
+## Development
 
 ```bash
-docker-compose up adonis-dev
+npm run dev          # Start with hot reload
+npm run build        # Production build
+npm run test         # Run tests
+npm run lint         # ESLint
+npm run typecheck    # TypeScript check
 ```
 
-* Exposes the API at: `http://localhost:3333`
-* Uses `.env.dev`
-* Includes hot-reloading
+## Project Structure
 
----
+```
+backend/
+├── app/
+│   ├── controllers/     # HTTP controllers
+│   ├── models/         # Lucid ORM models
+│   ├── middleware/     # Custom middleware
+│   └── services/       # Business logic
+├── database/
+│   └── migrations/     # Database migrations
+├── start/
+│   └── routes.ts       # Route definitions
+└── tests/              # Unit & functional tests
+```
 
-### 🏗️ Production Mode
+## Path Aliases
+
+```typescript
+import User from '#models/user'
+import UserController from '#controllers/user_controller'
+```
+
+## Database
 
 ```bash
-docker-compose up adonis-prod
+node ace migration:run        # Run migrations
+node ace make:migration name  # Create migration
+node ace make:model Model     # Create model
 ```
 
-* Runs the compiled API
-* Uses `.env.prod`
-* Production-ready container
+## Authentication
 
----
-
-### 🔁 Build and Launch Everything
-
-```bash
-docker-compose up --build -d
-```
-
-* Builds and launches all services in detached mode.
-
----
-
-## 📁 Project Structure
-
-```
-.
-├── .dockerignore
-├── Dockerfile                # Multi-stage (deps, build, dev, prod)
-├── docker-compose.yml        # Services for API + DB
-├── .env.dev.example          # Dev environment variables
-├── .env.prod.example         # Prod environment variables
-├── .env.example              # Base environment variables
-└── ...
-```
-
----
+Uses AdonisJS Auth with access tokens. Include token in `Authorization: Bearer <token>` header.

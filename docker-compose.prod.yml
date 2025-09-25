@@ -1,0 +1,18 @@
+services:
+  database:
+    env_file:
+      - ./backend/.env.prod
+  backend:
+    build:
+      target: prod
+    env_file:
+      - ./backend/.env.prod
+    ports:
+      - "3334:3333"
+  back-office:
+    build:
+      target: prod
+    ports:
+      - "8080:80"
+    env_file:
+      - ./back-office/.env.prod
