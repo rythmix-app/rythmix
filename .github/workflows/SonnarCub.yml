@@ -18,7 +18,7 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - run: npm ci
+      - run: npm install
       - run: npm test -- --coverage    # doit produire coverage/lcov.info
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
