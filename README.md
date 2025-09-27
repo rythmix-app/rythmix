@@ -5,6 +5,7 @@ Full-stack application with AdonisJS backend, Angular admin interface, and React
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - Docker & Docker Compose
 
@@ -13,7 +14,7 @@ Full-stack application with AdonisJS backend, Angular admin interface, and React
 ```bash
 # Clone and setup environment files
 git clone <repository-url>
-cd rythmix
+cd rythmixx
 
 # Copy environment files
 cp backend/.env.dev.example backend/.env.dev
@@ -27,6 +28,7 @@ docker-compose up
 ```
 
 ### Access Points
+
 - **Backend API**: http://localhost:3333
 - **Back-office**: http://localhost:4200
 - **Database**: localhost:5432
@@ -34,12 +36,14 @@ docker-compose up
 ## Development
 
 ### All services with Docker
+
 ```bash
 docker-compose up                    # Development
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up  # Production
 ```
 
 ### Individual services
+
 ```bash
 # Backend (AdonisJS)
 cd backend
