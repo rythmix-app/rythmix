@@ -14,8 +14,7 @@ Full-stack application with AdonisJS backend, Angular admin interface, and React
 ```bash
 # Clone and setup environment files
 git clone <repository-url>
-cd rythmixx
-
+cd rythmix
 # Copy environment files
 cp backend/.env.dev.example backend/.env.dev
 cp backend/.env.prod.example backend/.env.prod
