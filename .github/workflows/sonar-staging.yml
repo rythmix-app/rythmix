@@ -5,10 +5,15 @@ on:
 
 permissions: { contents: read, pull-requests: write }
 
+concurrency:
+  group: sonar-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   scan:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: back-office
@@ -18,19 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-
-      - name: Install
-        run: npm ci || npm install
+      - run: npm ci || npm install
         working-directory: ${{ matrix.dir }}
-
-      - name: Test
-        run: npm test -- --coverage
+      - run: npm test -- --coverage
         working-directory: ${{ matrix.dir }}
-
-      - name: SonarCloud Scan (${{ matrix.name }})
+      - name: SonarCloud (${{ matrix.name }})
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: ${{ matrix.dir }}
