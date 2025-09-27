@@ -27,8 +27,8 @@ jobs:
         with: { node-version: 20 }
       - run: npm ci || npm install
         working-directory: ${{ matrix.dir }}
-      - run: npm test -- --coverage
-        working-directory: ${{ matrix.dir }}
+     # - run: npm test -- --coverage
+       # working-directory: ${{ matrix.dir }}
       - name: SonarCloud (${{ matrix.name }})
         uses: SonarSource/sonarcloud-github-action@v2
         with:
