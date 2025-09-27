@@ -1,0 +1,38 @@
+name: sonar-staging
+on:
+  push: { branches: ["staging"] }
+  pull_request: { branches: ["staging"] }
+
+permissions: { contents: read, pull-requests: write }
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: back-office
+            dir: back-office
+          - name: front-mobile
+            dir: front-mobile
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - name: Install
+        run: npm ci || npm install
+        working-directory: ${{ matrix.dir }}
+
+      - name: Test
+        run: npm test -- --coverage
+        working-directory: ${{ matrix.dir }}
+
+      - name: SonarCloud Scan (${{ matrix.name }})
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          projectBaseDir: ${{ matrix.dir }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
