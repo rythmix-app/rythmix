@@ -1,0 +1,6 @@
+{
+  "sonarlint.connectedMode.project": {
+    "connectionId": "rythmix-app",
+    "projectKey": "rythmix-app"
+  }
+}
