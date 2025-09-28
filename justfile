@@ -63,9 +63,15 @@ db-d:
 stop:
     docker compose down
 
-# Stop and remove volumes (clean slate)
+# Stop all services and remove volumes
 clean:
+    @echo "🧹 Cleaning up Docker resources..."
     docker compose down -v
+
+# Remove all unused Docker resources (containers, images, volumes, networks)
+clean-all:
+    @echo "🧹 Cleaning up all Docker resources..."
+    docker system prune -a --volumes -f
 
 # Rebuild containers and start development
 rebuild:
