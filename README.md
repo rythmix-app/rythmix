@@ -7,20 +7,19 @@ Full-stack application with AdonisJS backend, Angular admin interface, and React
 ### Prerequisites
 - Node.js 18+
 - Docker & Docker Compose
+- [just](https://github.com/casey/just) command runner (recommended)
 
 ### Setup
 
 ```bash
-# Clone and setup environment files
+# Clone the repository
 git clone <repository-url>
 cd rythmix
 
-# Copy environment files
-find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
+# Using just (recommended)
+just init          # Initialize environment and dependencies
+just dev            # Start development environment
 
-# Start with Docker
-docker compose up
-```
 
 ### Access Points
 - **Backend API**: http://localhost:3333
@@ -29,13 +28,25 @@ docker compose up
 
 ## Development
 
-### All services with Docker
+### Using just (recommended)
+```bash
+just --list         # Show all available commands
+just dev            # Start all services
+just backend-dev    # Run backend only
+just office-dev     # Run back-office only
+just mobile-dev     # Run mobile app only
+just test-all       # Run all tests
+just lint-all       # Run all lints
+just info           # Show project information
+```
+
+### Manual Docker commands
 ```bash
 docker compose up                    # Development
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up  # Production
 ```
 
-### Individual services
+### Individual services (manual)
 ```bash
 # Backend (AdonisJS)
 cd backend
