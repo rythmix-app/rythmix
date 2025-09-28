@@ -13,7 +13,7 @@ services:
       - ./backend:/app
       - /app/node_modules
     ports:
-      - "3333:${PORT:-3333}"
+      - "3333:3333"
 
   back-office:
     build:
