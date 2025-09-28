@@ -3,3 +3,6 @@ CLAUDE.md
 .env
 .env.dev
 .env.prod
+
+.idea/**
+*.DS_Store
