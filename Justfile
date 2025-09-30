@@ -24,9 +24,9 @@ help:
     @echo "  logs-prod         - Affiche les logs en temps réel (prod)"
     @echo ""
     @echo "🐚 Shell des conteneurs :"
-    @echo "  bash-backend      - Entrer dans le bash du conteneur backend"
-    @echo "  bash-backoffice   - Entrer dans le bash du conteneur back-office"
-    @echo "  bash-db           - Entrer dans le bash du conteneur base de données"
+    @echo "  sh-backend      - Entrer dans le shell du conteneur backend"
+    @echo "  sh-backoffice   - Entrer dans le shell du conteneur back-office"
+    @echo "  sh-db           - Entrer dans le shell du conteneur base de données"
     @echo ""
     @echo "🗃️  Base de données :"
     @echo "  make-model NAME   - Créer un nouveau modèle AdonisJS"
@@ -59,7 +59,7 @@ install-dev:
     sleep 10
     @echo ""
     @echo "🗃️ Exécution des migrations..."
-    docker exec -it rythmix-backend-1 node ace migration:run || true
+    just migrate || true
     @echo ""
     @echo "✅ Installation terminée !"
     @echo ""
@@ -92,7 +92,7 @@ install-prod:
     sleep 15
     @echo ""
     @echo "🗃️ Exécution des migrations..."
-    docker exec -it rythmix-backend-1 node ace migration:run || true
+    {{_docker_cmd}} exec -T backend node ace migration:run || true
     @echo ""
     @echo "✅ Installation de production terminée !"
     @echo ""
@@ -119,20 +119,20 @@ logs-prod:
 
 # Commandes shell/bash des conteneurs
 sh-backend:
-    docker exec -it rythmix-backend-1 sh
+    {{_docker_cmd}} exec backend sh
 
 sh-backoffice:
-    docker exec -it rythmix-back-office-1 sh
+    {{_docker_cmd}} exec back-office sh
 
 sh-db:
-    docker exec -it rythmix-database-1 sh
+    {{_docker_cmd}} exec database sh
 
 # Commandes AdonisJS
 make-model NAME:
-    docker exec -it rythmix-backend-1 node ace make:model {{NAME}}
+    {{_docker_cmd}} exec backend node ace make:model {{NAME}}
 
 make-migration NAME:
-    docker exec -it rythmix-backend-1 node ace make:migration {{NAME}}
+    {{_docker_cmd}} exec backend node ace make:migration {{NAME}}
 
 migrate:
-    docker exec -it rythmix-backend-1 node ace migration:run
+    {{_docker_cmd}} exec backend node ace migration:run

@@ -74,9 +74,9 @@ just logs-prod        # 📋 View production logs
 
 #### 🐚 Container Shell Access
 ```bash
-just sh-backend       # 🖥️ Enter backend container shell
-just sh-backoffice    # 🖥️ Enter back-office container shell
-just sh-db           # 🖥️ Enter database container shell
+just sh-backend       # 🖥️ Enter backend service shell
+just sh-backoffice    # 🖥️ Enter back-office service shell
+just sh-db           # 🖥️ Enter database service shell
 ```
 
 #### 🗃️ Database Operations
@@ -151,10 +151,10 @@ npm install && npm start
 | `just up-prod` | 🚀 Start production containers |
 | `just down-prod` | 🛑 Stop production containers |
 | `just logs-prod` | 📋 View production logs |
-| **🐚 Container Access** |
-| `just sh-backend` | 🖥️ Enter backend container shell |
-| `just sh-backoffice` | 🖥️ Enter back-office container shell |
-| `just sh-db` | 🖥️ Enter database container shell |
+| **🐚 Service Access** |
+| `just sh-backend` | 🖥️ Enter backend service shell |
+| `just sh-backoffice` | 🖥️ Enter back-office service shell |
+| `just sh-db` | 🖥️ Enter database service shell |
 | **🗃️ Database** |
 | `just make-model NAME` | 📝 Create new AdonisJS model |
 | `just make-migration NAME` | 🔄 Create new migration |
