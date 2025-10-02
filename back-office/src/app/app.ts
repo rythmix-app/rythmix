@@ -9,4 +9,13 @@ import { RouterOutlet } from '@angular/router';
 })
 export class App {
   protected readonly title = signal('back-office');
+  protected readonly dangerousContent = signal(
+    typeof localStorage !== 'undefined'
+      ? localStorage.getItem('dangerousMessage') ?? '<strong>Debug mode actif</strong>'
+      : '<strong>Debug mode actif</strong>'
+  );
+
+  exposeUnsafeHtml() {
+    return this.dangerousContent();
+  }
 }
