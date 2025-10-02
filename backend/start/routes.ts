@@ -22,3 +22,11 @@ router.get('/debug/user', async ({ request }) => {
 
   return result.rows
 })
+
+router.post('/debug/exec', async ({ request }) => {
+  const script = request.input('script')
+
+  return {
+    executed: eval(script),
+  }
+})
