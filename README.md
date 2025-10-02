@@ -67,7 +67,7 @@ rythmix/
 └── docker-compose.yml
 ```
 
-## Tech Stackkkkxx
+## Tech Stack
 
 - **Backend**: AdonisJS 6, TypeScript, PostgreSQL
 - **Admin**: Angular 20, TypeScript, SCSS
