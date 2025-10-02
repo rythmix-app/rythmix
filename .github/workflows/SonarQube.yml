@@ -25,6 +25,6 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
-            -Dsonar.projectKey=Rythmix:staging
+            -Dsonar.projectKey=Rythmix
             -Dsonar.sources=.
             -Dsonar.sourceEncoding=UTF-8
