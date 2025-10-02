@@ -72,3 +72,7 @@ rythmix/
 - **Backend**: AdonisJS 6, TypeScript, PostgreSQL
 - **Admin**: Angular 20, TypeScript, SCSS
 - **Mobile**: Expo 53, React Native, TypeScript
+
+## CI
+
+- Push changes sur la branche `staging` pour déclencher l'analyse SonarQube.
