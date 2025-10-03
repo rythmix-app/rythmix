@@ -14,8 +14,6 @@ services:
       - ./backend/.env
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     networks:
       - database
 
@@ -26,7 +24,7 @@ services:
       context: ./backend
     env_file:
       - ./backend/.env
-    networks:      
+    networks:
       - database
       - backend
 

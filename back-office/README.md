@@ -9,6 +9,7 @@ Angular 20 administration interface with TypeScript and SCSS.
 npm install
 
 # Copy environment files
+cp .env.example .env
 cp .env.dev.example .env.dev
 cp .env.prod.example .env.prod
 ```

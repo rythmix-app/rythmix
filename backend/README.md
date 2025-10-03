@@ -9,9 +9,12 @@ AdonisJS 6 API with TypeScript and PostgreSQL.
 npm install
 
 # Copy environment files
+cp .env.example .env
 cp .env.dev.example .env.dev
 cp .env.prod.example .env.prod
-cp .env.example .env
+
+# Generate application key
+node ace generate:key
 
 # Run migrations
 node ace migration:run
