@@ -3,6 +3,8 @@ CLAUDE.md
 .env
 .env.dev
 .env.prod
+.vscode/settings.json
+
 
 .idea/**
 *.DS_Store
