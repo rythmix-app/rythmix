@@ -16,14 +16,10 @@ Full-stack application with AdonisJS backend, Angular admin interface, and React
 git clone <repository-url>
 cd rythmix
 # Copy environment files
-cp backend/.env.dev.example backend/.env.dev
-cp backend/.env.prod.example backend/.env.prod
-cp backend/.env.example backend/.env
-cp back-office/.env.dev.example back-office/.env.dev
-cp back-office/.env.prod.example back-office/.env.prod
+find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
 
 # Start with Docker
-docker-compose up
+docker compose up
 ```
 
 ### Access Points
@@ -37,8 +33,8 @@ docker-compose up
 ### All services with Docker
 
 ```bash
-docker-compose up                    # Development
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up  # Production
+docker compose up                    # Development
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up  # Production
 ```
 
 ### Individual services
@@ -72,3 +68,7 @@ rythmix/
 - **Backend**: AdonisJS 6, TypeScript, PostgreSQL
 - **Admin**: Angular 20, TypeScript, SCSS
 - **Mobile**: Expo 53, React Native, TypeScript
+
+## CI
+
+- Push changes sur la branche `staging` pour déclencher l'analyse SonarQube.
