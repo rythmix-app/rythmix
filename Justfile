@@ -43,10 +43,7 @@ install-dev:
     @echo "🚀 Installation de l'environnement de développement..."
     @echo ""
     @echo "📁 Copie des fichiers d'environnement..."
-    cp backend/.env.dev.example backend/.env.dev
-    cp backend/.env.example backend/.env
-    cp back-office/.env.dev.example back-office/.env.dev
-    cp back-office/.env.example back-office/.env
+    find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
     @echo "✅ Fichiers d'environnement copiés"
     @echo ""
     @echo "🐳 Arrêt des conteneurs existants (s'il y en a)..."
@@ -57,6 +54,9 @@ install-dev:
     @echo ""
     @echo "⏳ Attente que les services se lancent..."
     sleep 10
+    @echo ""
+    @echo "🔑 Génération de l'APP_KEY pour le backend..."
+    {{_docker_cmd}} exec backend node ace generate:key || true
     @echo ""
     @echo "🗃️ Exécution des migrations..."
     just migrate || true
