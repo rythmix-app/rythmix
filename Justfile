@@ -1,75 +1,75 @@
-# Détection automatique de l'outil Docker
+# Automatic detection of the Docker tool
 _docker_cmd := if `command -v docker-compose >/dev/null 2>&1; echo $?` == "0" { "docker-compose" } else { "docker compose" }
 
-# Afficher l'aide avec toutes les commandes disponibles
+# Show help with all available commands
 help:
-    @echo "Commandes disponibles :"
+    @echo "Available commands:"
     @echo ""
-    @echo "📋 Aide :"
-    @echo "  help              - Affiche cette aide"
-    @echo "  docker-status     - Affiche l'outil Docker détecté"
+    @echo "📋 Help:"
+    @echo "  help              - Show this help"
+    @echo "  docker-status     - Show detected Docker tool"
     @echo ""
-    @echo "⚡ Installation :"
-    @echo "  install-dev       - Installation complète pour le développement"
-    @echo "  install-prod      - Installation complète pour la production"
+    @echo "⚡ Installation:"
+    @echo "  install-dev       - Complete installation for development"
+    @echo "  install-prod      - Complete installation for production"
     @echo ""
-    @echo "🔧 Développement :"
-    @echo "  up-dev            - Lance l'environnement de développement"
-    @echo "  down-dev          - Arrête l'environnement de développement"
-    @echo "  logs-dev          - Affiche les logs en temps réel (dev)"
+    @echo "🔧 Development:"
+    @echo "  up-dev            - Start development environment"
+    @echo "  down-dev          - Stop development environment"
+    @echo "  logs-dev          - Show real-time logs (dev)"
     @echo ""
-    @echo "🚀 Production :"
-    @echo "  up-prod           - Lance l'environnement de production"
-    @echo "  down-prod         - Arrête l'environnement de production"
-    @echo "  logs-prod         - Affiche les logs en temps réel (prod)"
+    @echo "🚀 Production:"
+    @echo "  up-prod           - Start production environment"
+    @echo "  down-prod         - Stop production environment"
+    @echo "  logs-prod         - Show real-time logs (prod)"
     @echo ""
-    @echo "🐚 Shell des conteneurs :"
-    @echo "  sh-backend      - Entrer dans le shell du conteneur backend"
-    @echo "  sh-backoffice   - Entrer dans le shell du conteneur back-office"
-    @echo "  sh-db           - Entrer dans le shell du conteneur base de données"
+    @echo "🐚 Container shells:"
+    @echo "  sh-backend      - Enter backend container shell"
+    @echo "  sh-backoffice   - Enter back-office container shell"
+    @echo "  sh-db           - Enter database container shell"
     @echo ""
-    @echo "🗃️  Base de données :"
-    @echo "  make-model NAME   - Créer un nouveau modèle AdonisJS"
-    @echo "  make-migration NAME - Créer une nouvelle migration"
-    @echo "  migrate           - Exécuter les migrations en attente"
+    @echo "🗃️  Database:"
+    @echo "  make-model NAME   - Create a new AdonisJS model"
+    @echo "  make-migration NAME - Create a new migration"
+    @echo "  migrate           - Run pending migrations"
     @echo ""
 
-# Affiche l'outil Docker détecté
+# Show detected Docker tool
 docker-status:
-    @echo "🐳 Outil Docker détecté: {{_docker_cmd}}"
+    @echo "🐳 Detected Docker tool: {{_docker_cmd}}"
 
-# Installation complète pour le développement
+# Complete installation for development
 install-dev:
-    @echo "🚀 Installation de l'environnement de développement..."
+    @echo "🚀 Installing development environment..."
     @echo ""
-    @echo "📁 Copie des fichiers d'environnement..."
+    @echo "📁 Copying environment files..."
     find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
-    @echo "✅ Fichiers d'environnement copiés"
+    @echo "✅ Environment files copied"
     @echo ""
-    @echo "🐳 Arrêt des conteneurs existants (s'il y en a)..."
+    @echo "🐳 Stopping existing containers (if any)..."
     {{_docker_cmd}} -f docker-compose.prod.yml down -v || true
     @echo ""
-    @echo "🐳 Construction et lancement des conteneurs..."
+    @echo "🐳 Building and starting containers..."
     {{_docker_cmd}} up --build -d
     @echo ""
-    @echo "⏳ Attente que les services se lancent..."
+    @echo "⏳ Waiting for services to start..."
     sleep 10
     @echo ""
-    @echo "🔑 Génération de l'APP_KEY pour le backend..."
+    @echo "🔑 Generating APP_KEY for backend..."
     {{_docker_cmd}} exec backend node ace generate:key || true
     @echo ""
-    @echo "🗃️ Exécution des migrations..."
+    @echo "🗃️ Running migrations..."
     just migrate || true
     @echo ""
-    @echo "✅ Installation terminée !"
+    @echo "✅ Installation complete!"
     @echo ""
-    @echo "🌐 Points d'accès :"
+    @echo "🌐 Access points:"
     @echo "  - Backend API: http://localhost:3333"
     @echo "  - Back-office: http://localhost:4200"
-    @echo "  - Base de données: localhost:5432"
+    @echo "  - Database: localhost:5432"
     @echo ""
 
-# Installation complète pour la production
+# Complete installation for production
 install-prod:
     @echo "🚀 Installation de l'environnement de production..."
     @echo ""
