@@ -1,9 +1,10 @@
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
+import { randomUUID } from 'node:crypto'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -12,10 +13,16 @@ const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
 
 export default class User extends compose(BaseModel, AuthFinder) {
   @column({ isPrimary: true })
-  declare id: number
+  declare id: string
 
   @column()
-  declare fullName: string | null
+  declare firstName: string | null
+
+  @column()
+  declare lastName: string | null
+
+  @column()
+  declare username: string
 
   @column()
   declare email: string
@@ -29,5 +36,34 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 
+  /*
+   * future column in relation with the user when the other model will be created
+   *   @hasMany(() => Achievement)
+   *   declare achievements: HasMany<typeof Achievement>
+   *
+   *   declaration of the relation with the user in Achievement model
+   *   @belongsTo(() => User)
+   *   declare user: BelongsTo<typeof User>
+   */
+
+  /*
+   * future column in relation with the user when the other model will be created
+   *   @hasMany(() => LikedTrack)
+   *   declare likedTracks: HasMany<typeof LikedTrack>
+   *
+   *   declaration of the relation with the user in LikedTrack model
+   *   @belongsTo(() => User)
+   *   declare user: BelongsTo<typeof User>
+   */
+
   static accessTokens = DbAccessTokensProvider.forModel(User)
+
+  get fullName() {
+    return `${this.firstName} ${this.lastName}`
+  }
+
+  @beforeCreate()
+  static assignUuid(user: User) {
+    user.id = randomUUID()
+  }
 }
