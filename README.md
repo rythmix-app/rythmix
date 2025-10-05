@@ -28,6 +28,7 @@ sudo apt update && sudo apt install just
 choco install just
 
 # 🪟 Windows (Scoop)
+
 scoop install just
 ```
 
@@ -39,7 +40,6 @@ scoop install just
 # 📥 Clone the repository
 git clone <repository-url>
 cd rythmix
-
 # 🚀 Complete development setup
 just install-dev
 
@@ -67,6 +67,7 @@ just logs-dev         # 📋 View development logs
 
 #### 🏭 Production Environment
 ```bash
+
 just up-prod          # 🚀 Start production containers
 just down-prod        # 🛑 Stop production containers
 just logs-prod        # 📋 View production logs
