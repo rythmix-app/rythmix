@@ -5,4 +5,4 @@ CLAUDE.md
 .env.prod
 .vscode/settings.json
 .idea/**
-.DS_Store
+*.DS_Store
