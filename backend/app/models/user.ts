@@ -59,7 +59,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
   static accessTokens = DbAccessTokensProvider.forModel(User)
 
   get fullName() {
-    return `${this.firstName} ${this.lastName}`
+    const parts = [this.firstName, this.lastName].filter((part) => part && part !== null)
+    return parts.length > 0 ? parts.join(' ') : ''
   }
 
   @beforeCreate()
