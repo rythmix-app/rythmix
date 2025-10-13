@@ -7,6 +7,35 @@ networks:
     driver: bridge
 
 services:
+  traefik:
+    image: traefik:v3.2
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik:/etc/traefik
+    networks:
+      - backend
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.entrypoints=websecure
+      - traefik.http.routers.dashboard.tls=true
+
   database:
     image: postgres:alpine
     restart: unless-stopped
@@ -27,6 +56,12 @@ services:
     networks:
       - database
       - backend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend.rule=Host(`api.localhost`)
+      - traefik.http.routers.backend.entrypoints=websecure
+      - traefik.http.routers.backend.tls=true
+      - traefik.http.services.backend.loadbalancer.server.port=3333
 
   back-office:
     depends_on:
@@ -37,21 +72,14 @@ services:
       - ./back-office/.env
     networks:
       - backend
-      #- frontend # Uncomment if using reverse-proxy
-
-  # reverse-proxy:
-  #   image: nginx:alpine
-  #   restart: unless-stopped
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-  #     - ./nginx/conf.d:/etc/nginx/conf.d
-  #     - ./nginx/certs:/etc/nginx/certs
-  #   networks:
-  #     - rythmix-backend
-  #     - rythmix-frontend
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backoffice.rule=Host(`admin.localhost`)
+      - traefik.http.routers.backoffice.entrypoints=websecure
+      - traefik.http.routers.backoffice.tls=true
+      - traefik.http.services.backoffice.loadbalancer.server.port=4200
 
 volumes:
   pgdata:
+  traefik-certs:

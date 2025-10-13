@@ -15,8 +15,12 @@ Full-stack application with AdonisJS backend, Angular admin interface, and React
 # Clone and setup environment files
 git clone <repository-url>
 cd rythmix
+
 # Copy environment files
 find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
+
+# Setup HTTPS certificates for development
+./setup-dev-certs.sh
 
 # Start with Docker
 docker compose up
@@ -24,9 +28,12 @@ docker compose up
 
 ### Access Points
 
-- **Backend API**: http://localhost:3333
-- **Back-office**: http://localhost:4200
-- **Database**: localhost:5432
+All services are accessible via HTTPS through Traefik reverse proxy:
+
+- **Backend API**: https://api.localhost
+- **Back-office**: https://admin.localhost
+- **Traefik Dashboard**: https://traefik.localhost
+- **Database**: localhost:5432 (direct connection)
 
 ## Development
 
@@ -68,3 +75,21 @@ rythmix/
 - **Backend**: AdonisJS 6, TypeScript, PostgreSQL
 - **Admin**: Angular 20, TypeScript, SCSS
 - **Mobile**: Expo 53, React Native, TypeScript
+- **Reverse Proxy**: Traefik v3.2 with automatic HTTPS
+
+## Production Deployment
+
+Before deploying to production:
+
+1. Update domain names in `docker-compose.prod.yml` (replace `yourdomain.com`)
+2. Update Let's Encrypt email in `docker-compose.prod.yml`
+3. Ensure DNS records point to your server
+4. Deploy:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+Traefik will automatically obtain and renew SSL certificates from Let's Encrypt.
+
+See `traefik/README.md` for detailed Traefik configuration and troubleshooting.

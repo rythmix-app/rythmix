@@ -1,7 +1,23 @@
 services:
+  traefik:
+    command:
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --log.level=INFO
+    volumes:
+      - ./traefik/certs:/etc/traefik/certs:ro
+
   database:
     env_file:
       - ./backend/.env.dev
+
   backend:
     build:
       target: dev
@@ -12,8 +28,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
-    ports:
-      - "3333:${PORT:-3333}"
+
   back-office:
     build:
       target: dev
@@ -22,7 +37,5 @@ services:
       - /app/node_modules
     env_file:
       - ./back-office/.env.dev
-    ports:
-      - "4200:${PORT:-4200}"
     stdin_open: true
     tty: true

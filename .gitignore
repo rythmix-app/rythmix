@@ -6,3 +6,8 @@ CLAUDE.md
 .vscode/settings.json
 .idea/**
 .DS_Store
+LICENSE
+
+# Traefik certificates
+traefik/certs/*.pem
+traefik/acme/
