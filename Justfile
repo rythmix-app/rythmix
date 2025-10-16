@@ -33,6 +33,10 @@ help:
     @echo "  make-migration NAME - Create a new migration"
     @echo "  migrate           - Run pending migrations"
     @echo ""
+    @echo "🧪 Testing:"
+    @echo "  backend-test      - Run backend tests"
+    @echo "  backend-coverage  - Run backend tests with coverage report"
+    @echo ""
 
 # Show detected Docker tool
 docker-status:
@@ -136,3 +140,9 @@ make-migration NAME:
 
 migrate:
     {{_docker_cmd}} exec backend node ace migration:run
+
+backend-test:
+    {{_docker_cmd}} exec backend node ace test
+
+backend-coverage:
+    {{_docker_cmd}} exec backend npm run test:coverage
