@@ -12,27 +12,21 @@ const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
 })
 
 export default class User extends compose(BaseModel, AuthFinder) {
+  static accessTokens = DbAccessTokensProvider.forModel(User)
   @column({ isPrimary: true })
   declare id: string
-
   @column()
   declare firstName: string | null
-
   @column()
   declare lastName: string | null
-
   @column()
   declare username: string
-
   @column()
   declare email: string
-
   @column({ serializeAs: null })
   declare password: string
-
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
-
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 
@@ -55,8 +49,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
    *   @belongsTo(() => User)
    *   declare user: BelongsTo<typeof User>
    */
-
-  static accessTokens = DbAccessTokensProvider.forModel(User)
+  @column.dateTime()
+  declare deletedAt: DateTime | null
 
   get fullName() {
     const parts = [this.firstName, this.lastName].filter((part) => part && part !== null)
@@ -66,5 +60,15 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @beforeCreate()
   static assignUuid(user: User) {
     user.id = randomUUID()
+  }
+
+  async softDelete() {
+    this.deletedAt = DateTime.now()
+    await this.save()
+  }
+
+  async restore() {
+    this.deletedAt = null
+    await this.save()
   }
 }
