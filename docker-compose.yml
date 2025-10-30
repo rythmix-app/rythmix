@@ -20,7 +20,6 @@ services:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)
       - traefik.http.routers.dashboard.service=api@internal
       - traefik.http.routers.dashboard.entrypoints=websecure
       - traefik.http.routers.dashboard.tls=true
@@ -48,7 +47,6 @@ services:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.backend.rule=Host(`api.localhost`)
       - traefik.http.routers.backend.entrypoints=websecure
       - traefik.http.routers.backend.tls=true
       - traefik.http.services.backend.loadbalancer.server.port=3333
@@ -65,10 +63,8 @@ services:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.backoffice.rule=Host(`admin.localhost`)
       - traefik.http.routers.backoffice.entrypoints=websecure
       - traefik.http.routers.backoffice.tls=true
-      - traefik.http.services.backoffice.loadbalancer.server.port=4200
 
 volumes:
   pgdata:

@@ -9,11 +9,7 @@ services:
     volumes:
       - traefik-certs:/etc/traefik/acme
     labels:
-      - traefik.enable=true
       - traefik.http.routers.dashboard.rule=Host(`traefik.yourdomain.com`)
-      - traefik.http.routers.dashboard.service=api@internal
-      - traefik.http.routers.dashboard.entrypoints=websecure
-      - traefik.http.routers.dashboard.tls=true
       - traefik.http.routers.dashboard.tls.certresolver=letsencrypt
 
   database:
@@ -26,12 +22,8 @@ services:
     env_file:
       - ./backend/.env.prod
     labels:
-      - traefik.enable=true
       - traefik.http.routers.backend.rule=Host(`api.yourdomain.com`)
-      - traefik.http.routers.backend.entrypoints=websecure
-      - traefik.http.routers.backend.tls=true
       - traefik.http.routers.backend.tls.certresolver=letsencrypt
-      - traefik.http.services.backend.loadbalancer.server.port=3333
 
   back-office:
     build:
@@ -39,9 +31,6 @@ services:
     env_file:
       - ./back-office/.env.prod
     labels:
-      - traefik.enable=true
       - traefik.http.routers.backoffice.rule=Host(`admin.yourdomain.com`)
-      - traefik.http.routers.backoffice.entrypoints=websecure
-      - traefik.http.routers.backoffice.tls=true
       - traefik.http.routers.backoffice.tls.certresolver=letsencrypt
       - traefik.http.services.backoffice.loadbalancer.server.port=80
