@@ -13,25 +13,7 @@
 
 ### 🛠️ Installing just
 
-**[just](https://github.com/casey/just)** is a handy way to save and run project-specific commands. Install it first:
-
-```bash
-# 🍎 macOS
-brew install just
-
-# 🐧 Ubuntu/Debian
-wget -qO - 'https://proget.makedeb.org/debian-feeds/prebuilt-mpr/pgp-keys/makedeb-pub.gpg' | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
-echo "deb [arch=all,amd64 signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
-sudo apt update && sudo apt install just
-
-# 🪟 Windows (Chocolatey)
-choco install just
-
-# 🪟 Windows (Scoop)
-scoop install just
-```
-
-> 💡 **Tip**: Check the [official installation guide](https://github.com/casey/just#installation) for more options!
+**[just](https://github.com/casey/just)** is a handy way to save and run project-specific commands. [Install it](https://github.com/casey/just#installation) first:
 
 ### 🔧 Project Setup
 

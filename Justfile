@@ -51,7 +51,7 @@ install-dev:
     @echo "✅ Environment files copied"
     @echo ""
     @echo "🔐 Generating development SSL certificates..."
-    ./traefik/setup-dev-certs.sh
+    ( cd traefik && ./setup-dev-certs.sh )
     @echo "✅ Development SSL certificates generated"
     @echo ""
     @echo "🐳 Stopping existing containers (if any)..."
