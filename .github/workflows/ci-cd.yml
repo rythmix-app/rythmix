@@ -38,9 +38,12 @@ jobs:
           cache: "npm"
           cache-dependency-path: backend/package-lock.json
 
+      - name: Install just
+        uses: extractions/setup-just@v2
+
       - run: npm ci
       - run: npm run build
-        #- run: npm test
+      - run: just backend-test
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -66,7 +69,6 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
-      #- run: npm test
 
   # Back Office (Angular)
   back-office:
@@ -85,6 +87,4 @@ jobs:
           cache-dependency-path: back-office/package-lock.json
 
       - run: npm ci
-      #- run: npm run lint
-      #- run: npm test -- --watch=false --browsers=ChromeHeadless
       - run: npm run build
