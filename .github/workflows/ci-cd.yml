@@ -50,7 +50,7 @@ jobs:
         working-directory: ./back-office
 
     steps:
+      - uses: actions/checkout@v4
       - name: Install just
         uses: extractions/setup-just@v2
-      - run: pwd
       - run: just install-dev
