@@ -52,4 +52,5 @@ jobs:
     steps:
       - name: Install just
         uses: extractions/setup-just@v2
+      - run: pwd
       - run: just install-dev
