@@ -10,6 +10,18 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from './kernel.js'
 
+// Root endpoint - API information
+router.get('/', async ({ response }) => {
+  return response.ok({
+    name: 'Rythmix API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      users: '/api/users'
+    }
+  })
+})
+
 router
   .group(() => {
     router

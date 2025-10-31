@@ -3,7 +3,12 @@ CLAUDE.md
 .env
 .env.dev
 .env.prod
-.vscode/settings.json
+.vscode
 
 .idea/**
-*.DS_Store
+.DS_Store
+LICENSE
+
+# Traefik certificates
+traefik/certs/*.pem
+traefik/acme/

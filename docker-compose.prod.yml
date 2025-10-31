@@ -1,18 +1,36 @@
 services:
+  traefik:
+    command:
+      - --certificatesresolvers.letsencrypt.acme.email=admin@example.com
+      - --certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --log.level=WARN
+    volumes:
+      - traefik-certs:/etc/traefik/acme
+    labels:
+      - traefik.http.routers.dashboard.rule=Host(`traefik.yourdomain.com`)
+      - traefik.http.routers.dashboard.tls.certresolver=letsencrypt
+
   database:
     env_file:
       - ./backend/.env.prod
+
   backend:
     build:
       target: prod
     env_file:
       - ./backend/.env.prod
-    ports:
-      - "3334:3333"
+    labels:
+      - traefik.http.routers.backend.rule=Host(`api.yourdomain.com`)
+      - traefik.http.routers.backend.tls.certresolver=letsencrypt
+
   back-office:
     build:
       target: prod
-    ports:
-      - "8080:80"
     env_file:
       - ./back-office/.env.prod
+    labels:
+      - traefik.http.routers.backoffice.rule=Host(`admin.yourdomain.com`)
+      - traefik.http.routers.backoffice.tls.certresolver=letsencrypt
+      - traefik.http.services.backoffice.loadbalancer.server.port=80
