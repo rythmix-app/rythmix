@@ -1,12 +1,5 @@
-/*
-|--------------------------------------------------------------------------
-| Routes file
-|--------------------------------------------------------------------------
-|
-| The routes file is used for defining the HTTP routes.
-|
-*/
-
+// TypeScript
+// File: `backend/start/routes.ts`
 import router from '@adonisjs/core/services/router'
 import { middleware } from './kernel.js'
 
@@ -17,8 +10,8 @@ router.get('/', async ({ response }) => {
     version: '1.0.0',
     status: 'running',
     endpoints: {
-      users: '/api/users'
-    }
+      users: '/api/users',
+    },
   })
 })
 
@@ -35,5 +28,14 @@ router
         router.post('/:id/restore', '#controllers/users_controller.restore')
       })
       .prefix('/users')
+    router
+      .group(() => {
+        router.get('/', '#controllers/achievements_controller.index')
+        router.post('/', '#controllers/achievements_controller.create')
+        router.get('/:id', '#controllers/achievements_controller.show')
+        router.patch('/:id', '#controllers/achievements_controller.update')
+        router.delete('/:id', '#controllers/achievements_controller.delete')
+      })
+      .prefix('/achievements')
   })
   .prefix('/api')

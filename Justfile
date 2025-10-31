@@ -140,6 +140,12 @@ sh-db:
 make-model NAME:
     {{_docker_cmd}} exec backend node ace make:model {{NAME}}
 
+make-controller NAME:
+    {{_docker_cmd}} exec backend node ace make:controller {{NAME}}
+
+make-service NAME:
+    {{_docker_cmd}} exec backend node ace make:service {{NAME}}
+
 make-migration NAME:
     {{_docker_cmd}} exec backend node ace make:migration {{NAME}}
 
