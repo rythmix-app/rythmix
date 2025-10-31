@@ -11,8 +11,24 @@ export class AchievementService {
   }
 
   public async createAchievement(payload: { description?: string | null; type: string }) {
-    const achievement = await Achievement.create(payload)
-    return achievement
+    try {
+      const achievement = await Achievement.create(payload)
+      return achievement
+    } catch (error: any) {
+      if (error.code === '23505') {
+        return {
+          error: 'Achievement already exists',
+          status: 409,
+        }
+      }
+      if (error.code === '22001') {
+        return {
+          error: 'One or more fields exceed maximum length',
+          status: 400,
+        }
+      }
+      throw error
+    }
   }
 
   public async updateAchievement(
@@ -27,8 +43,24 @@ export class AchievementService {
       }
     }
     achievement.merge(payload)
-    await achievement.save()
-    return achievement
+    try {
+      await achievement.save()
+      return achievement
+    } catch (error: any) {
+      if (error.code === '23505') {
+        return {
+          error: 'Conflict when updating achievement',
+          status: 409,
+        }
+      }
+      if (error.code === '22001') {
+        return {
+          error: 'One or more fields exceed maximum length',
+          status: 400,
+        }
+      }
+      throw error
+    }
   }
 
   public async deleteAchievement(achievementId: number | string) {

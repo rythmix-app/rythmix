@@ -1,73 +1,87 @@
 // TypeScript
 import type { HttpContext } from '@adonisjs/core/http'
+import { AchievementService } from '#services/achievement_service'
 import Achievement from '#models/achievement'
+import { inject } from '@adonisjs/core'
 
+@inject()
 export default class AchievementsController {
+  constructor(private achievementService: AchievementService) {}
+
   public async index({ response }: HttpContext) {
     try {
-      const achievements = await Achievement.all()
-      return response.json({ message: 'Liste des achievements', data: achievements })
+      const achievements = await this.achievementService.getAll()
+      return response.json({ message: 'List of achievements', data: achievements })
     } catch (error) {
-      return response
-        .status(500)
-        .json({ message: 'Erreur lors de la récupération', error: String(error) })
+      return response.status(500).json({ message: 'Error while fetching achievements' })
     }
   }
 
   public async create({ request, response }: HttpContext) {
     try {
-      const payload = request.only(['description', 'type'])
-      const achievement = await Achievement.create(payload)
-      return response.status(201).json({ message: 'Achievement créé', data: achievement })
+      const result = await this.achievementService.createAchievement(
+        request.only(['description', 'type'])
+      )
+
+      if (!(result instanceof Achievement)) {
+        return response
+          .status((result as any).status || 500)
+          .json({ message: (result as any).error })
+      }
+
+      return response.status(201).json({ message: 'Achievement created', data: result })
     } catch (error) {
-      return response
-        .status(500)
-        .json({ message: 'Erreur lors de la création', error: String(error) })
+      return response.status(500).json({ message: 'Error while creating achievement' })
     }
   }
 
   public async show({ params, response }: HttpContext) {
     try {
-      const achievement = await Achievement.find(params.id)
+      const achievement = await this.achievementService.getById(params.id)
       if (!achievement) {
-        return response.status(404).json({ message: 'Achievement introuvable' })
+        return response.status(404).json({ message: 'Achievement not found' })
       }
-      return response.json({ message: `Détails de l'achievement ${params.id}`, data: achievement })
+      const payload = {
+        message: `Achievement details for ID: ${params.id}`,
+        data: achievement,
+      }
+      return response.json(payload)
     } catch (error) {
-      return response
-        .status(500)
-        .json({ message: 'Erreur lors de la récupération', error: String(error) })
+      return response.status(500).json({ message: 'Error while fetching achievement' })
     }
   }
 
   public async update({ params, request, response }: HttpContext) {
     try {
-      const achievement = await Achievement.find(params.id)
-      if (!achievement) {
-        return response.status(404).json({ message: 'Achievement introuvable' })
+      const result = await this.achievementService.updateAchievement(
+        params.id,
+        request.only(['description', 'type'])
+      )
+
+      if (!(result instanceof Achievement)) {
+        return response
+          .status((result as any).status || 500)
+          .json({ message: (result as any).error })
       }
-      achievement.merge(request.only(['description', 'type']))
-      await achievement.save()
-      return response.json({ message: 'Achievement mis à jour', data: achievement })
+
+      return response.json({ message: 'Achievement updated', data: result })
     } catch (error) {
-      return response
-        .status(500)
-        .json({ message: 'Erreur lors de la mise à jour', error: String(error) })
+      return response.status(500).json({ message: 'Error while updating achievement' })
     }
   }
 
-  public async destroy({ params, response }: HttpContext) {
+  public async delete({ params, response }: HttpContext) {
     try {
-      const achievement = await Achievement.find(params.id)
-      if (!achievement) {
-        return response.status(404).json({ message: 'Achievement introuvable' })
+      const result = await this.achievementService.deleteAchievement(params.id)
+      if ((result as any).error) {
+        return response
+          .status((result as any).status || 500)
+          .json({ message: (result as any).error })
       }
-      await achievement.delete()
-      return response.json({ message: `Achievement avec ID ${params.id} supprimé` })
+      // service returns message on success
+      return response.json({ message: (result as any).message })
     } catch (error) {
-      return response
-        .status(500)
-        .json({ message: 'Erreur lors de la suppression', error: String(error) })
+      return response.status(500).json({ message: 'Error while deleting achievement' })
     }
   }
 }
