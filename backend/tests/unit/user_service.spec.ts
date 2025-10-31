@@ -428,4 +428,100 @@ test.group('UserService - Edge Cases', (group) => {
       assert.include(error.message, 'unique')
     }
   })
+
+  test('updateUser should handle duplicate email/username with unique constraint error', async ({
+    assert,
+  }) => {
+    const timestamp = Date.now()
+    const user1 = await User.create({
+      username: `user1_${timestamp}`,
+      email: `user1_${timestamp}@example.com`,
+      password: 'password123',
+    })
+
+    const user2 = await User.create({
+      username: `user2_${timestamp}`,
+      email: `user2_${timestamp}@example.com`,
+      password: 'password123',
+    })
+
+    const result = await userService.updateUser(user2.id, {
+      email: `user1_${timestamp}@example.com`,
+    })
+
+    assert.notInstanceOf(result, User)
+    if (!(result instanceof User)) {
+      assert.equal(result.error, 'User with this email or username already exists')
+      assert.equal(result.status, 409)
+    }
+  })
+
+  test('updateUser should handle database errors gracefully by re-throwing', async ({
+    assert,
+  }) => {
+    const timestamp = Date.now()
+    const user = await User.create({
+      username: `test_error_${timestamp}`,
+      email: `test_error_${timestamp}@example.com`,
+      password: 'password123',
+    })
+
+    // Mock the save method to throw an unknown database error
+    const originalSave = user.save.bind(user)
+    user.save = async () => {
+      const error: any = new Error('Unknown database error')
+      error.code = 'UNKNOWN_ERROR'
+      throw error
+    }
+
+    // Mock the query to return our mocked user
+    const originalQuery = User.query
+    User.query = () => {
+      return {
+        where: () => ({
+          whereNull: () => ({
+            first: async () => user,
+          }),
+        }),
+      } as any
+    }
+
+    try {
+      await userService.updateUser(user.id, { firstName: 'Test' })
+      assert.fail('Should have thrown an error')
+    } catch (error: any) {
+      assert.equal(error.message, 'Unknown database error')
+    } finally {
+      // Restore original methods
+      user.save = originalSave
+      User.query = originalQuery
+    }
+  })
+
+  test('createUser should handle database errors gracefully by re-throwing', async ({
+    assert,
+  }) => {
+    // Mock User.create to throw an unknown database error
+    const originalCreate = User.create.bind(User)
+    User.create = async () => {
+      const error: any = new Error('Unknown database error')
+      error.code = 'UNKNOWN_ERROR'
+      throw error
+    }
+
+    try {
+      const timestamp = Date.now()
+      await userService.createUser({
+        username: `error_test_${timestamp}`,
+        email: `error_test_${timestamp}@example.com`,
+        password: 'password123',
+      })
+      assert.fail('Should have thrown an error')
+    } catch (error: any) {
+      assert.equal(error.message, 'Unknown database error')
+    } finally {
+      // Restore original create method
+      User.create = originalCreate
+    }
+  })
 })
