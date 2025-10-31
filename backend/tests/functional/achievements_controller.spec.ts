@@ -17,7 +17,7 @@ test.group('AchievementsController - CRUD Functional', (group) => {
 
     const response = await client.get('/api/achievements')
     response.assertStatus(200)
-    response.assertBodyContains({ message: 'Liste des achievements' })
+    response.assertBodyContains({ message: 'List of achievements' })
 
     const data = response.body().data
     assert.isAtLeast(data.length, 2)
@@ -27,7 +27,7 @@ test.group('AchievementsController - CRUD Functional', (group) => {
     const a = await Achievement.create({ type: 'single', description: 'detail' })
     const response = await client.get(`/api/achievements/${a.id}`)
     response.assertStatus(200)
-    response.assertBodyContains({ message: `Détails de l'achievement ${a.id}` })
+    response.assertBodyContains({ message: `Achievement details for ID: ${a.id}` })
     const data = response.body().data
     assert.equal(data.id, a.id)
     assert.equal(data.type, a.type)
@@ -36,14 +36,14 @@ test.group('AchievementsController - CRUD Functional', (group) => {
   test('GET non-existent should return 404', async ({ client }) => {
     const response = await client.get('/api/achievements/9999999')
     response.assertStatus(404)
-    response.assertBodyContains({ message: 'Achievement introuvable' })
+    response.assertBodyContains({ message: 'Achievement not found' })
   })
 
   test('POST /api/achievements should create achievement', async ({ client, assert }) => {
     const payload = { type: 'gold', description: 'created' }
     const response = await client.post('/api/achievements').json(payload)
     response.assertStatus(201)
-    response.assertBodyContains({ message: 'Achievement créé' })
+    response.assertBodyContains({ message: 'Achievement created' })
     const created = response.body().data
     assert.equal(created.type, payload.type)
     assert.equal(created.description, payload.description)
@@ -51,9 +51,11 @@ test.group('AchievementsController - CRUD Functional', (group) => {
 
   test('PATCH /api/achievements/:id should update', async ({ client, assert }) => {
     const a = await Achievement.create({ type: 'old', description: 'old' })
-    const response = await client.patch(`/api/achievements/${a.id}`).json({ description: 'updated', type: 'new' })
+    const response = await client
+      .patch(`/api/achievements/${a.id}`)
+      .json({ description: 'updated', type: 'new' })
     response.assertStatus(200)
-    response.assertBodyContains({ message: 'Achievement mis à jour' })
+    response.assertBodyContains({ message: 'Achievement updated' })
     const updated = response.body().data
     assert.equal(updated.description, 'updated')
     assert.equal(updated.type, 'new')
@@ -62,21 +64,22 @@ test.group('AchievementsController - CRUD Functional', (group) => {
   test('PATCH non-existent should return 404', async ({ client }) => {
     const response = await client.patch('/api/achievements/999999').json({ description: 'x' })
     response.assertStatus(404)
-    response.assertBodyContains({ message: 'Achievement introuvable' })
+    response.assertBodyContains({ message: 'Achievement not found' })
   })
 
   test('DELETE /api/achievements/:id should remove achievement', async ({ client, assert }) => {
     const a = await Achievement.create({ type: 'todel', description: 'd' })
     const response = await client.delete(`/api/achievements/${a.id}`)
     response.assertStatus(200)
-    response.assertBodyContains({ message: `Achievement avec ID ${a.id} supprimé` })
+    response.assertBodyContains({ message: `Achievement with ID: ${a.id} deleted successfully` })
     const found = await Achievement.find(a.id)
     assert.isNull(found)
   })
 
   test('DELETE non-existent should return 404', async ({ client }) => {
     const response = await client.delete('/api/achievements/999999')
+
     response.assertStatus(404)
-    response.assertBodyContains({ message: 'Achievement introuvable' })
+    response.assertBodyContains({ message: 'Achievement not found' })
   })
 })

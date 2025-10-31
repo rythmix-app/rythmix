@@ -34,7 +34,7 @@ router
         router.post('/', '#controllers/achievements_controller.create')
         router.get('/:id', '#controllers/achievements_controller.show')
         router.patch('/:id', '#controllers/achievements_controller.update')
-        router.delete('/:id', '#controllers/achievements_controller.destroy')
+        router.delete('/:id', '#controllers/achievements_controller.delete')
       })
       .prefix('/achievements')
   })
