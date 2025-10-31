@@ -20,6 +20,16 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v2
 
+      - name: Install mkcert
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-tools
+          curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+          chmod +x mkcert-v*-linux-amd64
+          sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+          mkcert -install
+        working-directory: /tmp
+
       - run: just install-dev
       - run: just backend-test
 
@@ -51,6 +61,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install mkcert
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-tools
+          curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+          chmod +x mkcert-v*-linux-amd64
+          sudo mv mkcert-v*-linux-amd64 /usr/local/bin/mkcert
+          mkcert -install
+        working-directory: /tmp
+
       - name: Install just
         uses: extractions/setup-just@v2
       - run: just install-dev
