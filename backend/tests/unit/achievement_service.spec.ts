@@ -95,7 +95,10 @@ test.group('AchievementService - CRUD Operations', (group) => {
     }
 
     try {
-      const result = await achievementService.createAchievement({ type: 'gold', description: 'dup' })
+      const result = await achievementService.createAchievement({
+        type: 'gold',
+        description: 'dup',
+      })
       assert.notInstanceOf(result, Achievement)
       if (!(result instanceof Achievement)) {
         assert.equal(result.error, 'Achievement already exists')
@@ -115,7 +118,10 @@ test.group('AchievementService - CRUD Operations', (group) => {
     }
 
     try {
-      const result = await achievementService.createAchievement({ type: 'x'.repeat(300), description: 'big' })
+      const result = await achievementService.createAchievement({
+        type: 'x'.repeat(300),
+        description: 'big',
+      })
       assert.notInstanceOf(result, Achievement)
       if (!(result instanceof Achievement)) {
         assert.equal(result.error, 'One or more fields exceed maximum length')
@@ -215,13 +221,18 @@ test.group('AchievementService - CRUD Operations', (group) => {
     }
   })
 
-  test('createAchievement should return created object when model.create succeeds (mocked)', async ({ assert }) => {
+  test('createAchievement should return created object when model.create succeeds (mocked)', async ({
+    assert,
+  }) => {
     const originalCreate = (Achievement as any).create
     const fakeAchievement: any = { id: 999, type: 'mocked', description: 'mock' }
     ;(Achievement as any).create = async (payload: any) => ({ ...fakeAchievement, ...payload })
 
     try {
-      const result = await achievementService.createAchievement({ type: 'mocked', description: 'mock' })
+      const result = await achievementService.createAchievement({
+        type: 'mocked',
+        description: 'mock',
+      })
       // should return the fake object
       assert.equal((result as any).type, 'mocked')
       assert.equal((result as any).description, 'mock')
@@ -245,7 +256,9 @@ test.group('AchievementService - CRUD Operations', (group) => {
 
   test('getById should return mocked record when model.query.first mocked', async ({ assert }) => {
     const originalQuery = (Achievement as any).query
-    ;(Achievement as any).query = () => ({ where: () => ({ first: async () => ({ id: 5, type: 'byid' }) }) })
+    ;(Achievement as any).query = () => ({
+      where: () => ({ first: async () => ({ id: 5, type: 'byid' }) }),
+    })
 
     try {
       const res = await achievementService.getById(5)
@@ -256,10 +269,16 @@ test.group('AchievementService - CRUD Operations', (group) => {
     }
   })
 
-  test('deleteAchievement should delete and return message when instance found (mocked)', async ({ assert }) => {
+  test('deleteAchievement should delete and return message when instance found (mocked)', async ({
+    assert,
+  }) => {
     const originalQuery = (Achievement as any).query
     let deleted = false
-    const fakeRecord: any = { delete: async () => { deleted = true } }
+    const fakeRecord: any = {
+      delete: async () => {
+        deleted = true
+      },
+    }
     ;(Achievement as any).query = () => ({ where: () => ({ first: async () => fakeRecord }) })
 
     try {
@@ -271,7 +290,9 @@ test.group('AchievementService - CRUD Operations', (group) => {
     }
   })
 
-  test('deleteAchievement should return not-found when instance missing (mocked)', async ({ assert }) => {
+  test('deleteAchievement should return not-found when instance missing (mocked)', async ({
+    assert,
+  }) => {
     const originalQuery = (Achievement as any).query
     ;(Achievement as any).query = () => ({ where: () => ({ first: async () => null }) })
 
