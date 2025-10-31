@@ -1,19 +1,27 @@
 services:
+  traefik:
+    command:
+      - --log.level=INFO
+    volumes:
+      - ./traefik/certs:/etc/traefik/certs:ro
+    labels:
+      - traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)
+
   database:
     env_file:
       - ./backend/.env.dev
+
   backend:
     build:
       target: dev
-    depends_on:
-      - database
     env_file:
       - ./backend/.env.dev
     volumes:
       - ./backend:/app
       - /app/node_modules
-    ports:
-      - "3333:${PORT:-3333}"
+    labels:
+      - traefik.http.routers.backend.rule=Host(`api.localhost`)
+
   back-office:
     build:
       target: dev
@@ -22,7 +30,8 @@ services:
       - /app/node_modules
     env_file:
       - ./back-office/.env.dev
-    ports:
-      - "4200:${PORT:-4200}"
     stdin_open: true
     tty: true
+    labels:
+      - traefik.http.routers.backoffice.rule=Host(`admin.localhost`)
+      - traefik.http.services.backoffice.loadbalancer.server.port=4200

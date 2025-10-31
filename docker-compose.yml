@@ -7,6 +7,23 @@ networks:
     driver: bridge
 
 services:
+  traefik:
+    image: traefik:v3.2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik:/etc/traefik
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.entrypoints=websecure
+      - traefik.http.routers.dashboard.tls=true
+
   database:
     image: postgres:alpine
     restart: unless-stopped
@@ -27,6 +44,12 @@ services:
     networks:
       - database
       - backend
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend.entrypoints=websecure
+      - traefik.http.routers.backend.tls=true
+      - traefik.http.services.backend.loadbalancer.server.port=3333
 
   back-office:
     depends_on:
@@ -37,21 +60,12 @@ services:
       - ./back-office/.env
     networks:
       - backend
-      #- frontend # Uncomment if using reverse-proxy
-
-  # reverse-proxy:
-  #   image: nginx:alpine
-  #   restart: unless-stopped
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-  #     - ./nginx/conf.d:/etc/nginx/conf.d
-  #     - ./nginx/certs:/etc/nginx/certs
-  #   networks:
-  #     - rythmix-backend
-  #     - rythmix-frontend
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backoffice.entrypoints=websecure
+      - traefik.http.routers.backoffice.tls=true
 
 volumes:
   pgdata:
+  traefik-certs:

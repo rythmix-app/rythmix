@@ -50,8 +50,12 @@ install-dev:
     find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
     @echo "✅ Environment files copied"
     @echo ""
+    @echo "🔐 Generating development SSL certificates..."
+    ( cd traefik && ./setup-dev-certs.sh )
+    @echo "✅ Development SSL certificates generated"
+    @echo ""
     @echo "🐳 Stopping existing containers (if any)..."
-    {{_docker_cmd}} -f docker-compose.prod.yml down -v || true
+    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml down -v || true
     @echo ""
     @echo "🐳 Building and starting containers..."
     {{_docker_cmd}} up --build -d
@@ -68,9 +72,10 @@ install-dev:
     @echo "✅ Installation complete!"
     @echo ""
     @echo "🌐 Access points:"
-    @echo "  - Backend API: http://localhost:3333"
-    @echo "  - Back-office: http://localhost:4200"
-    @echo "  - Database: localhost:5432"
+    @echo "  - Backend API: https://api.localhost"
+    @echo "  - Back-office: https://admin.localhost"
+    @echo "  - Traefik Dashboard: https://traefik.localhost"
+    @echo "  - Database: localhost:5432 (direct connection)"
     @echo ""
 
 # Complete installation for production
@@ -87,10 +92,10 @@ install-prod:
     @echo "⚠️  IMPORTANT: Vérifiez et modifiez les fichiers .env.prod avec vos valeurs de production"
     @echo ""
     @echo "🐳 Arrêt des conteneurs existants (s'il y en a)..."
-    {{_docker_cmd}} -f docker-compose.prod.yml down -v || true
+    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml down -v || true
     @echo ""
     @echo "🐳 Construction et lancement des conteneurs en mode production..."
-    {{_docker_cmd}} -f docker-compose.prod.yml up --build -d
+    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml up --build -d
     @echo ""
     @echo "⏳ Attente que les services se lancent..."
     sleep 15
@@ -113,13 +118,13 @@ logs-dev:
 
 # Commandes Docker pour la production
 up-prod:
-    {{_docker_cmd}} -f docker-compose.prod.yml up --build -d
+    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
 down-prod:
-    {{_docker_cmd}} -f docker-compose.prod.yml down
+    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml down
 
 logs-prod:
-    {{_docker_cmd}} -f docker-compose.prod.yml logs -f
+    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml logs -f
 
 # Commandes shell/bash des conteneurs
 sh-backend:
