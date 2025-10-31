@@ -434,6 +434,12 @@ test.group('UserService - Edge Cases', (group) => {
   }) => {
     const timestamp = Date.now()
 
+    await User.create({
+      username: `user1_${timestamp}`,
+      email: `user1_${timestamp}@example.com`,
+      password: 'password123',
+    })
+
     const user2 = await User.create({
       username: `user2_${timestamp}`,
       email: `user2_${timestamp}@example.com`,
