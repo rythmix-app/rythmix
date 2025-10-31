@@ -32,16 +32,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   /*
    * future column in relation with the user when the other model will be created
-   *   @hasMany(() => Achievement)
-   *   declare achievements: HasMany<typeof Achievement>
-   *
-   *   declaration of the relation with the user in Achievement model
-   *   @belongsTo(() => User)
-   *   declare user: BelongsTo<typeof User>
-   */
-
-  /*
-   * future column in relation with the user when the other model will be created
    *   @hasMany(() => LikedTrack)
    *   declare likedTracks: HasMany<typeof LikedTrack>
    *

@@ -220,7 +220,9 @@ test.group('AchievementsController - Unit Tests for Edge Cases', () => {
     }
   })
 
-  test('create should return 201 and created achievement when service succeeds', async ({ assert }) => {
+  test('create should return 201 and created achievement when service succeeds', async ({
+    assert,
+  }) => {
     const service = new AchievementService()
     const controller = new AchievementsController(service as any)
 
@@ -281,7 +283,11 @@ test.group('AchievementsController - Unit Tests for Edge Cases', () => {
 
     const mockResponse = makeMockResponse()
     const mockRequest = { only: () => ({ description: 'upd' }) }
-    const ctx = { response: mockResponse, params: { id: 3 }, request: mockRequest } as any as HttpContext
+    const ctx = {
+      response: mockResponse,
+      params: { id: 3 },
+      request: mockRequest,
+    } as any as HttpContext
 
     try {
       // @ts-ignore

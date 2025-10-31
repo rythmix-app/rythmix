@@ -433,11 +433,6 @@ test.group('UserService - Edge Cases', (group) => {
     assert,
   }) => {
     const timestamp = Date.now()
-    const user1 = await User.create({
-      username: `user1_${timestamp}`,
-      email: `user1_${timestamp}@example.com`,
-      password: 'password123',
-    })
 
     const user2 = await User.create({
       username: `user2_${timestamp}`,
@@ -456,9 +451,7 @@ test.group('UserService - Edge Cases', (group) => {
     }
   })
 
-  test('updateUser should handle database errors gracefully by re-throwing', async ({
-    assert,
-  }) => {
+  test('updateUser should handle database errors gracefully by re-throwing', async ({ assert }) => {
     const timestamp = Date.now()
     const user = await User.create({
       username: `test_error_${timestamp}`,
@@ -498,16 +491,14 @@ test.group('UserService - Edge Cases', (group) => {
     }
   })
 
-  test('createUser should handle database errors gracefully by re-throwing', async ({
-    assert,
-  }) => {
+  test('createUser should handle database errors gracefully by re-throwing', async ({ assert }) => {
     // Mock User.create to throw an unknown database error
-    const originalCreate = User.create.bind(User)
-    User.create = async () => {
+    const originalCreate = User.create
+    User.create = (async () => {
       const error: any = new Error('Unknown database error')
       error.code = 'UNKNOWN_ERROR'
       throw error
-    }
+    }) as typeof User.create
 
     try {
       const timestamp = Date.now()
