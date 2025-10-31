@@ -20,6 +20,10 @@ test.group('UsersController - CRUD Operations', (group) => {
     await testUtils.db().truncate()
   })
 
+  group.teardown(async () => {
+    await testUtils.db().truncate()
+  })
+
   test('GET /api/users should return list of users', async ({ client, assert }) => {
     await User.create(makeUser('user1'))
     await User.create(makeUser('user2'))
@@ -206,6 +210,10 @@ test.group('UsersController - Soft Delete Features', (group) => {
     await testUtils.db().truncate()
   })
 
+  group.teardown(async () => {
+    await testUtils.db().truncate()
+  })
+
   test('GET /api/users should not return soft-deleted users', async ({ client, assert }) => {
     await User.create(makeUser('active1'))
     await User.create(makeUser('active2'))
@@ -260,7 +268,10 @@ test.group('UsersController - Soft Delete Features', (group) => {
       email: deletedData.email,
     })
 
-    response.assertStatus(500)
+    response.assertStatus(409)
+    response.assertBodyContains({
+      message: 'User with this email or username already exists',
+    })
   })
 
   test('GET /api/users/trashed should return only soft-deleted users', async ({
@@ -334,6 +345,10 @@ test.group('UsersController - Integration Scenarios', (group) => {
   })
 
   group.each.setup(async () => {
+    await testUtils.db().truncate()
+  })
+
+  group.teardown(async () => {
     await testUtils.db().truncate()
   })
 
@@ -416,6 +431,10 @@ test.group('UsersController - Edge Cases Coverage', (group) => {
   })
 
   group.each.setup(async () => {
+    await testUtils.db().truncate()
+  })
+
+  group.teardown(async () => {
     await testUtils.db().truncate()
   })
 
