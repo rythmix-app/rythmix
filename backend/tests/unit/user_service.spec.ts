@@ -15,6 +15,10 @@ test.group('UserService - CRUD Operations', (group) => {
     await testUtils.db().truncate()
   })
 
+  group.teardown(async () => {
+    await testUtils.db().truncate()
+  })
+
   test('createUser should create a new user successfully', async ({ assert }) => {
     const timestamp = Date.now()
     const result = await userService.createUser({
@@ -159,6 +163,10 @@ test.group('UserService - Soft Delete Operations', (group) => {
 
   group.each.setup(async () => {
     userService = new UserService()
+    await testUtils.db().truncate()
+  })
+
+  group.teardown(async () => {
     await testUtils.db().truncate()
   })
 
@@ -368,6 +376,10 @@ test.group('UserService - Edge Cases', (group) => {
 
   group.each.setup(async () => {
     userService = new UserService()
+    await testUtils.db().truncate()
+  })
+
+  group.teardown(async () => {
     await testUtils.db().truncate()
   })
 

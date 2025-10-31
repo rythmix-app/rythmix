@@ -18,8 +18,28 @@ export class UserService {
       }
     }
     user.merge(payload)
-    await user.save()
-    return user
+    try {
+      await user.save()
+      return user
+    } catch (error: any) {
+      // Handle database constraint errors (unique constraint, value too long, etc.)
+      if (error.code === '23505') {
+        // Unique constraint violation
+        return {
+          error: 'User with this email or username already exists',
+          status: 409,
+        }
+      }
+      if (error.code === '22001') {
+        // String data right truncation / value too long
+        return {
+          error: 'One or more fields exceed maximum length',
+          status: 400,
+        }
+      }
+      // Re-throw other database errors
+      throw error
+    }
   }
 
   public async deleteUser(userId: string, user: User) {
@@ -81,7 +101,27 @@ export class UserService {
       }
     }
 
-    const user = await User.create(payload)
-    return user
+    try {
+      const user = await User.create(payload)
+      return user
+    } catch (error: any) {
+      // Handle database constraint errors (unique constraint, value too long, etc.)
+      if (error.code === '23505') {
+        // Unique constraint violation
+        return {
+          error: 'User with this email or username already exists',
+          status: 409,
+        }
+      }
+      if (error.code === '22001') {
+        // String data right truncation / value too long
+        return {
+          error: 'One or more fields exceed maximum length',
+          status: 400,
+        }
+      }
+      // Re-throw other database errors
+      throw error
+    }
   }
 }
