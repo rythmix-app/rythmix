@@ -5,6 +5,9 @@ import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { randomUUID } from 'node:crypto'
+import { hasMany } from '@adonisjs/lucid/orm'
+import LikedTrack from './licked_track.js'
+import type { HasMany } from '@adonisjs/lucid/types/relations'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -30,11 +33,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 
+  @hasMany(() => LikedTrack)
+  declare likedTracks: HasMany<typeof LikedTrack>
   /*
-   * future column in relation with the user when the other model will be created
-   *   @hasMany(() => LikedTrack)
-   *   declare likedTracks: HasMany<typeof LikedTrack>
-   *
    *   declaration of the relation with the user in LikedTrack model
    *   @belongsTo(() => User)
    *   declare user: BelongsTo<typeof User>
