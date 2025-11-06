@@ -42,12 +42,16 @@ export default class GamesController {
   }
 
   public async update({ params, request, response }: HttpContext) {
-    const gameId = params.id
-    const result = await this.gameService.updateGame(gameId, request.only(['name', 'description']))
-    if (!(result instanceof Game)) {
-      return response.status(result.status || 500).json({ message: result.error })
+    try {
+      const gameId = params.id
+      const result = await this.gameService.updateGame(gameId, request.only(['name', 'description']))
+      if (!(result instanceof Game)) {
+        return response.status(result.status || 500).json({ message: result.error })
+      }
+      return response.json({ message: 'Game updated successfully', data: result })
+    } catch (error) {
+      return response.status(500).json({ message: 'An unexpected error occurred', error: error?.message })
     }
-    return response.json({ message: 'Game updated successfully', data: result })
   }
 
   public async destroy({ params, response }: HttpContext) {
