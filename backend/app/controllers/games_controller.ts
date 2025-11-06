@@ -55,11 +55,15 @@ export default class GamesController {
   }
 
   public async destroy({ params, response }: HttpContext) {
-    const gameId = params.id
-    const result = await this.gameService.deleteGame(gameId)
-    if (result.error) {
-      return response.status(result.status || 500).json({ message: result.error })
+    try {
+      const gameId = params.id
+      const result = await this.gameService.deleteGame(gameId)
+      if (result.error) {
+        return response.status(result.status).json({ message: result.error })
+      }
+      return response.json({ message: `Game with ID: ${gameId} deleted successfully` })
+    } catch (error) {
+      return response.status(500).json({ message: 'An unexpected error occurred while deleting the game.', error: error?.message || error })
     }
-    return response.json({ message: `Game with ID: ${gameId} deleted successfully` })
   }
 }
