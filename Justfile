@@ -152,6 +152,9 @@ make-migration NAME:
 migrate:
     {{_docker_cmd}} exec backend node ace migration:run
 
+seeder:
+    {{_docker_cmd}} exec backend node ace db:seed
+
 backend-test:
     {{_docker_cmd}} exec backend node ace test
 
