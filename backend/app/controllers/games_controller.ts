@@ -25,12 +25,16 @@ export default class GamesController {
   }
 
   public async show({ params, response }: HttpContext) {
-    const gameId = params.id
-    const game = await this.gameService.getById(gameId)
-    if (!game) {
-      return response.status(404).json({ message: 'Game not found' })
+    try {
+      const gameId = params.id
+      const game = await this.gameService.getById(gameId)
+      if (!game) {
+        return response.status(404).json({ message: 'Game not found' })
+      }
+      return response.json({ message: `Game details for ID: ${gameId}`, data: game })
+    } catch (error) {
+      return response.status(500).json({ message: 'An error occurred while retrieving the game', error: error.message })
     }
-    return response.json({ message: `Game details for ID: ${gameId}`, data: game })
   }
 
   public async update({ params, request, response }: HttpContext) {
