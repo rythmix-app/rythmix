@@ -17,11 +17,15 @@ export default class GamesController {
   }
 
   public async create({ request, response }: HttpContext) {
-    const result = await this.gameService.createGame(request.only(['name', 'description']))
-    if (!(result instanceof Game)) {
-      return response.status(result.status || 500).json({ message: result.error })
+    try {
+      const result = await this.gameService.createGame(request.only(['name', 'description']))
+      if (!(result instanceof Game)) {
+        return response.status(result.status || 500).json({ message: result.error })
+      }
+      return response.status(201).json({ message: 'Game created successfully', data: result })
+    } catch (error) {
+      return response.status(500).json({ message: 'An unexpected error occurred', error: error.message })
     }
-    return response.status(201).json({ message: 'Game created successfully', data: result })
   }
 
   public async show({ params, response }: HttpContext) {
