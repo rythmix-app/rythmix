@@ -8,8 +8,12 @@ export default class GamesController {
   constructor(private readonly gameService: GameService) {}
 
   public async index({ response }: HttpContext) {
-    const games = await this.gameService.getAll()
-    return response.json({ message: 'List of games', data: games })
+    try {
+      const games = await this.gameService.getAll()
+      return response.json({ message: 'List of games', data: games })
+    } catch (error) {
+      return response.status(500).json({ message: 'Failed to fetch games', error: error.message || error })
+    }
   }
 
   public async create({ request, response }: HttpContext) {
