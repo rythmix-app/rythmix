@@ -37,14 +37,5 @@ router
         router.delete('/:id', '#controllers/achievements_controller.delete')
       })
       .prefix('/achievements')
-    router
-      .group(() => {
-        router.get('/', '#controllers/games_controller.index')
-        router.post('/', '#controllers/games_controller.create')
-        router.get('/:id', '#controllers/games_controller.show')
-        router.patch('/:id', '#controllers/games_controller.update')
-        router.delete('/:id', '#controllers/games_controller.destroy')
-      })
-      .prefix('/games')
   })
   .prefix('/api')
