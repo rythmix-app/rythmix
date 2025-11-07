@@ -39,6 +39,15 @@ router
       .prefix('/achievements')
     router
       .group(() => {
+        router.get('/', '#controllers/games_controller.index')
+        router.post('/', '#controllers/games_controller.create').use(middleware.role({ roles: ['admin'] }))
+        router.get('/:id', '#controllers/games_controller.show')
+        router.patch('/:id', '#controllers/games_controller.update').use(middleware.role({ roles: ['admin'] }))
+        router.delete('/:id', '#controllers/games_controller.destroy').use(middleware.role({ roles: ['admin'] }))
+      })
+      .prefix('/games')
+    router
+      .group(() => {
         router.get('/', '#controllers/licked_tracks_controller.index')
         router.post('/', '#controllers/licked_tracks_controller.create')
         router.get('/:id', '#controllers/licked_tracks_controller.show')

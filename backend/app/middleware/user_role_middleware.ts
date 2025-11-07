@@ -7,6 +7,9 @@ export default class UserRoleMiddleware {
     next: NextFn,
     options: { roles: ('user' | 'admin')[] }
   ) {
+    // Authenticate the user first if not already authenticated
+    await auth.authenticateUsing(['api'])
+
     const user = auth.user
 
     if (!user) {
