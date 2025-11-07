@@ -31,7 +31,7 @@ jobs:
         working-directory: /tmp
 
       - run: just install-dev
-      - run: just backend-test
+      - run: just backend-coverage
 
   # Mobile App (Expo)
   front-mobile:
