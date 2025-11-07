@@ -20,7 +20,6 @@ const makeMockResponse = () => {
     },
   }
 }
-
 test.group('AchievementsController - Unit Tests for Edge Cases', () => {
   test('create should use 500 status when service returns error', async ({ assert }) => {
     const service = new AchievementService()
@@ -315,6 +314,122 @@ test.group('AchievementsController - Unit Tests for Edge Cases', () => {
       assert.equal(mockResponse.body?.message, 'deleted')
     } finally {
       ;(service as any).deleteAchievement = original
+    }
+  })
+
+  test('create returns 500 when service returns error object without status', async ({
+    assert,
+  }) => {
+    const service = { createAchievement: async () => ({ error: 'Create failed' }) } as any
+    const controller = new AchievementsController(service)
+
+    const response = {
+      statusCode: 200,
+      body: null as any,
+      status(code: number) {
+        this.statusCode = code
+        return this
+      },
+      json(payload: any) {
+        this.body = payload
+        return this
+      },
+    }
+    const request = { only: () => ({ type: 't', description: 'd' }) } as any
+
+    await controller.create({ request, response } as any)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(String(response.body?.message), /Create failed|Error/i)
+  })
+
+  test('update returns 500 when service returns error object without status', async ({
+    assert,
+  }) => {
+    const service = { updateAchievement: async () => ({ error: 'Update failed' }) } as any
+    const controller = new AchievementsController(service)
+
+    const response = {
+      statusCode: 200,
+      body: null as any,
+      status(code: number) {
+        this.statusCode = code
+        return this
+      },
+      json(payload: any) {
+        this.body = payload
+        return this
+      },
+    }
+    const request = { only: () => ({ description: 'new desc' }) } as any
+    const params = { id: 123 }
+
+    await controller.update({ response, request, params } as any)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(String(response.body?.message), /Update failed|Error/i)
+  })
+
+  test('delete returns 500 when service returns error object without status', async ({
+    assert,
+  }) => {
+    const service = { deleteAchievement: async () => ({ error: 'Delete failed' }) } as any
+    const controller = new AchievementsController(service)
+
+    const response = {
+      statusCode: 200,
+      body: null as any,
+      status(code: number) {
+        this.statusCode = code
+        return this
+      },
+      json(payload: any) {
+        this.body = payload
+        return this
+      },
+    }
+    const params = { id: 456 }
+
+    await controller.delete({ response, params } as any)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(String(response.body?.message), /Delete failed|Error/i)
+  })
+  test('update should return 500 when service throws', async ({ assert }) => {
+    const service = new AchievementService()
+    const controller = new AchievementsController(service as any)
+
+    const original = (service as any).updateAchievement
+    ;(service as any).updateAchievement = async () => {
+      throw new Error('boom update throw')
+    }
+
+    const mockResponse = {
+      statusCode: 0,
+      body: null as any,
+      status(code: number) {
+        this.statusCode = code
+        return this
+      },
+      json(payload: any) {
+        this.body = payload
+        return this
+      },
+    }
+    const mockRequest = { only: () => ({ description: 'x' }) }
+    const ctx = {
+      response: mockResponse,
+      request: mockRequest,
+      params: { id: 1 },
+    } as any as HttpContext
+
+    try {
+      // @ts-ignore
+      await controller.update(ctx)
+      assert.equal(mockResponse.statusCode, 500)
+      assert.match(String(mockResponse.body?.message), /Error while updating achievement/i)
+    } finally {
+      ;(service as any).updateAchievement = original
     }
   })
 })
