@@ -1,0 +1,19 @@
+name: Setup Development Tools
+description: Install mkcert and just for development
+
+runs:
+  using: composite
+  steps:
+    - name: Install just
+      uses: extractions/setup-just@v2
+
+    - name: Install mkcert
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y libnss3-tools
+        curl -fsSL "https://dl.filippo.io/mkcert/latest?for=linux/amd64" -o mkcert
+        chmod +x mkcert
+        sudo mv mkcert /usr/local/bin/mkcert
+        mkcert -install
+      working-directory: /tmp
