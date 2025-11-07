@@ -37,5 +37,14 @@ router
         router.delete('/:id', '#controllers/achievements_controller.delete')
       })
       .prefix('/achievements')
+    router
+      .group(() => {
+        router.get('/', '#controllers/licked_tracks_controller.index')
+        router.post('/', '#controllers/licked_tracks_controller.create')
+        router.get('/:id', '#controllers/licked_tracks_controller.show')
+        router.patch('/:id', '#controllers/licked_tracks_controller.update')
+        router.delete('/:id', '#controllers/licked_tracks_controller.delete')
+      })
+      .prefix('/licked-tracks')
   })
   .prefix('/api')
