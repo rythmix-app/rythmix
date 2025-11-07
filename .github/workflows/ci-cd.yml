@@ -7,8 +7,30 @@ on:
     branches: [main, staging]
 
 jobs:
+  # Detect changes
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      front-mobile: ${{ steps.filter.outputs.front-mobile }}
+      back-office: ${{ steps.filter.outputs.back-office }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            front-mobile:
+              - 'front-mobile/**'
+            back-office:
+              - 'back-office/**'
+
   # Backend API
   backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
 
     permissions:
