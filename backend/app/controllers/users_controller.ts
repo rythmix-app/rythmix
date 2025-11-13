@@ -9,7 +9,7 @@ export default class UsersController {
 
   public async index({ response }: HttpContext) {
     const users = await this.userService.getAll()
-    return response.json({ message: 'List of users', data: users })
+    return response.json({ users: users })
   }
 
   public async create({ request, response }: HttpContext) {
@@ -19,7 +19,7 @@ export default class UsersController {
     if (!(result instanceof User)) {
       return response.status(result.status || 500).json({ message: result.error })
     }
-    return response.status(201).json({ message: 'User created successfully', data: result })
+    return response.status(201).json({ user: result })
   }
 
   public async show({ params, response }: HttpContext) {
@@ -28,7 +28,7 @@ export default class UsersController {
     if (!user) {
       return response.status(404).json({ message: 'User not found' })
     }
-    return response.json({ message: `User details for ID: ${userId}`, user })
+    return response.json({ user })
   }
 
   public async update({ params, request, response }: HttpContext) {
@@ -40,7 +40,7 @@ export default class UsersController {
     if (!(result instanceof User)) {
       return response.status(result.status || 500).json({ message: result.error })
     }
-    return response.json({ message: `User updated successfully`, result })
+    return response.json({ user: result })
   }
 
   public async delete({ params, response, auth }: HttpContext) {
@@ -63,6 +63,6 @@ export default class UsersController {
 
   public async trashed({ response }: HttpContext) {
     const users = await this.userService.getOnlyTrashed()
-    return response.json({ message: 'List of soft deleted users', data: users })
+    return response.json({ users })
   }
 }

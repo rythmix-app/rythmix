@@ -76,13 +76,10 @@ test.group('GamesController - CRUD Operations', (group) => {
     const admin = await User.create(makeAdminUser())
     const token = await User.accessTokens.create(admin)
 
-    const response = await client
-      .post('/api/games')
-      .bearerToken(token.value!.release())
-      .json({
-        name: 'New Game',
-        description: 'New Game Description',
-      })
+    const response = await client.post('/api/games').bearerToken(token.value!.release()).json({
+      name: 'New Game',
+      description: 'New Game Description',
+    })
 
     response.assertStatus(201)
     response.assertBodyContains({ message: 'Game created successfully' })
@@ -158,9 +155,7 @@ test.group('GamesController - CRUD Operations', (group) => {
     const admin = await User.create(makeAdminUser())
     const token = await User.accessTokens.create(admin)
 
-    const response = await client
-      .delete('/api/games/999999')
-      .bearerToken(token.value!.release())
+    const response = await client.delete('/api/games/999999').bearerToken(token.value!.release())
 
     response.assertStatus(404)
     response.assertBodyContains({ message: 'Game not found' })
@@ -188,13 +183,10 @@ test.group('GamesController - Integration Scenarios', (group) => {
     const token = await User.accessTokens.create(admin)
 
     // Create
-    let response = await client
-      .post('/api/games')
-      .bearerToken(token.value!.release())
-      .json({
-        name: 'Lifecycle Game',
-        description: 'Testing full lifecycle',
-      })
+    let response = await client.post('/api/games').bearerToken(token.value!.release()).json({
+      name: 'Lifecycle Game',
+      description: 'Testing full lifecycle',
+    })
 
     response.assertStatus(201)
     const gameId = response.body().data.id
@@ -210,13 +202,10 @@ test.group('GamesController - Integration Scenarios', (group) => {
     assert.equal(response.body().data.name, 'Lifecycle Game')
 
     // Update
-    response = await client
-      .patch(`/api/games/${gameId}`)
-      .bearerToken(token.value!.release())
-      .json({
-        name: 'Updated Lifecycle Game',
-        description: 'Updated description',
-      })
+    response = await client.patch(`/api/games/${gameId}`).bearerToken(token.value!.release()).json({
+      name: 'Updated Lifecycle Game',
+      description: 'Updated description',
+    })
     response.assertStatus(200)
     assert.equal(response.body().data.name, 'Updated Lifecycle Game')
 
