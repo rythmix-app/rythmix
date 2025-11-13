@@ -1,0 +1,417 @@
+.users-page {
+  background: var(--secondary-dark);
+  min-height: 100vh;
+  padding: 40px;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+
+    .page-title {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, var(--primary-blue-light) 0%, var(--secondary-blue-normal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .btn-create {
+      background: linear-gradient(135deg, var(--primary-dark-green) 0%, var(--secondary-blue-normal) 100%);
+      color: var(--secondary-dark);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 0 24px;
+      height: 42px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(20, 255, 236, 0.3);
+      transition: all 0.3s;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+      }
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(20, 255, 236, 0.5);
+      }
+    }
+  }
+
+  .filters-bar {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 32px;
+
+    .search-field {
+      flex: 1;
+      max-width: 400px;
+
+      ::ng-deep {
+        .mat-mdc-text-field-wrapper {
+          background: var(--primary-dark);
+          border-radius: 8px;
+        }
+
+        .mdc-text-field--outlined .mdc-notched-outline {
+          .mdc-notched-outline__leading,
+          .mdc-notched-outline__notch,
+          .mdc-notched-outline__trailing {
+            border-color: var(--primary-dark-green);
+          }
+        }
+
+        .mdc-text-field--focused .mdc-notched-outline {
+          .mdc-notched-outline__leading,
+          .mdc-notched-outline__notch,
+          .mdc-notched-outline__trailing {
+            border-color: var(--primary-blue-light) !important;
+            border-width: 2px !important;
+          }
+        }
+
+        .mat-mdc-input-element {
+          color: var(--primary-white);
+          font-size: 14px;
+
+          &::placeholder {
+            color: var(--primary-white) !important;
+            opacity: 0.7;
+          }
+        }
+
+        .mat-mdc-form-field-icon-suffix mat-icon {
+          color: var(--secondary-blue-normal);
+        }
+
+        label {
+          color: var(--secondary-gray-light) !important;
+        }
+      }
+    }
+
+    .toggle-deleted {
+      ::ng-deep {
+        .mdc-label {
+          color: var(--secondary-gray-light);
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .mdc-switch__track {
+          background-color: var(--secondary-dark-green);
+          border-color: var(--secondary-dark-green);
+        }
+
+        .mdc-switch--selected .mdc-switch__track {
+          background-color: var(--primary-dark-green);
+          border-color: var(--primary-dark-green);
+        }
+
+        .mdc-switch__handle::after {
+          background-color: var(--primary-white);
+        }
+
+        .mdc-switch--selected .mdc-switch__handle::after {
+          background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--secondary-blue-normal) 100%);
+        }
+      }
+    }
+  }
+
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    padding: 80px;
+
+    ::ng-deep .mat-mdc-progress-spinner circle {
+      stroke: var(--primary-blue-light);
+    }
+  }
+
+  .table-wrapper {
+    .data-table {
+      width: 100%;
+      background: transparent;
+
+      ::ng-deep {
+        .mat-mdc-header-cell {
+          background: transparent;
+          color: var(--primary-blue-light);
+          font-weight: 700;
+          font-size: 12px;
+          letter-spacing: 1.5px;
+          padding: 20px 16px;
+          border-bottom: 2px solid var(--primary-dark-green);
+        }
+
+        .mat-mdc-cell {
+          color: var(--secondary-gray-light);
+          font-size: 14px;
+          padding: 20px 16px;
+          border-bottom: 1px solid rgba(13, 115, 119, 0.2);
+        }
+
+        .mat-mdc-row {
+          transition: all 0.2s;
+
+          &:hover {
+            background: rgba(13, 115, 119, 0.1);
+          }
+        }
+
+        .mat-mdc-row:last-child .mat-mdc-cell {
+          border-bottom: none;
+        }
+      }
+
+      .user-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        span {
+          color: var(--primary-white);
+          font-weight: 500;
+        }
+
+        .deleted {
+          text-decoration: line-through;
+          color: #666;
+        }
+
+        .fullname {
+          font-size: 12px;
+          color: var(--secondary-blue-normal);
+          font-weight: 400;
+        }
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+
+        &.badge-admin {
+          background: linear-gradient(135deg, var(--primary-dark-green) 0%, var(--primary-blue-light) 100%);
+          color: var(--secondary-dark);
+          box-shadow: 0 2px 8px rgba(20, 255, 236, 0.3);
+        }
+
+        &.badge-user {
+          background: var(--secondary-dark-green);
+          color: var(--secondary-blue-normal);
+          border: 1px solid var(--primary-dark-green);
+        }
+
+        &.badge-active {
+          background: var(--primary-dark-green);
+          color: var(--primary-blue-light);
+        }
+
+        &.badge-deleted {
+          background: transparent;
+          color: #666;
+          border: 1px solid #666;
+        }
+      }
+
+      .actions-cell {
+        text-align: right;
+
+        .action-link {
+          color: var(--secondary-blue-normal);
+          font-size: 13px;
+          font-weight: 600;
+          padding: 6px 12px;
+          min-width: auto;
+          height: auto;
+          line-height: normal;
+          border-radius: 6px;
+          transition: all 0.2s;
+
+          &:hover {
+            background: rgba(13, 115, 119, 0.2);
+            color: var(--primary-blue-light);
+          }
+
+          &.danger {
+            color: #ff6b6b;
+
+            &:hover {
+              background: rgba(255, 107, 107, 0.1);
+            }
+          }
+        }
+      }
+
+      .no-data-row {
+        td {
+          text-align: center;
+          padding: 60px;
+          color: #666;
+          font-size: 14px;
+        }
+      }
+    }
+
+    .pagination-wrapper {
+      margin-top: 24px;
+      border-top: 1px solid rgba(13, 115, 119, 0.3);
+      padding-top: 16px;
+
+      ::ng-deep {
+        .mat-mdc-paginator {
+          background: transparent;
+        }
+
+        .mat-mdc-paginator-container {
+          padding: 8px 0;
+          gap: 12px; // ✅ Espacement entre les éléments
+        }
+
+        .mat-mdc-paginator-page-size-select {
+          border: 1px solid var(--primary-white);
+          border-radius: 8px;
+          padding: 4px 8px;
+          transition: all 0.3s;
+
+          &:hover {
+            border-color: var(--primary-blue-light);
+            background: rgba(20, 255, 236, 0.1);
+          }
+        }
+
+        .mat-mdc-paginator-page-size-label,
+        .mat-mdc-paginator-range-label {
+          font-size: 13px;
+          color: var(--primary-white); // ✅ Blanc
+          font-weight: 500;
+        }
+
+        .mat-mdc-icon-button {
+          border: 1px solid var(--primary-white);
+          border-radius: 8px;
+          margin: 0 4px;
+          color: var(--primary-white);
+          transition: all 0.3s;
+
+          // ✅ Force la couleur des icônes SVG
+          svg {
+            fill: var(--primary-white) !important;
+          }
+
+          .mat-mdc-button-persistent-ripple {
+            color: var(--primary-white);
+          }
+
+          &:disabled {
+            color: var(--secondary-dark-green);
+            border-color: var(--secondary-dark-green);
+            opacity: 0.5;
+
+            svg {
+              fill: var(--secondary-dark-green) !important;
+            }
+          }
+
+          &:hover:not(:disabled) {
+            background: linear-gradient(135deg, var(--primary-dark-green) 0%, var(--secondary-blue-normal) 100%);
+            border-color: var(--primary-blue-light);
+            color: var(--secondary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(20, 255, 236, 0.3);
+
+            // ✅ Change la couleur au hover
+            svg {
+              fill: var(--secondary-dark) !important;
+            }
+          }
+
+          &:active:not(:disabled) {
+            transform: translateY(0);
+          }
+        }
+
+        .mat-mdc-select {
+          color: var(--primary-white);
+
+          .mat-mdc-select-value {
+            color: var(--primary-white);
+          }
+        }
+
+        .mat-mdc-select-arrow {
+          color: var(--primary-white); // ✅ Flèche blanche
+        }
+
+        // Style du dropdown du select
+        .mat-mdc-select-panel {
+          background: var(--primary-dark);
+
+          .mat-mdc-option {
+            color: var(--primary-white);
+
+            &:hover {
+              background: rgba(20, 255, 236, 0.1);
+            }
+
+            // Option sélectionnée
+            &.mat-mdc-option-active,
+            &.mdc-list-item--selected {
+              background: rgba(13, 115, 119, 0.2);
+              color: var(--primary-blue-light) !important;
+
+              .mdc-list-item__primary-text {
+                color: var(--primary-blue-light) !important;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .users-page {
+    padding: 20px;
+
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .filters-bar {
+      flex-direction: column;
+      align-items: stretch;
+
+      .search-field {
+        max-width: 100%;
+      }
+    }
+
+    .table-wrapper .data-table {
+      font-size: 12px;
+
+      ::ng-deep {
+        .mat-mdc-header-cell,
+        .mat-mdc-cell {
+          padding: 12px 8px;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,180 @@
+<div class="user-detail-page">
+  <div class="page-header">
+    <div class="header-left">
+      <button mat-icon-button (click)="onCancel()" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1 class="page-title">{{ title }}</h1>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <!-- Loader -->
+    @if (isLoading) {
+      <div class="loading-container">
+        <mat-spinner></mat-spinner>
+      </div>
+    }
+
+    <!-- Form -->
+    @if (!isLoading) {
+      <div class="form-container">
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+          <div class="form-section">
+            <h2 class="section-title">Informations personnelles</h2>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Username *</mat-label>
+                <input matInput formControlName="username">
+                @if (userForm.get('username')?.hasError('required')) {
+                  <mat-error>
+                    Le username est requis
+                  </mat-error>
+                }
+                @if (userForm.get('username')?.hasError('minlength')) {
+                  <mat-error>
+                    Le username doit contenir au moins 3 caractères
+                  </mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field half">
+                <mat-label>Prénom</mat-label>
+                <input matInput formControlName="firstName">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field half">
+                <mat-label>Nom</mat-label>
+                <input matInput formControlName="lastName">
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Email *</mat-label>
+                <input matInput type="email" formControlName="email">
+                @if (userForm.get('email')?.hasError('required')) {
+                  <mat-error>
+                    L'email est requis
+                  </mat-error>
+                }
+                @if (userForm.get('email')?.hasError('email')) {
+                  <mat-error>
+                    L'email n'est pas valide
+                  </mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            @if (mode === 'create') {
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Mot de passe *</mat-label>
+                  <input matInput type="password" formControlName="password">
+                  @if (userForm.get('password')?.hasError('required')) {
+                    <mat-error>
+                      Le mot de passe est requis
+                    </mat-error>
+                  }
+                  @if (userForm.get('password')?.hasError('minlength')) {
+                    <mat-error>
+                      Le mot de passe doit contenir au moins 6 caractères
+                    </mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            }
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field half">
+                <mat-label>Rôle *</mat-label>
+                <mat-select formControlName="role">
+                  <mat-option value="user">Utilisateur</mat-option>
+                  <mat-option value="admin">Administrateur</mat-option>
+                </mat-select>
+                @if (userForm.get('role')?.hasError('required')) {
+                  <mat-error>
+                    Le rôle est requis
+                  </mat-error>
+                }
+              </mat-form-field>
+
+              <!-- ✅ NOUVEAU : Champ statut -->
+              <mat-form-field appearance="outline" class="form-field half">
+                <mat-label>Statut</mat-label>
+                <mat-select formControlName="status">
+                  <mat-option value="active">Actif</mat-option>
+                  <mat-option value="inactive">Inactif</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- User info (view mode only) -->
+          @if (mode === 'view' && user) {
+            <div class="info-section">
+              <h2 class="section-title">Informations système</h2>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">ID</span>
+                  <span class="info-value">{{ user.id }}</span>
+                </div>
+                <!-- ✅ Dates groupées dans un seul bloc -->
+                <div class="info-item">
+                  <span class="info-label">Dates</span>
+                  <div class="info-dates">
+                    <div class="date-row">
+                      <span class="date-label">Création:</span>
+                      <span class="info-value">{{ user.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+                    </div>
+                    @if (user.updatedAt) {
+                      <div class="date-row">
+                        <span class="date-label">Modification:</span>
+                        <span class="info-value">{{ user.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Statut</span>
+                  <span class="badge" [class.badge-active]="user.status === 'active'" [class.badge-deleted]="user.status === 'inactive'">
+                    {{ user.status === 'inactive' ? 'Inactif' : 'Actif' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Form actions -->
+          @if (mode !== 'view') {
+            <div class="form-actions">
+              <button mat-button type="button" (click)="onCancel()" [disabled]="isSubmitting" class="btn-cancel">
+                Annuler
+              </button>
+              <button mat-raised-button type="submit" [disabled]="isSubmitting" class="btn-submit">
+                @if (isSubmitting) {
+                  <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+                }
+                @if (!isSubmitting) {
+                  <span>{{ mode === 'create' ? 'Créer' : 'Enregistrer' }}</span>
+                }
+              </button>
+            </div>
+          }
+
+          @if (mode === 'view') {
+            <div class="form-actions">
+              <button mat-raised-button type="button" (click)="router.navigate(['/users', userId, 'edit'])" class="btn-edit">
+                <mat-icon>edit</mat-icon>
+                Modifier
+              </button>
+            </div>
+          }
+        </form>
+      </div>
+    }
+  </div>
+</div>
