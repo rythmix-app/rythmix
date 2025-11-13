@@ -11,7 +11,7 @@ export default class AchievementsController {
   public async index({ response }: HttpContext) {
     try {
       const achievements = await this.achievementService.getAll()
-      return response.json({ message: 'List of achievements', data: achievements })
+      return response.json({ achievements })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching achievements' })
     }
@@ -29,7 +29,7 @@ export default class AchievementsController {
           .json({ message: (result as any).error })
       }
 
-      return response.status(201).json({ message: 'Achievement created', data: result })
+      return response.status(201).json({ achievement: result })
     } catch (error) {
       return response.status(500).json({ message: 'Error while creating achievement' })
     }
@@ -41,11 +41,7 @@ export default class AchievementsController {
       if (!achievement) {
         return response.status(404).json({ message: 'Achievement not found' })
       }
-      const payload = {
-        message: `Achievement details for ID: ${params.id}`,
-        data: achievement,
-      }
-      return response.json(payload)
+      return response.json({ achievement })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching achievement' })
     }
@@ -64,7 +60,7 @@ export default class AchievementsController {
           .json({ message: (result as any).error })
       }
 
-      return response.json({ message: 'Achievement updated', data: result })
+      return response.json({ achievement: result })
     } catch (error) {
       return response.status(500).json({ message: 'Error while updating achievement' })
     }
@@ -78,7 +74,7 @@ export default class AchievementsController {
           .status((result as any).status || 500)
           .json({ message: (result as any).error })
       }
-      // service returns message on success
+      // service returns a message on success
       return response.json({ message: (result as any).message })
     } catch (error) {
       return response.status(500).json({ message: 'Error while deleting achievement' })
