@@ -36,6 +36,7 @@ help:
     @echo "🧪 Testing:"
     @echo "  backend-test      - Run backend tests"
     @echo "  backend-coverage  - Run backend tests with coverage report"
+    @echo "  backend-check     - Run lint, format and typecheck"
     @echo ""
 
 # Show detected Docker tool
@@ -160,3 +161,6 @@ backend-test:
 
 backend-coverage:
     {{_docker_cmd}} exec backend npm run test:coverage
+
+backend-check:
+    {{_docker_cmd}} exec backend npm run check
