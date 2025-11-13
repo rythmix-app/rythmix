@@ -212,8 +212,7 @@ test.group('AchievementsController - Unit Tests for Edge Cases', () => {
     try {
       // @ts-ignore
       await controller.index(ctx)
-      assert.equal(mockResponse.body?.message, 'List of achievements')
-      assert.isArray(mockResponse.body?.data)
+      assert.isArray(mockResponse.body?.achievements)
     } finally {
       ;(service as any).getAll = original
     }
@@ -241,8 +240,8 @@ test.group('AchievementsController - Unit Tests for Edge Cases', () => {
       await controller.create(ctx)
       assert.equal(mockResponse.statusCode, 201)
       // prefer checking returned data rather than message to avoid fragile instanceof checks
-      assert.exists(mockResponse.body?.data)
-      assert.equal(mockResponse.body?.data, fakeAchievement)
+      assert.exists(mockResponse.body?.achievement)
+      assert.equal(mockResponse.body?.achievement, fakeAchievement)
     } finally {
       ;(service as any).createAchievement = original
     }
@@ -262,8 +261,7 @@ test.group('AchievementsController - Unit Tests for Edge Cases', () => {
     try {
       // @ts-ignore
       await controller.show(ctx)
-      assert.equal(mockResponse.body?.message, `Achievement details for ID: ${2}`)
-      assert.equal(mockResponse.body?.data, fakeAchievement)
+      assert.equal(mockResponse.body?.achievement, fakeAchievement)
     } finally {
       ;(service as any).getById = original
     }
@@ -291,8 +289,8 @@ test.group('AchievementsController - Unit Tests for Edge Cases', () => {
     try {
       // @ts-ignore
       await controller.update(ctx)
-      assert.exists(mockResponse.body?.data)
-      assert.equal(mockResponse.body?.data, fakeAchievement)
+      assert.exists(mockResponse.body?.achievement)
+      assert.equal(mockResponse.body?.achievement, fakeAchievement)
     } finally {
       ;(service as any).updateAchievement = original
     }

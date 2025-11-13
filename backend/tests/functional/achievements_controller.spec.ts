@@ -17,20 +17,18 @@ test.group('AchievementsController - CRUD Functional', (group) => {
 
     const response = await client.get('/api/achievements')
     response.assertStatus(200)
-    response.assertBodyContains({ message: 'List of achievements' })
 
-    const data = response.body().data
-    assert.isAtLeast(data.length, 2)
+    const achievements = response.body().achievements
+    assert.isAtLeast(achievements.length, 2)
   })
 
   test('GET /api/achievements/:id should return details', async ({ client, assert }) => {
     const a = await Achievement.create({ type: 'single', description: 'detail' })
     const response = await client.get(`/api/achievements/${a.id}`)
     response.assertStatus(200)
-    response.assertBodyContains({ message: `Achievement details for ID: ${a.id}` })
-    const data = response.body().data
-    assert.equal(data.id, a.id)
-    assert.equal(data.type, a.type)
+    const achievement = response.body().achievement
+    assert.equal(achievement.id, a.id)
+    assert.equal(achievement.type, a.type)
   })
 
   test('GET non-existent should return 404', async ({ client }) => {
@@ -43,8 +41,7 @@ test.group('AchievementsController - CRUD Functional', (group) => {
     const payload = { type: 'gold', description: 'created' }
     const response = await client.post('/api/achievements').json(payload)
     response.assertStatus(201)
-    response.assertBodyContains({ message: 'Achievement created' })
-    const created = response.body().data
+    const created = response.body().achievement
     assert.equal(created.type, payload.type)
     assert.equal(created.description, payload.description)
   })
@@ -55,8 +52,7 @@ test.group('AchievementsController - CRUD Functional', (group) => {
       .patch(`/api/achievements/${a.id}`)
       .json({ description: 'updated', type: 'new' })
     response.assertStatus(200)
-    response.assertBodyContains({ message: 'Achievement updated' })
-    const updated = response.body().data
+    const updated = response.body().achievement
     assert.equal(updated.description, 'updated')
     assert.equal(updated.type, 'new')
   })
