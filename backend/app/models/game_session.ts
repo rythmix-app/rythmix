@@ -13,15 +13,6 @@ export interface PlayerData {
   rank: number
 }
 
-// Type pour les données de jeu
-export interface GameData {
-  classement?: any[]
-  settings?: Record<string, any>
-  manche?: number
-  points?: Record<string, number>
-  [key: string]: any
-}
-
 export default class GameSession extends BaseModel {
   @column({ isPrimary: true })
   declare id: string
