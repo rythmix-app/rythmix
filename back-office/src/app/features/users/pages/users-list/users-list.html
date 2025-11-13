@@ -1,0 +1,127 @@
+<div class="users-page">
+  <div class="page-header">
+    <h1 class="page-title">UTILISATEURS</h1>
+    <button mat-raised-button class="btn-create" (click)="createUser()">
+      <mat-icon>add</mat-icon>
+      Créer un utilisateur
+    </button>
+  </div>
+
+  <div class="page-content">
+    <!-- Filtres -->
+    <div class="filters-bar">
+      <mat-form-field appearance="outline" class="search-field">
+        <input matInput (keyup)="applyFilter($event)" placeholder="Rechercher par username ou email...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <mat-slide-toggle
+        [(ngModel)]="filters.includeDeleted"
+        (change)="toggleIncludeDeleted()"
+        class="toggle-deleted">
+        Inclure les supprimés
+      </mat-slide-toggle>
+    </div>
+
+    <!-- Loader -->
+    @if (isLoading) {
+      <div class="loading-container">
+        <mat-spinner></mat-spinner>
+      </div>
+    }
+
+    <!-- Table -->
+    @if (!isLoading) {
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="dataSource" matSort class="data-table">
+
+        <!-- Username Column -->
+        <ng-container matColumnDef="username">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>USERNAME</th>
+          <td mat-cell *matCellDef="let user">
+            <div class="user-cell">
+              <span [class.deleted]="isUserDeleted(user)">{{ user.username }}</span>
+              @if (getUserFullName(user) !== '-') {
+                <span class="fullname">
+                {{ getUserFullName(user) }}
+              </span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Email Column -->
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>EMAIL</th>
+          <td mat-cell *matCellDef="let user">
+            <span [class.deleted]="isUserDeleted(user)">{{ user.email }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Role Column -->
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>RÔLE</th>
+          <td mat-cell *matCellDef="let user">
+            <span class="badge" [class.badge-admin]="user.role === 'admin'">
+              {{ user.role || 'user' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Created At Column -->
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>DATE DE CRÉATION</th>
+          <td mat-cell *matCellDef="let user">
+            {{ user.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>STATUT</th>
+          <td mat-cell *matCellDef="let user">
+            <span
+              class="badge"
+              [class.badge-active]="!isUserDeleted(user)"
+              [class.badge-deleted]="isUserDeleted(user)">
+              {{ isUserDeleted(user) ? 'Supprimé' : 'Actif' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let user" class="actions-cell">
+            <button mat-button class="action-link" (click)="viewUser(user)">Consulter</button>
+            @if (!isUserDeleted(user)) {
+              <button mat-button class="action-link" (click)="editUser(user)">Modifier</button>
+            }
+            @if (!isUserDeleted(user)) {
+              <button mat-button class="action-link danger" (click)="deleteUser(user)">Supprimer</button>
+            }
+            @if (isUserDeleted(user)) {
+              <button mat-button class="action-link" (click)="restoreUser(user)">Restaurer</button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+        <tr class="no-data-row" *matNoDataRow>
+          <td colspan="6">Aucun utilisateur trouvé</td>
+        </tr>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-wrapper">
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </div>
+    }
+  </div>
+</div>
