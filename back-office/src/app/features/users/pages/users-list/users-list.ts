@@ -68,7 +68,7 @@ export class UsersList implements OnInit {
   }
 
   toggleIncludeDeleted(): void {
-    this.filters.includeDeleted = !this.filters.includeDeleted;
+    this.isLoading = true;
     this.loadUsers();
   }
 
@@ -103,14 +103,16 @@ export class UsersList implements OnInit {
     this.userService.restoreUser(user.id).subscribe({
       next: () => {
         this.snackBar.open('Utilisateur restauré avec succès', 'Fermer', {
-          duration: 3000
+          duration: 3000,
+          panelClass: ['custom-snackbar']
         });
         this.loadUsers();
       },
       error: (error) => {
         console.error('Error restoring user:', error);
         this.snackBar.open('Erreur lors de la restauration', 'Fermer', {
-          duration: 3000
+          duration: 3000,
+          panelClass: ['custom-snackbar']
         });
       }
     });
