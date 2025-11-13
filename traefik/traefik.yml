@@ -5,6 +5,9 @@
 api:
   dashboard: true
 
+# Health Check
+ping: {}
+
 # Entry Points
 entryPoints:
   web:

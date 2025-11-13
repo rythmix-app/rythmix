@@ -1,5 +1,6 @@
 # Base stage
 FROM node:alpine AS base
+RUN apk add --no-cache wget
 WORKDIR /app
 
 # Dependencies stage

@@ -63,10 +63,7 @@ install-dev:
     @echo "✅ Development SSL certificates generated"
     @echo ""
     @echo "🐳 Building and starting containers..."
-    just up-dev
-    @echo ""
-    @echo "⏳ Waiting for services to start..."
-    sleep 10
+    {{_docker_cmd}} up --build -d
     @echo ""
     @echo "🔑 Generating APP_KEY for backend..."
     {{_docker_cmd}} exec backend node ace generate:key
@@ -94,10 +91,7 @@ install-prod:
     @echo "⚠️  IMPORTANT: Check and update the .env.prod files with your production values"
     @echo ""
     @echo "🐳 Building and starting containers in production mode..."
-    just up-prod
-    @echo ""
-    @echo "⏳ Waiting for services to start..."
-    sleep 15
+    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml up --build -d
     @echo ""
     @echo "🗃️ Running migrations..."
     just migrate
@@ -107,7 +101,7 @@ install-prod:
 
 # Docker commands for development
 up-dev:
-    {{_docker_cmd}} up --build -d
+    {{_docker_cmd}} up --build --wait
 
 down-dev:
     {{_docker_cmd}} down
@@ -134,6 +128,9 @@ sh-backoffice:
 
 sh-db:
     {{_docker_cmd}} exec database sh
+
+psql-db:
+    {{_docker_cmd}} exec -T database psql -U root -d rythmix
 
 # AdonisJS commands
 make-model NAME:
