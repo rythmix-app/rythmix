@@ -163,7 +163,6 @@ backend-test:
 backend-coverage:
     {{_docker_cmd}} exec backend npm run test:coverage
 
-#backoffice-test:
 backoffice-test:
     {{_docker_cmd}} exec -T back-office ng test --watch=false --browsers=ChromeHeadless
 

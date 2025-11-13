@@ -12,7 +12,8 @@
     "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura node ace test",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check": "npm run format && npm run lint && npm run typecheck"
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",
