@@ -8,7 +8,13 @@ export default class extends BaseSchema {
       table.string('id', 36).primary()
 
       // foreign key to games(id)
-      table.integer('game_id').unsigned().notNullable().references('id').inTable('games').onDelete('CASCADE')
+      table
+        .integer('game_id')
+        .unsigned()
+        .notNullable()
+        .references('id')
+        .inTable('games')
+        .onDelete('CASCADE')
 
       table.string('status').notNullable()
       table.json('players').notNullable()

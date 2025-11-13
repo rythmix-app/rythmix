@@ -6,9 +6,8 @@ import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { randomUUID } from 'node:crypto'
 import { hasMany } from '@adonisjs/lucid/orm'
-import LikedTrack from '#models/licked_track'
+import LikedTrack from '#models/liked_track'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
-import UserAchievement from '#models/user_achievement'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -38,8 +37,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @hasMany(() => LikedTrack)
   declare likedTracks: HasMany<typeof LikedTrack>
-  @hasMany(() => UserAchievement)
-  declare achievementUsers: HasMany<typeof UserAchievement>
   @column.dateTime()
   declare deletedAt: DateTime | null
 
