@@ -2,7 +2,7 @@ import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import User from '#models/user'
 
-export default class LickedTrack extends BaseModel {
+export default class LikedTrack extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
 

@@ -85,8 +85,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
 
     const mockResponse = {
       json: (data: any) => {
-        assert.equal(data.message, 'List of games')
-        assert.equal(data.data, mockGames)
+        assert.equal(data.games, mockGames)
         return data
       },
     } as any
@@ -113,8 +112,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
 
     const mockResponse = {
       json: (data: any) => {
-        assert.equal(data.message, 'Game details for ID: 1')
-        assert.equal(data.data, mockGame)
+        assert.equal(data.game, mockGame)
         return data
       },
     } as any

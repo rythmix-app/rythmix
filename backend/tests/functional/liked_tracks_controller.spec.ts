@@ -10,18 +10,18 @@ async function createUser(tag: string) {
   })
 }
 
-test.group('LickedTracksController - Functional', (group) => {
+test.group('LikedTracksController - Functional', (group) => {
   group.each.setup(async () => {
     await testUtils.db().truncate()
   })
 
-  test('GET /api/licked-tracks returns empty list', async ({ client, assert }) => {
-    const res = await client.get('/api/licked-tracks')
+  test('GET /api/liked-tracks returns empty list', async ({ client, assert }) => {
+    const res = await client.get('/api/liked-tracks')
     res.assertStatus(200)
-    assert.isArray(res.body().data)
+    assert.isArray(res.body().likedTracks)
   })
 
-  test('POST /api/licked-tracks creates record', async ({ client, assert }) => {
+  test('POST /api/liked-tracks creates record', async ({ client, assert }) => {
     const user = await createUser('post')
     const payload = {
       userId: user.id,
@@ -31,27 +31,27 @@ test.group('LickedTracksController - Functional', (group) => {
       type: 'like',
     }
 
-    const res = await client.post('/api/licked-tracks').json(payload)
+    const res = await client.post('/api/liked-tracks').json(payload)
 
     res.assertStatus(201)
-    assert.equal(res.body().data.userId, payload.userId)
+    assert.equal(res.body().likedTrack.userId, payload.userId)
   })
 
-  test('PATCH /api/licked-tracks/:id updates record', async ({ client, assert }) => {
+  test('PATCH /api/liked-tracks/:id updates record', async ({ client, assert }) => {
     const user = await createUser('patch')
     const rec = await user.related('likedTracks').create({ spotifyId: 'sp', title: 'Old' })
 
-    const res = await client.patch(`/api/licked-tracks/${rec.id}`).json({ title: 'New' })
+    const res = await client.patch(`/api/liked-tracks/${rec.id}`).json({ title: 'New' })
 
     res.assertStatus(200)
-    assert.equal(res.body().data.title, 'New')
+    assert.equal(res.body().likedTrack.title, 'New')
   })
 
-  test('DELETE /api/licked-tracks/:id deletes record', async ({ client }) => {
+  test('DELETE /api/liked-tracks/:id deletes record', async ({ client }) => {
     const user = await createUser('delete')
     const rec = await user.related('likedTracks').create({ spotifyId: 'x' })
 
-    const res = await client.delete(`/api/licked-tracks/${rec.id}`)
+    const res = await client.delete(`/api/liked-tracks/${rec.id}`)
 
     res.assertStatus(200)
   })

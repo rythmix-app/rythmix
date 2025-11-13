@@ -40,9 +40,8 @@ test.group('GamesController - CRUD Operations', (group) => {
     const response = await client.get('/api/games')
 
     response.assertStatus(200)
-    response.assertBodyContains({ message: 'List of games' })
 
-    const games = response.body().data
+    const games = response.body().games
     assert.isAtLeast(games.length, 2)
   })
 
@@ -55,11 +54,8 @@ test.group('GamesController - CRUD Operations', (group) => {
     const response = await client.get(`/api/games/${game.id}`)
 
     response.assertStatus(200)
-    response.assertBodyContains({
-      message: `Game details for ID: ${game.id}`,
-    })
 
-    const returnedGame = response.body().data
+    const returnedGame = response.body().game
     assert.equal(returnedGame.id, game.id)
     assert.equal(returnedGame.name, 'Test Game')
     assert.equal(returnedGame.description, 'Test Description')
@@ -82,9 +78,8 @@ test.group('GamesController - CRUD Operations', (group) => {
     })
 
     response.assertStatus(201)
-    response.assertBodyContains({ message: 'Game created successfully' })
 
-    const createdGame = response.body().data
+    const createdGame = response.body().game
     assert.equal(createdGame.name, 'New Game')
     assert.equal(createdGame.description, 'New Game Description')
   })
@@ -107,9 +102,8 @@ test.group('GamesController - CRUD Operations', (group) => {
       })
 
     response.assertStatus(200)
-    response.assertBodyContains({ message: 'Game updated successfully' })
 
-    const updatedGame = response.body().data
+    const updatedGame = response.body().game
     assert.equal(updatedGame.name, 'Updated Name')
     assert.equal(updatedGame.description, 'Updated Description')
   })
@@ -189,17 +183,17 @@ test.group('GamesController - Integration Scenarios', (group) => {
     })
 
     response.assertStatus(201)
-    const gameId = response.body().data.id
+    const gameId = response.body().game.id
 
     // Read (list)
     response = await client.get('/api/games')
-    let games = response.body().data
+    let games = response.body().games
     assert.exists(games.find((g: any) => g.id === gameId))
 
     // Read (single)
     response = await client.get(`/api/games/${gameId}`)
     response.assertStatus(200)
-    assert.equal(response.body().data.name, 'Lifecycle Game')
+    assert.equal(response.body().game.name, 'Lifecycle Game')
 
     // Update
     response = await client.patch(`/api/games/${gameId}`).bearerToken(token.value!.release()).json({
@@ -207,7 +201,7 @@ test.group('GamesController - Integration Scenarios', (group) => {
       description: 'Updated description',
     })
     response.assertStatus(200)
-    assert.equal(response.body().data.name, 'Updated Lifecycle Game')
+    assert.equal(response.body().game.name, 'Updated Lifecycle Game')
 
     // Delete
     response = await client.delete(`/api/games/${gameId}`).bearerToken(token.value!.release())
@@ -236,7 +230,7 @@ test.group('GamesController - Integration Scenarios', (group) => {
     })
 
     const response = await client.get('/api/games')
-    const games = response.body().data
+    const games = response.body().games
     assert.isAtLeast(games.length, 3)
   })
 })

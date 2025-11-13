@@ -31,9 +31,8 @@ test.group('UsersController - CRUD Operations', (group) => {
     const response = await client.get('/api/users')
 
     response.assertStatus(200)
-    response.assertBodyContains({ message: 'List of users' })
 
-    const users = response.body().data
+    const users = response.body().users
     assert.isAtLeast(users.length, 2)
   })
 
@@ -43,9 +42,6 @@ test.group('UsersController - CRUD Operations', (group) => {
     const response = await client.get(`/api/users/${user.id}`)
 
     response.assertStatus(200)
-    response.assertBodyContains({
-      message: `User details for ID: ${user.id}`,
-    })
 
     const returnedUser = response.body().user
     assert.equal(returnedUser.id, user.id)
@@ -70,9 +66,8 @@ test.group('UsersController - CRUD Operations', (group) => {
     })
 
     response.assertStatus(201)
-    response.assertBodyContains({ message: 'User created successfully' })
 
-    const createdUser = response.body().data
+    const createdUser = response.body().user
     assert.equal(createdUser.username, userData.username)
     assert.equal(createdUser.email, userData.email)
     assert.equal(createdUser.firstName, 'New')
@@ -86,7 +81,7 @@ test.group('UsersController - CRUD Operations', (group) => {
 
     response.assertStatus(201)
 
-    const createdUser = response.body().data
+    const createdUser = response.body().user
     assert.equal(createdUser.username, userData.username)
     assert.equal(createdUser.email, userData.email)
   })
@@ -130,9 +125,8 @@ test.group('UsersController - CRUD Operations', (group) => {
     })
 
     response.assertStatus(200)
-    response.assertBodyContains({ message: 'User updated successfully' })
 
-    const updatedUser = response.body().result
+    const updatedUser = response.body().user
     assert.equal(updatedUser.firstName, 'Updated')
     assert.equal(updatedUser.lastName, 'Name')
   })
@@ -225,7 +219,7 @@ test.group('UsersController - Soft Delete Features', (group) => {
 
     response.assertStatus(200)
 
-    const users = response.body().data
+    const users = response.body().users
     assert.notExists(users.find((u: any) => u.id === deletedUser.id))
   })
 
@@ -288,9 +282,8 @@ test.group('UsersController - Soft Delete Features', (group) => {
     const response = await client.get('/api/users/trashed')
 
     response.assertStatus(200)
-    response.assertBodyContains({ message: 'List of soft deleted users' })
 
-    const trashedUsers = response.body().data
+    const trashedUsers = response.body().users
     assert.notExists(trashedUsers.find((u: any) => u.id === activeUser.id))
     assert.exists(trashedUsers.find((u: any) => u.id === deletedUser1.id))
     assert.exists(trashedUsers.find((u: any) => u.id === deletedUser2.id))
@@ -316,7 +309,7 @@ test.group('UsersController - Soft Delete Features', (group) => {
     assert.isNull(user.deletedAt)
 
     const listResponse = await client.get('/api/users')
-    const users = listResponse.body().data
+    const users = listResponse.body().users
     assert.exists(users.find((u: any) => u.id === user.id))
   })
 
@@ -363,10 +356,10 @@ test.group('UsersController - Integration Scenarios', (group) => {
     })
 
     response.assertStatus(201)
-    const userId = response.body().data.id
+    const userId = response.body().user.id
 
     response = await client.get('/api/users')
-    let users = response.body().data
+    let users = response.body().users
     assert.exists(users.find((u: any) => u.id === userId))
 
     response = await client.patch(`/api/users/${userId}`).json({
@@ -374,7 +367,7 @@ test.group('UsersController - Integration Scenarios', (group) => {
       lastName: 'Lifecycle',
     })
     response.assertStatus(200)
-    assert.equal(response.body().result.firstName, 'Updated')
+    assert.equal(response.body().user.firstName, 'Updated')
 
     const user = await User.findOrFail(userId)
     const token = await User.accessTokens.create(user)
@@ -383,22 +376,22 @@ test.group('UsersController - Integration Scenarios', (group) => {
     response.assertStatus(200)
 
     response = await client.get('/api/users')
-    users = response.body().data
+    users = response.body().users
     assert.notExists(users.find((u: any) => u.id === userId))
 
     response = await client.get('/api/users/trashed')
-    const trashedUsers = response.body().data
+    const trashedUsers = response.body().users
     assert.exists(trashedUsers.find((u: any) => u.id === userId))
 
     response = await client.post(`/api/users/${userId}/restore`)
     response.assertStatus(200)
 
     response = await client.get('/api/users')
-    users = response.body().data
+    users = response.body().users
     assert.exists(users.find((u: any) => u.id === userId))
 
     response = await client.get('/api/users/trashed')
-    const trashedUsersAfterRestore = response.body().data
+    const trashedUsersAfterRestore = response.body().users
     assert.notExists(trashedUsersAfterRestore.find((u: any) => u.id === userId))
   })
 
@@ -412,14 +405,14 @@ test.group('UsersController - Integration Scenarios', (group) => {
     await client.post('/api/users').json(user3Data)
 
     let response = await client.get('/api/users')
-    let users = response.body().data
+    let users = response.body().users
     assert.isAtLeast(users.length, 3)
 
     const user2 = await User.query().where('email', user2Data.email).firstOrFail()
     await user2.softDelete()
 
     response = await client.get('/api/users/trashed')
-    const trashedUsers = response.body().data
+    const trashedUsers = response.body().users
     assert.isAtLeast(trashedUsers.length, 1)
     assert.exists(trashedUsers.find((u: any) => u.id === user2.id))
   })
