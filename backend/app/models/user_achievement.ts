@@ -57,8 +57,8 @@ export default class UserAchievement extends BaseModel {
       throw new Error('requiredProgress must be greater than 0')
     }
 
-    if (userAchievement.currentTier < 0) {
-      throw new Error('currentTier must be greater than or equal to 0')
+    if (userAchievement.currentTier < 1) {
+      throw new Error('currentTier must be greater than or equal to 1')
     }
 
     if (
