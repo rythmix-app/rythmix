@@ -1,25 +1,28 @@
 <div class="layout-container">
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="logo">
       <h1>RYTHMIX</h1>
     </div>
 
     <nav class="nav-menu">
-      <div *ngFor="let section of menuItems" class="menu-section">
-        <div class="section-title">
-          <mat-icon>{{ section.icon }}</mat-icon>
-          <span>{{ section.title }}</span>
+      @for (section of menuItems; track section) {
+        <div class="menu-section">
+          <div class="section-title">
+            <mat-icon>{{ section.icon }}</mat-icon>
+            <span>{{ section.title }}</span>
+          </div>
+          <ul class="menu-items">
+            @for (item of section.items; track item) {
+              <li>
+                <a [routerLink]="item.route" routerLinkActive="active">
+                  <mat-icon>{{ item.icon }}</mat-icon>
+                  {{ item.label }}
+                </a>
+              </li>
+            }
+          </ul>
         </div>
-        <ul class="menu-items">
-          <li *ngFor="let item of section.items">
-            <a [routerLink]="item.route" routerLinkActive="active">
-              <mat-icon>{{ item.icon }}</mat-icon>
-              {{ item.label }}
-            </a>
-          </li>
-        </ul>
-      </div>
+      }
     </nav>
 
     <div class="user-profile">
@@ -28,7 +31,6 @@
     </div>
   </aside>
 
-  <!-- Main Content -->
   <main class="main-content">
     <router-outlet></router-outlet>
   </main>
