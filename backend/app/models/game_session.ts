@@ -30,10 +30,10 @@ export default class GameSession extends BaseModel {
   declare players: PlayerData[]
 
   @column({
-    prepare: (value: GameData) => JSON.stringify(value),
+    prepare: (value: any) => JSON.stringify(value),
     consume: (value: string) => JSON.parse(value),
   })
-  declare gameData: GameData
+  declare gameData: any
 
   @belongsTo(() => Game)
   declare game: BelongsTo<typeof Game>
