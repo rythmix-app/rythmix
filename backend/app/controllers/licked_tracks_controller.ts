@@ -10,7 +10,7 @@ export default class LickedTracksController {
   public async index({ response }: HttpContext) {
     try {
       const lickedTracks = await this.lickedTrackService.getAll()
-      return response.json({ message: 'List of licked tracks', data: lickedTracks })
+      return response.json({ lickedTracks })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching licked tracks' })
     }
@@ -23,7 +23,7 @@ export default class LickedTracksController {
       if (!(result instanceof LickedTrack)) {
         return response.status(result.status || 500).json({ message: result.error })
       }
-      return response.status(201).json({ message: 'Licked track created', data: result })
+      return response.status(201).json({ lickedTrack: result })
     } catch (error) {
       return response.status(500).json({ message: 'Error while creating licked track' })
     }
@@ -35,10 +35,7 @@ export default class LickedTracksController {
       if (!lickedTrack) {
         return response.status(404).json({ message: 'Licked track not found' })
       }
-      return response.json({
-        message: `Licked track details for ID: ${params.id}`,
-        data: lickedTrack,
-      })
+      return response.json({ lickedTrack })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching licked track' })
     }
@@ -53,7 +50,7 @@ export default class LickedTracksController {
       if (!(result instanceof LickedTrack)) {
         return response.status(result.status || 500).json({ message: result.error })
       }
-      return response.json({ message: `Licked track ${params.id} updated`, data: result })
+      return response.json({ lickedTrack: result })
     } catch (error) {
       return response.status(500).json({ message: 'Error while updating licked track' })
     }

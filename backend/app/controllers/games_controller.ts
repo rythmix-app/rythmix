@@ -10,7 +10,7 @@ export default class GamesController {
   public async index({ response }: HttpContext) {
     try {
       const games = await this.gameService.getAll()
-      return response.json({ message: 'List of games', data: games })
+      return response.json({ games })
     } catch (error) {
       return response
         .status(500)
@@ -24,7 +24,7 @@ export default class GamesController {
       if (!(result instanceof Game)) {
         return response.status(result.status || 500).json({ message: result.error })
       }
-      return response.status(201).json({ message: 'Game created successfully', data: result })
+      return response.status(201).json({ game: result })
     } catch (error) {
       return response
         .status(500)
@@ -39,7 +39,7 @@ export default class GamesController {
       if (!game) {
         return response.status(404).json({ message: 'Game not found' })
       }
-      return response.json({ message: `Game details for ID: ${gameId}`, data: game })
+      return response.json({ game })
     } catch (error) {
       return response
         .status(500)
@@ -57,7 +57,7 @@ export default class GamesController {
       if (!(result instanceof Game)) {
         return response.status(result.status || 500).json({ message: result.error })
       }
-      return response.json({ message: 'Game updated successfully', data: result })
+      return response.json({ game: result })
     } catch (error) {
       return response
         .status(500)
