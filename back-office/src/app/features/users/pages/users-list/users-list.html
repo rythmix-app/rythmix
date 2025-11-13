@@ -8,7 +8,6 @@
   </div>
 
   <div class="page-content">
-    <!-- Filtres -->
     <div class="filters-bar">
       <mat-form-field appearance="outline" class="search-field">
         <input matInput (keyup)="applyFilter($event)" placeholder="Rechercher par username ou email...">
@@ -30,12 +29,10 @@
       </div>
     }
 
-    <!-- Table -->
     @if (!isLoading) {
     <div class="table-wrapper">
       <table mat-table [dataSource]="dataSource" matSort class="data-table">
 
-        <!-- Username Column -->
         <ng-container matColumnDef="username">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>USERNAME</th>
           <td mat-cell *matCellDef="let user">
@@ -50,7 +47,6 @@
           </td>
         </ng-container>
 
-        <!-- Email Column -->
         <ng-container matColumnDef="email">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>EMAIL</th>
           <td mat-cell *matCellDef="let user">
@@ -58,7 +54,6 @@
           </td>
         </ng-container>
 
-        <!-- Role Column -->
         <ng-container matColumnDef="role">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>RÔLE</th>
           <td mat-cell *matCellDef="let user">
@@ -68,7 +63,6 @@
           </td>
         </ng-container>
 
-        <!-- Created At Column -->
         <ng-container matColumnDef="createdAt">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>DATE DE CRÉATION</th>
           <td mat-cell *matCellDef="let user">
@@ -76,7 +70,6 @@
           </td>
         </ng-container>
 
-        <!-- Status Column -->
         <ng-container matColumnDef="status">
           <th mat-header-cell *matHeaderCellDef>STATUT</th>
           <td mat-cell *matCellDef="let user">
@@ -89,15 +82,12 @@
           </td>
         </ng-container>
 
-        <!-- Actions Column -->
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef></th>
           <td mat-cell *matCellDef="let user" class="actions-cell">
-            <button mat-button class="action-link" (click)="viewUser(user)">Consulter</button>
             @if (!isUserDeleted(user)) {
+              <button mat-button class="action-link" (click)="viewUser(user)">Consulter</button>
               <button mat-button class="action-link" (click)="editUser(user)">Modifier</button>
-            }
-            @if (!isUserDeleted(user)) {
               <button mat-button class="action-link danger" (click)="deleteUser(user)">Supprimer</button>
             }
             @if (isUserDeleted(user)) {
@@ -114,7 +104,6 @@
         </tr>
       </table>
 
-      <!-- Pagination -->
       <div class="pagination-wrapper">
         <mat-paginator
           [pageSizeOptions]="[10, 25, 50, 100]"

@@ -27,7 +27,7 @@ export class UserService {
   }
 
   updateUser(id: string, user: UpdateUserDto): Observable<User> {
-    return this.api.put<{ user: User }>(`${this.endpoint}/${id}`, user)
+    return this.api.patch<{ user: User }>(`${this.endpoint}/${id}`, user)
       .pipe(map(response => response.user));
   }
 

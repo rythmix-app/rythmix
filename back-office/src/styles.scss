@@ -22,3 +22,23 @@ body {
 * {
   box-sizing: border-box;
 }
+
+.custom-snackbar {
+  .mdc-snackbar__surface {
+    background: var(--primary-dark) !important;
+    border: 1px solid var(--primary-dark-green);
+  }
+
+  .mat-mdc-snack-bar-label {
+    color: var(--primary-white) !important;
+  }
+
+  .mat-mdc-button {
+    color: var(--primary-blue-light) !important;
+    font-weight: 600;
+
+    &:hover {
+      background: rgba(20, 255, 236, 0.1);
+    }
+  }
+}

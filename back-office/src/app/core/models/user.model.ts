@@ -9,7 +9,6 @@ export interface User {
   createdAt: Date;
   updatedAt?: Date | null;
   deletedAt?: Date | null;
-  status: 'active' |'inactive' | 'deleted'
 }
 
 export interface CreateUserDto {

@@ -122,7 +122,6 @@
                 color: #ff6b6b;
               }
 
-              // Select styling
               .mat-mdc-select {
                 color: var(--primary-white);
               }
@@ -180,27 +179,34 @@
               color: var(--secondary-gray-light);
               font-weight: 500;
             }
+          }
+        }
 
-            .badge {
-              display: inline-block;
-              width: fit-content;
-              padding: 10px 20px;
-              border-radius: 16px;
-              font-size: 13px;
-              font-weight: 700;
-              text-transform: uppercase;
+        .badge {
+          display: inline-block;
+          width: fit-content;
+          padding: 10px 20px;
+          border-radius: 16px;
+          font-size: 13px;
+          font-weight: 700;
+          text-transform: uppercase;
 
-              &.badge-active {
-                background: var(--secondary-blue-normal);
-                color: var(--primary-white);
-              }
+          &.badge-active {
+            background: var(--primary-dark-green);
+            color: var(--primary-blue-light);
+            box-shadow: 0 2px 8px rgba(13, 115, 119, 0.3);
+          }
 
-              &.badge-deleted {
-                background: transparent;
-                color: #ff6b6b;
-                border: 1px solid #ff6b6b;
-              }
-            }
+          &.badge-inactive {
+            background: var(--secondary-dark-green);
+            color: var(--secondary-blue-normal);
+            border: 1px solid var(--primary-dark-green);
+          }
+
+          &.badge-deleted {
+            background: transparent;
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
           }
         }
       }
@@ -286,7 +292,6 @@
   }
 }
 
-// Style pour les panels de select Material
 ::ng-deep {
   .mat-mdc-select-panel {
     background: var(--primary-dark) !important;
@@ -360,7 +365,6 @@
   }
 }
 
-// Style des select (rôle)
 ::ng-deep {
   .mat-mdc-form-field {
     .mat-mdc-select {
@@ -373,7 +377,6 @@
       }
     }
 
-    // Couleur du focus
     &.mat-focused {
       .mdc-notched-outline__leading,
       .mdc-notched-outline__notch,
@@ -383,7 +386,6 @@
     }
   }
 
-  // Dropdown du select
   .mat-mdc-select-panel {
     background: var(--primary-dark);
 
@@ -394,7 +396,6 @@
         background: rgba(20, 255, 236, 0.1);
       }
 
-      // Option sélectionnée
       &.mat-mdc-option-active,
       &.mdc-list-item--selected {
         background: rgba(13, 115, 119, 0.2);

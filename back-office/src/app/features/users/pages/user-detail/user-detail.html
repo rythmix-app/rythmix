@@ -9,14 +9,12 @@
   </div>
 
   <div class="page-content">
-    <!-- Loader -->
     @if (isLoading) {
       <div class="loading-container">
         <mat-spinner></mat-spinner>
       </div>
     }
 
-    <!-- Form -->
     @if (!isLoading) {
       <div class="form-container">
         <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
@@ -101,19 +99,9 @@
                   </mat-error>
                 }
               </mat-form-field>
-
-              <!-- ✅ NOUVEAU : Champ statut -->
-              <mat-form-field appearance="outline" class="form-field half">
-                <mat-label>Statut</mat-label>
-                <mat-select formControlName="status">
-                  <mat-option value="active">Actif</mat-option>
-                  <mat-option value="inactive">Inactif</mat-option>
-                </mat-select>
-              </mat-form-field>
             </div>
           </div>
 
-          <!-- User info (view mode only) -->
           @if (mode === 'view' && user) {
             <div class="info-section">
               <h2 class="section-title">Informations système</h2>
@@ -122,7 +110,6 @@
                   <span class="info-label">ID</span>
                   <span class="info-value">{{ user.id }}</span>
                 </div>
-                <!-- ✅ Dates groupées dans un seul bloc -->
                 <div class="info-item">
                   <span class="info-label">Dates</span>
                   <div class="info-dates">
@@ -140,15 +127,16 @@
                 </div>
                 <div class="info-item">
                   <span class="info-label">Statut</span>
-                  <span class="badge" [class.badge-active]="user.status === 'active'" [class.badge-deleted]="user.status === 'inactive'">
-                    {{ user.status === 'inactive' ? 'Inactif' : 'Actif' }}
-                  </span>
+                  <span class="badge"
+                        [class.badge-active]="!user.deletedAt"
+                        [class.badge-deleted]="user.deletedAt">
+                        {{ user.deletedAt ? 'Supprimé' : 'Actif' }}
+                      </span>
                 </div>
               </div>
             </div>
           }
 
-          <!-- Form actions -->
           @if (mode !== 'view') {
             <div class="form-actions">
               <button mat-button type="button" (click)="onCancel()" [disabled]="isSubmitting" class="btn-cancel">

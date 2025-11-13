@@ -33,7 +33,6 @@ export class UserDetail implements OnInit {
 
     this.initForm();
 
-    // Ne charger que si on n'est pas en mode création
     if (this.mode !== 'create') {
       this.loadUser();
     }
@@ -57,7 +56,7 @@ export class UserDetail implements OnInit {
   loadUser(): void {
     if (!this.userId) return;
 
-    this.isLoading = true; // ✅ Active le spinner
+    this.isLoading = true;
     this.userService.getUserById(this.userId).subscribe({
       next: (user) => {
         this.user = user;
@@ -66,14 +65,15 @@ export class UserDetail implements OnInit {
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
-          role: user.role || 'user'
+          role: user.role || 'user',
         });
-        this.isLoading = false; // ✅ Désactive le spinner
+        this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading user:', error);
         this.snackBar.open('Erreur lors du chargement de l\'utilisateur', 'Fermer', {
-          duration: 3000
+          duration: 3000,
+          panelClass: ['custom-snackbar']
         });
         this.isLoading = false;
         this.router.navigate(['/users']);
@@ -103,14 +103,16 @@ export class UserDetail implements OnInit {
       this.userService.createUser(createDto).subscribe({
         next: (user) => {
           this.snackBar.open('Utilisateur créé avec succès', 'Fermer', {
-            duration: 3000
+            duration: 3000,
+            panelClass: ['custom-snackbar']
           });
           this.router.navigate(['/users']);
         },
         error: (error) => {
           console.error('Error creating user:', error);
           this.snackBar.open('Erreur lors de la création', 'Fermer', {
-            duration: 3000
+            duration: 3000,
+            panelClass: ['custom-snackbar']
           });
           this.isSubmitting = false;
         }
@@ -126,14 +128,16 @@ export class UserDetail implements OnInit {
       this.userService.updateUser(this.userId, updateDto).subscribe({
         next: (user) => {
           this.snackBar.open('Utilisateur modifié avec succès', 'Fermer', {
-            duration: 3000
+            duration: 3000,
+            panelClass: ['custom-snackbar']
           });
           this.router.navigate(['/users']);
         },
         error: (error) => {
           console.error('Error updating user:', error);
           this.snackBar.open('Erreur lors de la modification', 'Fermer', {
-            duration: 3000
+            duration: 3000,
+            panelClass: ['custom-snackbar']
           });
           this.isSubmitting = false;
         }
