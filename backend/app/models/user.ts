@@ -6,7 +6,7 @@ import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { randomUUID } from 'node:crypto'
 import { hasMany } from '@adonisjs/lucid/orm'
-import LikedTrack from './licked_track.js'
+import LikedTrack from '#models/licked_track'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import UserAchievement from '#models/user_achievement'
 

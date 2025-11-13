@@ -202,4 +202,221 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
 
     await controller.destroy(mockContext)
   })
+
+  test('create should return 500 when service throws', async ({ assert }) => {
+    const mockService = {
+      createGame: async () => {
+        throw new Error('Database connection failed')
+      },
+    } as unknown as GameService
+
+    const controller = new GamesController(mockService)
+
+    const mockResponse = {
+      status: (code: number) => {
+        assert.equal(code, 500)
+        return {
+          json: (data: any) => {
+            assert.equal(data.message, 'An unexpected error occurred')
+            assert.equal(data.error, 'Database connection failed')
+            return data
+          },
+        }
+      },
+    } as any
+
+    const mockRequest = {
+      only: () => ({ name: 'Test', description: 'Test' }),
+    } as any
+
+    const mockContext = {
+      request: mockRequest,
+      response: mockResponse,
+    } as any
+
+    await controller.create(mockContext)
+  })
+
+  test('show should return 500 when service throws', async ({ assert }) => {
+    const mockService = {
+      getById: async () => {
+        throw new Error('Database error')
+      },
+    } as unknown as GameService
+
+    const controller = new GamesController(mockService)
+
+    const mockResponse = {
+      status: (code: number) => {
+        assert.equal(code, 500)
+        return {
+          json: (data: any) => {
+            assert.equal(data.message, 'An error occurred while retrieving the game')
+            assert.equal(data.error, 'Database error')
+            return data
+          },
+        }
+      },
+    } as any
+
+    const mockContext = {
+      response: mockResponse,
+      params: { id: 1 },
+    } as any
+
+    await controller.show(mockContext)
+  })
+
+  test('update should return 500 when service throws', async ({ assert }) => {
+    const mockService = {
+      updateGame: async () => {
+        throw new Error('Unexpected error')
+      },
+    } as unknown as GameService
+
+    const controller = new GamesController(mockService)
+
+    const mockResponse = {
+      status: (code: number) => {
+        assert.equal(code, 500)
+        return {
+          json: (data: any) => {
+            assert.equal(data.message, 'An unexpected error occurred')
+            assert.equal(data.error, 'Unexpected error')
+            return data
+          },
+        }
+      },
+    } as any
+
+    const mockRequest = {
+      only: () => ({ name: 'Updated' }),
+    } as any
+
+    const mockContext = {
+      request: mockRequest,
+      response: mockResponse,
+      params: { id: 1 },
+    } as any
+
+    await controller.update(mockContext)
+  })
+
+  test('destroy should return 500 when service throws', async ({ assert }) => {
+    const mockService = {
+      deleteGame: async () => {
+        throw new Error('Critical error')
+      },
+    } as unknown as GameService
+
+    const controller = new GamesController(mockService)
+
+    const mockResponse = {
+      status: (code: number) => {
+        assert.equal(code, 500)
+        return {
+          json: (data: any) => {
+            assert.equal(data.message, 'An unexpected error occurred while deleting the game.')
+            assert.equal(data.error, 'Critical error')
+            return data
+          },
+        }
+      },
+    } as any
+
+    const mockContext = {
+      response: mockResponse,
+      params: { id: 1 },
+    } as any
+
+    await controller.destroy(mockContext)
+  })
+
+  test('index should return 500 when service throws', async ({ assert }) => {
+    const mockService = {
+      getAll: async () => {
+        throw new Error('Failed to fetch')
+      },
+    } as unknown as GameService
+
+    const controller = new GamesController(mockService)
+
+    const mockResponse = {
+      status: (code: number) => {
+        assert.equal(code, 500)
+        return {
+          json: (data: any) => {
+            assert.equal(data.message, 'Failed to fetch games')
+            assert.equal(data.error, 'Failed to fetch')
+            return data
+          },
+        }
+      },
+    } as any
+
+    const mockContext = {
+      response: mockResponse,
+    } as any
+
+    await controller.index(mockContext)
+  })
+
+  test('index should return 500 with fallback error when thrown error has no message', async ({ assert }) => {
+    const mockService = {
+      getAll: async () => {
+        throw 'String error without message property'
+      },
+    } as unknown as GameService
+
+    const controller = new GamesController(mockService)
+
+    const mockResponse = {
+      status: (code: number) => {
+        assert.equal(code, 500)
+        return {
+          json: (data: any) => {
+            assert.equal(data.message, 'Failed to fetch games')
+            assert.equal(data.error, 'String error without message property')
+            return data
+          },
+        }
+      },
+    } as any
+
+    const mockContext = {
+      response: mockResponse,
+    } as any
+
+    await controller.index(mockContext)
+  })
+
+  test('destroy should return 500 with fallback error when thrown error has no message', async ({ assert }) => {
+    const mockService = {
+      deleteGame: async () => {
+        throw { code: 'UNKNOWN_ERROR', details: 'Something went wrong' }
+      },
+    } as unknown as GameService
+
+    const controller = new GamesController(mockService)
+
+    const mockResponse = {
+      status: (code: number) => {
+        assert.equal(code, 500)
+        return {
+          json: (data: any) => {
+            assert.equal(data.message, 'An unexpected error occurred while deleting the game.')
+            assert.deepEqual(data.error, { code: 'UNKNOWN_ERROR', details: 'Something went wrong' })
+            return data
+          },
+        }
+      },
+    } as any
+
+    const mockContext = {
+      response: mockResponse,
+      params: { id: 1 },
+    } as any
+
+    await controller.destroy(mockContext)
+  })
 })

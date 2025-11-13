@@ -36,39 +36,43 @@ help:
     @echo "🧪 Testing:"
     @echo "  backend-test      - Run backend tests"
     @echo "  backend-coverage  - Run backend tests with coverage report"
-    @echo "  backend-check     - Run lint, format and typecheck"
+    @echo "  backoffice-test   - Run back-office tests"
+    @echo "  backoffice-build  - Build back-office application"
     @echo ""
 
 # Show detected Docker tool
 docker-status:
     @echo "🐳 Detected Docker tool: {{_docker_cmd}}"
 
+setup-env:
+    find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
+
+setup-dev-certs:
+    ( cd traefik && ./setup-dev-certs.sh )
+
 # Complete installation for development
 install-dev:
     @echo "🚀 Installing development environment..."
     @echo ""
     @echo "📁 Copying environment files..."
-    find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
+    just setup-env
     @echo "✅ Environment files copied"
     @echo ""
     @echo "🔐 Generating development SSL certificates..."
-    ( cd traefik && ./setup-dev-certs.sh )
+    just setup-dev-certs
     @echo "✅ Development SSL certificates generated"
     @echo ""
-    @echo "🐳 Stopping existing containers (if any)..."
-    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml down -v || true
-    @echo ""
     @echo "🐳 Building and starting containers..."
-    {{_docker_cmd}} up --build -d
+    just up-dev
     @echo ""
     @echo "⏳ Waiting for services to start..."
     sleep 10
     @echo ""
     @echo "🔑 Generating APP_KEY for backend..."
-    {{_docker_cmd}} exec backend node ace generate:key || true
+    {{_docker_cmd}} exec backend node ace generate:key
     @echo ""
     @echo "🗃️ Running migrations..."
-    just migrate || true
+    just migrate
     @echo ""
     @echo "✅ Installation complete!"
     @echo ""
@@ -81,33 +85,27 @@ install-dev:
 
 # Complete installation for production
 install-prod:
-    @echo "🚀 Installation de l'environnement de production..."
+    @echo "🚀 Installing production environment..."
     @echo ""
-    @echo "📁 Copie des fichiers d'environnement..."
-    cp backend/.env.prod.example backend/.env.prod
-    cp backend/.env.example backend/.env
-    cp back-office/.env.prod.example back-office/.env.prod
-    cp back-office/.env.example back-office/.env
-    @echo "✅ Fichiers d'environnement copiés"
+    @echo "📁 Copying environment files..."
+    just setup-env
+    @echo "✅ Environment files copied"
     @echo ""
-    @echo "⚠️  IMPORTANT: Vérifiez et modifiez les fichiers .env.prod avec vos valeurs de production"
+    @echo "⚠️  IMPORTANT: Check and update the .env.prod files with your production values"
     @echo ""
-    @echo "🐳 Arrêt des conteneurs existants (s'il y en a)..."
-    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml down -v || true
+    @echo "🐳 Building and starting containers in production mode..."
+    just up-prod
     @echo ""
-    @echo "🐳 Construction et lancement des conteneurs en mode production..."
-    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-    @echo ""
-    @echo "⏳ Attente que les services se lancent..."
+    @echo "⏳ Waiting for services to start..."
     sleep 15
     @echo ""
-    @echo "🗃️ Exécution des migrations..."
-    {{_docker_cmd}} exec -T backend node ace migration:run || true
+    @echo "🗃️ Running migrations..."
+    just migrate
     @echo ""
-    @echo "✅ Installation de production terminée !"
+    @echo "✅ Production installation complete!"
     @echo ""
 
-# Commandes Docker pour le développement
+# Docker commands for development
 up-dev:
     {{_docker_cmd}} up --build -d
 
@@ -117,7 +115,7 @@ down-dev:
 logs-dev:
     {{_docker_cmd}} logs -f
 
-# Commandes Docker pour la production
+# Docker commands for production
 up-prod:
     {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
@@ -127,7 +125,7 @@ down-prod:
 logs-prod:
     {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml logs -f
 
-# Commandes shell/bash des conteneurs
+# Container shell/bash commands
 sh-backend:
     {{_docker_cmd}} exec backend sh
 
@@ -137,7 +135,7 @@ sh-backoffice:
 sh-db:
     {{_docker_cmd}} exec database sh
 
-# Commandes AdonisJS
+# AdonisJS commands
 make-model NAME:
     {{_docker_cmd}} exec backend node ace make:model {{NAME}}
 
@@ -156,11 +154,17 @@ migrate:
 seeder:
     {{_docker_cmd}} exec backend node ace db:seed
 
+# Test commands
+
+#backend-test:
 backend-test:
     {{_docker_cmd}} exec backend node ace test
 
 backend-coverage:
     {{_docker_cmd}} exec backend npm run test:coverage
 
-backend-check:
-    {{_docker_cmd}} exec backend npm run check
+backoffice-test:
+    {{_docker_cmd}} exec -T back-office ng test --watch=false --browsers=ChromeHeadless
+
+backoffice-coverage:
+    {{_docker_cmd}} exec -T back-office ng test --watch=false --browsers=ChromeHeadless --code-coverage
