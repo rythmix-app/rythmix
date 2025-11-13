@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { User, CreateUserDto, UpdateUserDto, UserFilters } from '../models/user.model';
 
@@ -12,19 +12,23 @@ export class UserService {
   constructor(private api: ApiService) {}
 
   getUsers(filters?: UserFilters): Observable<User[]> {
-    return this.api.get<User[]>(this.endpoint, filters);
+    return this.api.get<{ users: User[] }>(this.endpoint, filters)
+      .pipe(map(response => response.users));
   }
 
   getUserById(id: string): Observable<User> {
-    return this.api.get<User>(`${this.endpoint}/${id}`);
+    return this.api.get<{ user: User }>(`${this.endpoint}/${id}`)
+      .pipe(map(response => response.user));
   }
 
   createUser(user: CreateUserDto): Observable<User> {
-    return this.api.post<User>(this.endpoint, user);
+    return this.api.post<{ user: User }>(this.endpoint, user)
+      .pipe(map(response => response.user));
   }
 
   updateUser(id: string, user: UpdateUserDto): Observable<User> {
-    return this.api.put<User>(`${this.endpoint}/${id}`, user);
+    return this.api.put<{ user: User }>(`${this.endpoint}/${id}`, user)
+      .pipe(map(response => response.user));
   }
 
   deleteUser(id: string): Observable<void> {
@@ -32,10 +36,16 @@ export class UserService {
   }
 
   restoreUser(id: string): Observable<User> {
-    return this.api.post<User>(`${this.endpoint}/${id}/restore`, {});
+    return this.api.post<{ user: User }>(`${this.endpoint}/${id}/restore`, {})
+      .pipe(map(response => response.user));
   }
 
   permanentDeleteUser(id: string): Observable<void> {
     return this.api.delete<void>(`${this.endpoint}/${id}/permanent`);
+  }
+
+  getTrashedUsers(): Observable<User[]> {
+    return this.api.get<{ users: User[] }>(`${this.endpoint}/trashed`)
+      .pipe(map(response => response.users));
   }
 }
