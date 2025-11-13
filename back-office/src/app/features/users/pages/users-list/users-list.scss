@@ -278,7 +278,7 @@
 
         .mat-mdc-paginator-container {
           padding: 8px 0;
-          gap: 12px; // ✅ Espacement entre les éléments
+          gap: 12px;
         }
 
         .mat-mdc-paginator-page-size-select {
@@ -296,7 +296,7 @@
         .mat-mdc-paginator-page-size-label,
         .mat-mdc-paginator-range-label {
           font-size: 13px;
-          color: var(--primary-white); // ✅ Blanc
+          color: var(--primary-white);
           font-weight: 500;
         }
 
@@ -307,7 +307,6 @@
           color: var(--primary-white);
           transition: all 0.3s;
 
-          // ✅ Force la couleur des icônes SVG
           svg {
             fill: var(--primary-white) !important;
           }
@@ -333,7 +332,6 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(20, 255, 236, 0.3);
 
-            // ✅ Change la couleur au hover
             svg {
               fill: var(--secondary-dark) !important;
             }
@@ -353,10 +351,9 @@
         }
 
         .mat-mdc-select-arrow {
-          color: var(--primary-white); // ✅ Flèche blanche
+          color: var(--primary-white);
         }
 
-        // Style du dropdown du select
         .mat-mdc-select-panel {
           background: var(--primary-dark);
 
@@ -367,7 +364,6 @@
               background: rgba(20, 255, 236, 0.1);
             }
 
-            // Option sélectionnée
             &.mat-mdc-option-active,
             &.mdc-list-item--selected {
               background: rgba(13, 115, 119, 0.2);
