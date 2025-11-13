@@ -361,7 +361,9 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
     await controller.index(mockContext)
   })
 
-  test('index should return 500 with fallback error when thrown error has no message', async ({ assert }) => {
+  test('index should return 500 with fallback error when thrown error has no message', async ({
+    assert,
+  }) => {
     const mockService = {
       getAll: async () => {
         throw 'String error without message property'
@@ -390,7 +392,9 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
     await controller.index(mockContext)
   })
 
-  test('destroy should return 500 with fallback error when thrown error has no message', async ({ assert }) => {
+  test('destroy should return 500 with fallback error when thrown error has no message', async ({
+    assert,
+  }) => {
     const mockService = {
       deleteGame: async () => {
         throw { code: 'UNKNOWN_ERROR', details: 'Something went wrong' }
