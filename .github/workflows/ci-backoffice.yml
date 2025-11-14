@@ -1,0 +1,43 @@
+name: Back-office CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'back-office/**'
+      - '.github/workflows/ci-backoffice.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'back-office/**'
+      - '.github/workflows/ci-backoffice.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment files
+        run: |
+          cp back-office/.env.example back-office/.env
+          cp back-office/.env.example back-office/.env.dev
+
+      - name: Build and start services
+        run: docker compose up -d --build back-office 
+
+      - name: Run linting
+        run: docker compose exec -T back-office npm run lint
+      
+      - name: Run code formatting check
+        run: docker compose exec -T back-office npm run format:check
+
+      - name: Run tests with coverage
+        run: docker compose exec -T back-office npm run test:coverage
+  
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v

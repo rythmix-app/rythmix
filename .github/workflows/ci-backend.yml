@@ -1,0 +1,54 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, staging]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci-backend.yml'
+  pull_request:
+    branches: [main, staging]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci-backend.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment files
+        run: |
+          cp backend/.env.example backend/.env
+          cp backend/.env.example backend/.env.dev
+
+      - name: Build and start services
+        run: docker compose up --build -d database backend
+
+      # - name: Generate APP_KEY
+      #   run: |
+      #     docker compose exec backend node ace generate:key
+
+      # - name: Run migrations
+      #   run: |
+      #     docker compose exec backend node ace migration:run
+
+      - name: Run linting
+        run: docker compose exec -T backend npm run lint
+
+      - name: Run code formatting check
+        run: docker compose exec -T backend npm run format:check
+
+      - name: Run type checking
+        run: docker compose exec -T backend npm run typecheck
+      
+      - name: Run test with coverage
+        run: docker compose exec -T backend npm run test:coverage
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
