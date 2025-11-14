@@ -48,24 +48,8 @@ jobs:
       - name: Setup dev tools
         uses: ./.github/actions/setup-dev-tools
 
-      # Set up Docker Buildx for better caching
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Cache Docker layers to avoid rebuilding everything
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-backend-${{ hashFiles('backend/package-lock.json', 'backend/Dockerfile') }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-backend-
-
       - name: Setup environment and start services
         run: just install-dev
-        env:
-          DOCKER_BUILDKIT: 1
-          COMPOSE_DOCKER_CLI_BUILD: 1
 
       - name: Run tests with coverage
         run: just backend-coverage
@@ -124,24 +108,8 @@ jobs:
       - name: Setup dev tools
         uses: ./.github/actions/setup-dev-tools
 
-      # Set up Docker Buildx for better caching
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Cache Docker layers to avoid rebuilding everything
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-backoffice-${{ hashFiles('back-office/package-lock.json', 'back-office/Dockerfile') }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-backoffice-
-
       - name: Setup environment and start services
         run: just install-dev
-        env:
-          DOCKER_BUILDKIT: 1
-          COMPOSE_DOCKER_CLI_BUILD: 1
 
       - name: Run tests with coverage
         run: just backoffice-coverage
