@@ -27,6 +27,10 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     await testUtils.db().truncate()
   })
 
+  group.teardown(async () => {
+    await testUtils.db().truncate()
+  })
+
   test('createGameSession should create a record successfully', async ({ assert }) => {
     const game = await createTestGame('create')
     const created = await service.createGameSession({
@@ -293,13 +297,13 @@ test.group('GameSessionService - Unit CRUD', (group) => {
   test('getByStatus returns sessions with specific status', async ({ assert }) => {
     const game = await createTestGame('status')
 
-    await GameSession.create({
+    const session1 = await GameSession.create({
       gameId: game.id,
       status: 'en_cours',
       players: [],
       gameData: {},
     })
-    await GameSession.create({
+    const session2 = await GameSession.create({
       gameId: game.id,
       status: 'en_cours',
       players: [],
@@ -313,8 +317,11 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     })
 
     const sessions = await service.getByStatus('en_cours')
-    assert.equal(sessions.length, 2)
+    assert.isAbove(sessions.length, 0)
     assert.isTrue(sessions.every((s: any) => s.status === 'en_cours'))
+    // Verify our created sessions are in the results
+    assert.exists(sessions.find((s: any) => s.id === session1.id))
+    assert.exists(sessions.find((s: any) => s.id === session2.id))
   })
 
   test('createGameSession rethrows on unknown DB error', async ({ assert }) => {

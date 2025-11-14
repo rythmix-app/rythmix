@@ -80,6 +80,11 @@ export default defineConfig({
         name: 'functional',
         timeout: 30000,
       },
+      {
+        files: ['tests/**/game_session*'],
+        name: 'game_session',
+        timeout: 30000,
+      }
     ],
     forceExit: false,
   },

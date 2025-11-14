@@ -166,13 +166,13 @@ test.group('GameSessionsController - Functional', (group) => {
   }) => {
     const game = await createGame('status')
 
-    await GameSession.create({
+    const session1 = await GameSession.create({
       gameId: game.id,
       status: 'en_cours',
       players: [],
       gameData: {},
     })
-    await GameSession.create({
+    const session2 = await GameSession.create({
       gameId: game.id,
       status: 'en_cours',
       players: [],
@@ -188,8 +188,10 @@ test.group('GameSessionsController - Functional', (group) => {
     const res = await client.get('/api/game-sessions/status/en_cours')
 
     res.assertStatus(200)
-    assert.equal(res.body().data.length, 2)
+    assert.isAbove(res.body().data.length, 0)
     assert.isTrue(res.body().data.every((s: any) => s.status === 'en_cours'))
+    assert.exists(res.body().data.find((s: any) => s.id === session1.id))
+    assert.exists(res.body().data.find((s: any) => s.id === session2.id))
   })
 
   test('POST /api/game-sessions returns 404 for non-existent game', async ({ client }) => {

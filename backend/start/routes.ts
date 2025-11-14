@@ -11,6 +11,8 @@ router.get('/', async ({ response }) => {
     status: 'running',
     endpoints: {
       users: '/api/users',
+      games: '/api/games',
+      gameSessions: '/api/game-sessions',
     },
   })
 })
@@ -50,6 +52,21 @@ router
         router
           .delete('/:id', '#controllers/games_controller.destroy')
           .use(middleware.role({ roles: ['admin'] }))
+      })
+      .prefix('/games')
+    router
+      .group(() => {
+        router.get('/', '#controllers/game_sessions_controller.index')
+        router.post('/', '#controllers/game_sessions_controller.create')
+        router.get('/status/:status', '#controllers/game_sessions_controller.getByStatus')
+        router.get('/:id', '#controllers/game_sessions_controller.show')
+        router.patch('/:id', '#controllers/game_sessions_controller.update')
+        router.delete('/:id', '#controllers/game_sessions_controller.delete')
+      })
+      .prefix('/game-sessions')
+    router
+      .group(() => {
+        router.get('/:gameId/sessions', '#controllers/game_sessions_controller.getByGame')
       })
       .prefix('/games')
     router
