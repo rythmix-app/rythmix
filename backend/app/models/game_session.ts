@@ -25,13 +25,24 @@ export default class GameSession extends BaseModel {
 
   @column({
     prepare: (value: PlayerData[]) => JSON.stringify(value),
-    consume: (value: string) => JSON.parse(value),
+    consume: (value: string) => {
+      if (typeof value === 'string') {
+        return JSON.parse(value)
+    }
+  return value 
+}
   })
   declare players: PlayerData[]
 
   @column({
     prepare: (value: any) => JSON.stringify(value),
-    consume: (value: string) => JSON.parse(value),
+    consume: (value: string) => {
+      if (typeof value === 'string') {
+        return JSON.parse(value)
+    }
+  return value 
+
+}
   })
   declare gameData: any
 
