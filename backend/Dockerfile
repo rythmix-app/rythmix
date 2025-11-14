@@ -8,7 +8,7 @@ FROM base AS deps
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Prod build
+# build stage
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
