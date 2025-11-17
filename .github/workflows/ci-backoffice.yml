@@ -2,12 +2,12 @@ name: Back-office CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, staging, MIX-194] # Added MIX-194 branch to trigger back-office CI for testing
     paths:
       - 'back-office/**'
       - '.github/workflows/ci-backoffice.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main, staging]
     paths:
       - 'back-office/**'
       - '.github/workflows/ci-backoffice.yml'

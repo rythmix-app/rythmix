@@ -2,7 +2,7 @@ name: Mobile CI
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, staging, MIX-194] # Added MIX-194 branch to trigger back-office CI for testing
     paths:
       - 'front-mobile/**'
       - '.github/workflows/ci-mobile.yml'
