@@ -78,9 +78,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-      - name: Setup environment
-        run: NODE_ENV=test
+  
+      # - name: Setup environment
+      #   run: cp .env.example .env
+      # - name: Generate APP_KEY
+      #   run: NODE_ENV=test node ace generate:key
       - name: Run migrations
-        run: node ace migration:run
+        run: NODE_ENV=test node ace migration:run
       - name: Run tests with coverage
         run: npm run test:coverage
