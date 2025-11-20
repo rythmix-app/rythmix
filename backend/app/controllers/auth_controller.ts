@@ -21,11 +21,16 @@ export default class AuthController {
 
       const user = await this.authService.register(data)
 
-      const { accessToken, refreshToken } = await this.authService.login(user.email, user.password)
-
       return response.created({
-        accessToken,
-        refreshToken,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          },
+        },
       })
     } catch (error: unknown) {
       if (error instanceof errors.E_VALIDATION_ERROR) {

@@ -208,6 +208,6 @@ export class AuthService {
   }
 
   async cleanExpiredTokens() {
-    await RefreshToken.query().where('expiresAt', '<', DateTime.now().toString()).delete()
+    await RefreshToken.query().where('expiresAt', '<', DateTime.now().toSQL()).delete()
   }
 }

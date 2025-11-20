@@ -1,0 +1,34 @@
+name: Link Jira Ticket
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  link-jira:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract and add Jira link
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title;
+            const ticketMatch = title.match(/^([A-Z]+-\d+)/);
+            
+            if (!ticketMatch) {
+              console.log('No Jira ticket found in title');
+              return;
+            }
+            
+            const ticket = ticketMatch[1];
+            const jiraUrl = `https://app-rythmix.atlassian.net/browse/${ticket}`;
+            const currentBody = context.payload.pull_request.body || '';
+            
+            const newBody = `🎫 Ticket Jira: [${ticket}](${jiraUrl})\n\n${currentBody}`;
+            
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              body: newBody
+            });
