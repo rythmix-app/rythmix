@@ -9,12 +9,11 @@
     "build": "node ace build",
     "dev": "node ace serve --hmr",
     "test": "node ace test",
-    "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura node ace test", 
+    "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura node ace test",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit"
-
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",
