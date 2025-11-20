@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Extract and add Jira link
-        uses: actions/github-script@v7
+        uses: actions/checkout@v4
         with:
           script: |
             const title = context.payload.pull_request.title;
