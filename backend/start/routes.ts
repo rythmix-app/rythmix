@@ -1,22 +1,38 @@
-// TypeScript
-// File: `backend/start/routes.ts`
 import router from '@adonisjs/core/services/router'
 import { middleware } from './kernel.js'
+import { loginThrottle, registerThrottle, resendVerificationThrottle } from './limiter.js'
 
-// Root endpoint - API information
 router.get('/', async ({ response }) => {
   return response.ok({
     name: 'Rythmix API',
     version: '1.0.0',
     status: 'running',
     endpoints: {
+      auth: '/api/auth',
       users: '/api/users',
+      achievements: '/api/achievements',
+      games: '/api/games',
+      likedTracks: '/api/liked-tracks',
     },
   })
 })
 
 router
   .group(() => {
+    router
+      .group(() => {
+        router.post('/register', '#controllers/auth_controller.register').use(registerThrottle)
+        router.post('/login', '#controllers/auth_controller.login').use(loginThrottle)
+        router.post('/refresh', '#controllers/auth_controller.refresh')
+        router.post('/logout', '#controllers/auth_controller.logout').use(middleware.auth())
+        router.get('/verify-email', '#controllers/auth_controller.verifyEmail')
+        router
+          .post('/resend-verification', '#controllers/auth_controller.resendVerificationEmail')
+          .use(resendVerificationThrottle)
+        router.get('/me', '#controllers/auth_controller.me').use(middleware.auth())
+      })
+      .prefix('/auth')
+
     router
       .group(() => {
         router.get('/', '#controllers/users_controller.index')
