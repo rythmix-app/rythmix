@@ -24,11 +24,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install mkcert
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-tools ca-certificates curl
+          # Download latest mkcert binary for Linux and install to /usr/local/bin
+          curl -sL -o mkcert "https://github.com/FiloSottile/mkcert/releases/latest/download/mkcert-linux-amd64"
+          chmod +x mkcert
+          sudo mv mkcert /usr/local/bin/mkcert
+          mkcert -version || true
+
       - name: Setup environment files
         run: find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
 
       - name: Generate development SSL certificates for Traefik
-        run: ( cd traefik && ./setup-dev-certs.sh )
+        working-directory: traefik
+        run: ./setup-dev-certs.sh
 
       - name: Build and start all services
         run: docker compose up -d --build
