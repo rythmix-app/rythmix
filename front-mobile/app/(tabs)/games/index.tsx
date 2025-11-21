@@ -1,11 +1,9 @@
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function HomeScreen() {
-    console.log('HomeScreen rendu');
-
+export default function GamesScreen() {
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Écran d’accueil</Text>
+            <Text style={styles.title}>Écran Jeux</Text>
         </View>
     );
 }
