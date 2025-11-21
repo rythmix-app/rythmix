@@ -9,13 +9,16 @@ services:
 
   database:
     env_file:
-      - ./backend/.env.dev
+      - ./backend/.env
 
   backend:
     build:
       target: dev
     env_file:
-      - ./backend/.env.dev
+      - ./backend/.env
+    environment:
+      - HOST=0.0.0.0
+      - DB_HOST=database
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -29,7 +32,9 @@ services:
       - ./back-office:/app
       - /app/node_modules
     env_file:
-      - ./back-office/.env.dev
+      - ./back-office/.env
+    environment:
+      - API_BASE_URL=http://backend:3333/api
     stdin_open: true
     tty: true
     labels:

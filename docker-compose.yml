@@ -33,8 +33,6 @@ services:
   database:
     image: postgres:alpine
     restart: unless-stopped
-    env_file:
-      - ./backend/.env
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
@@ -52,8 +50,6 @@ services:
         condition: service_healthy
     build:
       context: ./backend
-    env_file:
-      - ./backend/.env
     networks:
       - database
       - backend
@@ -72,12 +68,9 @@ services:
 
   back-office:
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     build:
       context: ./back-office
-    env_file:
-      - ./back-office/.env
     networks:
       - backend
       - frontend
