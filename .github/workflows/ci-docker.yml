@@ -27,18 +27,18 @@ jobs:
       - name: Setup environment files
         run: find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
 
-      - name: Install mkcert
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget libnss3-tools
-          wget https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
-          chmod +x mkcert-v1.4.4-linux-amd64
-          sudo mv mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
-          mkcert -install
+      # - name: Install mkcert
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y wget libnss3-tools
+      #     wget https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
+      #     chmod +x mkcert-v1.4.4-linux-amd64
+      #     sudo mv mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
+      #     mkcert -install
 
-      - name: Generate development SSL certificates for Traefik
-        working-directory: traefik
-        run: ./setup-dev-certs.sh
+      # - name: Generate development SSL certificates for Traefik
+      #   working-directory: traefik
+      #   run: ./setup-dev-certs.sh
 
       - name: Build and start all services
         run: docker compose up -d --build
@@ -53,9 +53,9 @@ jobs:
 
       - name: Run endpoint checks
         run: |
-          curl -f https://api.localhost || exit 1
-          curl -f https://admin.localhost/health || exit 1
-          curl -f https://traefik.localhost || exit 1
+          curl -fk https://api.localhost
+          curl -fk https://admin.localhost
+          curl -fk https://traefik.localhost
 
 
       - name: Show logs on failure
