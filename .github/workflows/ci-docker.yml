@@ -54,9 +54,9 @@ jobs:
 
       - name: Run endpoint checks
         run: |
-          curl -fk https://api.localhost || echo "fail api"
+          curl -fk https://api.localhost
           curl -fk https://admin.localhost || echo "fail admin"
-          curl -fk https://traefik.localhost || echo "fail traefik"
+          curl -fk https://traefik.localhost
 
 
       - name: Show logs on failure
