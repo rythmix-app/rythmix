@@ -20,6 +20,15 @@ entryPoints:
   websecure:
     address: :443
 
+# Certificate Resolvers
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: your-email@example.com  # Change this to your email
+      storage: /etc/traefik/acme/acme.json
+      httpChallenge:
+        entryPoint: web
+
 # Providers
 providers:
   docker:
