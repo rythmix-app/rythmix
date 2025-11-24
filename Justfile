@@ -158,14 +158,8 @@ seeder:
     {{_docker_cmd}} exec backend node ace db:seed
 
 # Test commands
-backend-test:
-    {{_docker_cmd}} exec backend node ace test
+test SERVICE:
+    {{_docker_cmd}} exec -T {{SERVICE}} npm run test
 
-backend-coverage:
-    {{_docker_cmd}} exec backend npm run test:coverage
-
-backoffice-test:
-    {{_docker_cmd}} exec -T back-office ng test --watch=false --browsers=ChromeHeadless
-
-backoffice-coverage:
-    {{_docker_cmd}} exec -T back-office ng test --watch=false --browsers=ChromeHeadless --code-coverage
+coverage SERVICE:
+    {{_docker_cmd}} exec -T {{SERVICE}} npm run test:coverage

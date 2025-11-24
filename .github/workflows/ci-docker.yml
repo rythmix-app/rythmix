@@ -2,7 +2,7 @@ name: Docker Integration CI
 
 on:
   push:
-    branches: [main, staging, MIX-194] # Added MIX-194 branch to trigger back-office CI for testing
+    branches: [main, staging]
     paths:
       - 'docker-compose*.yml'
       - 'traefik/**'
