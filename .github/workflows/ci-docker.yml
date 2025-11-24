@@ -11,7 +11,7 @@ on:
   pull_request:
     branches: [main, staging]
     paths:
-      - 'docker-compose*.yml'
+      - 'docker-compose*.yml' 
       - 'traefik/**'
       - '**/Dockerfile'
       - '.github/workflows/ci-docker.yml'
