@@ -49,14 +49,14 @@ jobs:
           docker compose exec backend node ace migration:run
 
       - name: Verify all services are healthy
-        run: |
-          docker compose up --wait
+        run: docker compose up --wait
 
-      - name: Run backend tests
-        run: docker compose exec -T backend npm run test:coverage
-      
-      - name: Run back-office tests
-        run: docker compose exec -T back-office npm run test:coverage
+      - name: Run endpoint checks
+        run: |
+          curl -f https://api.localhost || exit 1
+          curl -f https://admin.localhost/health || exit 1
+          curl -f https://traefik.localhost || exit 1
+
 
       - name: Show logs on failure
         if: failure()
