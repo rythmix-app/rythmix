@@ -55,7 +55,7 @@ jobs:
       - name: Run endpoint checks
         run: |
           curl -fk https://api.localhost
-          curl -fk https://admin.localhost
+          curl -fk https://admin.localhost > /dev/null
           curl -fk https://traefik.localhost
 
 
