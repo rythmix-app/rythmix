@@ -27,17 +27,6 @@ jobs:
       - name: Setup environment files
         run: find backend back-office -type f -name ".env*.example" -exec sh -c 'cp "$1" "${1%.example}"' _ {} \;
 
-      - name: Build and start all services
-        run: docker compose up -d --build
-
-      - name: setup backend app key and run migrations
-        run: |
-          docker compose exec backend node ace generate:key
-          docker compose exec backend node ace migration:run
-
-      - name: Verify all services are healthy
-        run: docker compose up --wait
-
       - name: Install mkcert
         run: |
           sudo apt-get update
@@ -50,6 +39,18 @@ jobs:
       - name: Generate development SSL certificates for Traefik
         working-directory: traefik
         run: ./setup-dev-certs.sh
+
+
+      - name: Build and start all services
+        run: docker compose up -d --build
+
+      - name: setup backend app key and run migrations
+        run: |
+          docker compose exec backend node ace generate:key
+          docker compose exec backend node ace migration:run
+
+      - name: Verify all services are healthy
+        run: docker compose up --wait
 
       - name: Run endpoint checks
         run: |
