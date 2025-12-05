@@ -1,10 +1,6 @@
 services:
   traefik:
     command:
-      - --certificatesresolvers.letsencrypt.acme.email=admin@example.com
-      - --certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme/acme.json
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
       - --log.level=WARN
     volumes:
       - traefik-certs:/etc/traefik/acme
@@ -17,6 +13,7 @@ services:
       - ./backend/.env.prod
 
   backend:
+    image: ${REGISTRY:-rythmix}/backend:${TAG:-latest}
     build:
       target: prod
     env_file:
@@ -26,6 +23,7 @@ services:
       - traefik.http.routers.backend.tls.certresolver=letsencrypt
 
   back-office:
+    image: ${REGISTRY:-rythmix}/back-office:${TAG:-latest}
     build:
       target: prod
     env_file:
