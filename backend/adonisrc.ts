@@ -91,7 +91,12 @@ export default defineConfig({
         files: ['tests/**/game_session*'],
         name: 'game_session',
         timeout: 30000,
-      }
+      },
+      {
+        files: ['tests/**/auth*'],
+        name: 'auth',
+        timeout: 30000,
+      },
     ],
     forceExit: false,
   },
