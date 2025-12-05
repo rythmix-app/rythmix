@@ -157,6 +157,9 @@ migrate:
 seeder:
     {{_docker_cmd}} exec backend node ace db:seed
 
+backend-check:
+    {{_docker_cmd}} exec backend npm run check
+
 # Test commands
 test SERVICE:
     {{_docker_cmd}} exec -T {{SERVICE}} npm run test

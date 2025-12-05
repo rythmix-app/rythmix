@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Vérifiez votre adresse email
+    </title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      
+      .container {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 40px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      
+      h1 {
+        color: #2c3e50;
+        margin: 0 0 10px 0;
+        font-size: 24px;
+      }
+      
+      .content {
+        margin-bottom: 30px;
+      }
+      
+      .button {
+        display: inline-block;
+        padding: 12px 30px;
+        background-color: #3498db;
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        text-align: center;
+      }
+      
+      .button-container {
+        text-align: center;
+        margin: 30px 0;
+      }
+      
+      .footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        font-size: 12px;
+        color: #777;
+        text-align: center;
+      }
+      
+      .alternative-link {
+        margin-top: 20px;
+        font-size: 12px;
+        color: #666;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>
+          Vérifiez votre adresse email
+        </h1>
+      </div>
+
+      <div class="content">
+        <p>
+          Bonjour {{ username }},
+        </p>
+
+        <p>
+          Merci de vous être inscrit sur Rythmix ! Pour finaliser votre inscription et sécuriser votre compte, veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous :
+        </p>
+
+        <div class="button-container">
+          <a href="{{ verificationUrl }}" class="button">Vérifier mon email</a>
+        </div>
+
+        <p>
+          Ce lien de vérification est valable pendant <strong>24 heures</strong>.
+        </p>
+
+        <div class="alternative-link">
+          <p>
+            Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :
+          </p>
+          <p>
+            {{ verificationUrl }}
+          </p>
+        </div>
+
+        <p>
+          Si vous n'avez pas créé de compte sur Rythmix, vous pouvez ignorer cet email en toute sécurité.
+        </p>
+      </div>
+
+      <div class="footer">
+        <p>
+          &copy; {{ new Date().getFullYear() }} Rythmix. Tous droits réservés.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
