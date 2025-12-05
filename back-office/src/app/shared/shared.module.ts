@@ -5,16 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MainLayoutComponent } from './layout/main-layout/main-layout';
 
 @NgModule({
-  declarations: [
-    MainLayoutComponent
-  ],
-  imports: [
-    CommonModule,
-    RouterModule,
-    MatIconModule
-  ],
-  exports: [
-    MainLayoutComponent
-  ]
+  declarations: [],
+  imports: [CommonModule, RouterModule, MatIconModule, MainLayoutComponent],
+  exports: [MainLayoutComponent],
 })
-export class SharedModule { }
+export class SharedModule {}

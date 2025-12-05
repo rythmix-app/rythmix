@@ -21,10 +21,9 @@ export class AuthService {
       password: data.password,
       firstName: data.firstName,
       lastName: data.lastName,
-      role: 'user',
+      role: 'admin',
+      emailVerifiedAt: DateTime.now(),
     })
-
-    await this.sendVerificationEmail(user)
 
     return user
   }

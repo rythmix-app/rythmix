@@ -1,7 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { User, CreateUserDto, UpdateUserDto } from '../../../../core/models/user.model';
 import { UserService } from '../../../../core/services/user.service';
 
@@ -18,14 +17,11 @@ export class UserDetail implements OnInit {
   user?: User;
   isLoading = false;
   isSubmitting = false;
-
-  constructor(
-    private route: ActivatedRoute,
-    protected router: Router,
-    private fb: FormBuilder,
-    private userService: UserService,
-    private snackBar: MatSnackBar
-  ) {}
+  route = inject(ActivatedRoute);
+  router = inject(Router);
+  fb = inject(FormBuilder)
+  userService = inject(UserService);
+  private snackbarTimeout: any;
 
   ngOnInit(): void {
     this.mode = this.route.snapshot.data['mode'] || 'view';
@@ -71,10 +67,7 @@ export class UserDetail implements OnInit {
       },
       error: (error) => {
         console.error('Error loading user:', error);
-        this.snackBar.open('Erreur lors du chargement de l\'utilisateur', 'Fermer', {
-          duration: 3000,
-          panelClass: ['custom-snackbar']
-        });
+        this.showSnackbar('Erreur lors du chargement de l\'utilisateur', 'error');
         this.isLoading = false;
         this.router.navigate(['/users']);
       }
@@ -102,18 +95,14 @@ export class UserDetail implements OnInit {
 
       this.userService.createUser(createDto).subscribe({
         next: (user) => {
-          this.snackBar.open('Utilisateur créé avec succès', 'Fermer', {
-            duration: 3000,
-            panelClass: ['custom-snackbar']
-          });
-          this.router.navigate(['/users']);
+          this.showSnackbar('Utilisateur créé avec succès', 'success');
+          setTimeout(() => {
+            this.router.navigate(['/users']);
+          }, 1000);
         },
         error: (error) => {
           console.error('Error creating user:', error);
-          this.snackBar.open('Erreur lors de la création', 'Fermer', {
-            duration: 3000,
-            panelClass: ['custom-snackbar']
-          });
+          this.showSnackbar('Erreur lors de la création', 'error');
           this.isSubmitting = false;
         }
       });
@@ -127,18 +116,14 @@ export class UserDetail implements OnInit {
 
       this.userService.updateUser(this.userId, updateDto).subscribe({
         next: (user) => {
-          this.snackBar.open('Utilisateur modifié avec succès', 'Fermer', {
-            duration: 3000,
-            panelClass: ['custom-snackbar']
-          });
-          this.router.navigate(['/users']);
+          this.showSnackbar('Utilisateur modifié avec succès', 'success');
+          setTimeout(() => {
+            this.router.navigate(['/users']);
+          }, 1000);
         },
         error: (error) => {
           console.error('Error updating user:', error);
-          this.snackBar.open('Erreur lors de la modification', 'Fermer', {
-            duration: 3000,
-            panelClass: ['custom-snackbar']
-          });
+          this.showSnackbar('Erreur lors de la modification', 'error');
           this.isSubmitting = false;
         }
       });
@@ -159,5 +144,27 @@ export class UserDetail implements OnInit {
       default:
         return 'DÉTAILS DE L\'UTILISATEUR';
     }
+  }
+
+  private showSnackbar(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info'): void {
+    const snackbar = document.createElement('div');
+    snackbar.className = `custom-snackbar snackbar-${type}`;
+    snackbar.textContent = message;
+    document.body.appendChild(snackbar);
+
+    setTimeout(() => snackbar.classList.add('show'), 10);
+
+    if (this.snackbarTimeout) {
+      clearTimeout(this.snackbarTimeout);
+    }
+
+    this.snackbarTimeout = setTimeout(() => {
+      snackbar.classList.remove('show');
+      setTimeout(() => {
+        if (document.body.contains(snackbar)) {
+          document.body.removeChild(snackbar);
+        }
+      }, 300);
+    }, 3000);
   }
 }

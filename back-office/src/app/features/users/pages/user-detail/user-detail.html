@@ -1,8 +1,8 @@
 <div class="user-detail-page">
   <div class="page-header">
     <div class="header-left">
-      <button mat-icon-button (click)="onCancel()" class="back-btn">
-        <mat-icon>arrow_back</mat-icon>
+      <button class="back-btn" (click)="onCancel()">
+        <i class="fas fa-arrow-left"></i>
       </button>
       <h1 class="page-title">{{ title }}</h1>
     </div>
@@ -11,7 +11,7 @@
   <div class="page-content">
     @if (isLoading) {
       <div class="loading-container">
-        <mat-spinner></mat-spinner>
+        <div class="spinner"></div>
       </div>
     }
 
@@ -22,83 +22,101 @@
             <h2 class="section-title">Informations personnelles</h2>
 
             <div class="form-row">
-              <mat-form-field appearance="outline" class="form-field">
-                <mat-label>Username *</mat-label>
-                <input matInput formControlName="username">
-                @if (userForm.get('username')?.hasError('required')) {
-                  <mat-error>
-                    Le username est requis
-                  </mat-error>
+              <div class="form-field">
+                <label class="field-label">
+                  Username <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  formControlName="username"
+                  class="field-input"
+                  [class.error]="userForm.get('username')?.invalid && userForm.get('username')?.touched">
+                @if (userForm.get('username')?.hasError('required') && userForm.get('username')?.touched) {
+                  <span class="field-error">Le username est requis</span>
                 }
-                @if (userForm.get('username')?.hasError('minlength')) {
-                  <mat-error>
-                    Le username doit contenir au moins 3 caractères
-                  </mat-error>
+                @if (userForm.get('username')?.hasError('minlength') && userForm.get('username')?.touched) {
+                  <span class="field-error">Le username doit contenir au moins 3 caractères</span>
                 }
-              </mat-form-field>
+              </div>
             </div>
 
             <div class="form-row">
-              <mat-form-field appearance="outline" class="form-field half">
-                <mat-label>Prénom</mat-label>
-                <input matInput formControlName="firstName">
-              </mat-form-field>
+              <div class="form-field half">
+                <label class="field-label">Prénom</label>
+                <input
+                  type="text"
+                  formControlName="firstName"
+                  class="field-input">
+              </div>
 
-              <mat-form-field appearance="outline" class="form-field half">
-                <mat-label>Nom</mat-label>
-                <input matInput formControlName="lastName">
-              </mat-form-field>
+              <div class="form-field half">
+                <label class="field-label">Nom</label>
+                <input
+                  type="text"
+                  formControlName="lastName"
+                  class="field-input">
+              </div>
             </div>
 
             <div class="form-row">
-              <mat-form-field appearance="outline" class="form-field">
-                <mat-label>Email *</mat-label>
-                <input matInput type="email" formControlName="email">
-                @if (userForm.get('email')?.hasError('required')) {
-                  <mat-error>
-                    L'email est requis
-                  </mat-error>
+              <div class="form-field">
+                <label class="field-label">
+                  Email <span class="required">*</span>
+                </label>
+                <input
+                  type="email"
+                  formControlName="email"
+                  class="field-input"
+                  [class.error]="userForm.get('email')?.invalid && userForm.get('email')?.touched">
+                @if (userForm.get('email')?.hasError('required') && userForm.get('email')?.touched) {
+                  <span class="field-error">L'email est requis</span>
                 }
-                @if (userForm.get('email')?.hasError('email')) {
-                  <mat-error>
-                    L'email n'est pas valide
-                  </mat-error>
+                @if (userForm.get('email')?.hasError('email') && userForm.get('email')?.touched) {
+                  <span class="field-error">L'email n'est pas valide</span>
                 }
-              </mat-form-field>
+              </div>
             </div>
 
             @if (mode === 'create') {
               <div class="form-row">
-                <mat-form-field appearance="outline" class="form-field">
-                  <mat-label>Mot de passe *</mat-label>
-                  <input matInput type="password" formControlName="password">
-                  @if (userForm.get('password')?.hasError('required')) {
-                    <mat-error>
-                      Le mot de passe est requis
-                    </mat-error>
+                <div class="form-field">
+                  <label class="field-label">
+                    Mot de passe <span class="required">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    formControlName="password"
+                    class="field-input"
+                    [class.error]="userForm.get('password')?.invalid && userForm.get('password')?.touched">
+                  @if (userForm.get('password')?.hasError('required') && userForm.get('password')?.touched) {
+                    <span class="field-error">Le mot de passe est requis</span>
                   }
-                  @if (userForm.get('password')?.hasError('minlength')) {
-                    <mat-error>
-                      Le mot de passe doit contenir au moins 6 caractères
-                    </mat-error>
+                  @if (userForm.get('password')?.hasError('minlength') && userForm.get('password')?.touched) {
+                    <span class="field-error">Le mot de passe doit contenir au moins 6 caractères</span>
                   }
-                </mat-form-field>
+                </div>
               </div>
             }
 
             <div class="form-row">
-              <mat-form-field appearance="outline" class="form-field half">
-                <mat-label>Rôle *</mat-label>
-                <mat-select formControlName="role">
-                  <mat-option value="user">Utilisateur</mat-option>
-                  <mat-option value="admin">Administrateur</mat-option>
-                </mat-select>
-                @if (userForm.get('role')?.hasError('required')) {
-                  <mat-error>
-                    Le rôle est requis
-                  </mat-error>
+              <div class="form-field half">
+                <label class="field-label">
+                  Rôle <span class="required">*</span>
+                </label>
+                <div class="select-wrapper">
+                  <select
+                    formControlName="role"
+                    class="field-select"
+                    [class.error]="userForm.get('role')?.invalid && userForm.get('role')?.touched">
+                    <option value="user">Utilisateur</option>
+                    <option value="admin">Administrateur</option>
+                  </select>
+                  <span class="select-arrow">▼</span>
+                </div>
+                @if (userForm.get('role')?.hasError('required') && userForm.get('role')?.touched) {
+                  <span class="field-error">Le rôle est requis</span>
                 }
-              </mat-form-field>
+              </div>
             </div>
           </div>
 
@@ -130,8 +148,8 @@
                   <span class="badge"
                         [class.badge-active]="!user.deletedAt"
                         [class.badge-deleted]="user.deletedAt">
-                        {{ user.deletedAt ? 'Supprimé' : 'Actif' }}
-                      </span>
+                    {{ user.deletedAt ? 'Supprimé' : 'Actif' }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -139,24 +157,34 @@
 
           @if (mode !== 'view') {
             <div class="form-actions">
-              <button mat-button type="button" (click)="onCancel()" [disabled]="isSubmitting" class="btn-cancel">
+              <button
+                type="button"
+                (click)="onCancel()"
+                [disabled]="isSubmitting"
+                class="btn-cancel">
                 Annuler
               </button>
-              <button mat-raised-button type="submit" [disabled]="isSubmitting" class="btn-submit">
+              <button
+                type="submit"
+                [disabled]="isSubmitting || userForm.invalid"
+                class="btn-submit">
                 @if (isSubmitting) {
-                  <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+                  <i class="fas fa-spinner fa-spin"></i>
                 }
                 @if (!isSubmitting) {
-                  <span>{{ mode === 'create' ? 'Créer' : 'Enregistrer' }}</span>
+                  <i class="fas fa-check"></i>
                 }
+                <span>{{ mode === 'create' ? 'Créer' : 'Enregistrer' }}</span>
               </button>
             </div>
           }
 
           @if (mode === 'view') {
             <div class="form-actions">
-              <button mat-raised-button type="button" (click)="router.navigate(['/users', userId, 'edit'])" class="btn-edit">
-                <mat-icon>edit</mat-icon>
+              <button
+                type="button"
+                (click)="router.navigate(['/users', userId, 'edit'])"
+                class="btn-edit">
                 Modifier
               </button>
             </div>
