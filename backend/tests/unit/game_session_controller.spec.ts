@@ -253,7 +253,9 @@ test.group('GameSessionsController - Unit', () => {
 
   test('delete returns 200 with message on success', async ({ assert }) => {
     const service = {
-      deleteGameSession: async () => ({ message: 'GameSession with ID: session-10 deleted successfully' }),
+      deleteGameSession: async () => ({
+        message: 'GameSession with ID: session-10 deleted successfully',
+      }),
     } as any
     const controller = new GameSessionsController(service)
 

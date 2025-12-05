@@ -28,9 +28,9 @@ export default class GameSession extends BaseModel {
     consume: (value: string) => {
       if (typeof value === 'string') {
         return JSON.parse(value)
-    }
-  return value 
-}
+      }
+      return value
+    },
   })
   declare players: PlayerData[]
 
@@ -39,10 +39,9 @@ export default class GameSession extends BaseModel {
     consume: (value: string) => {
       if (typeof value === 'string') {
         return JSON.parse(value)
-    }
-  return value 
-
-}
+      }
+      return value
+    },
   })
   declare gameData: any
 

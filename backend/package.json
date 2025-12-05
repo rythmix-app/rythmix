@@ -10,9 +10,11 @@
     "dev": "node ace serve --hmr",
     "test": "node ace test",
     "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura node ace test",
-    "lint": "eslint .",
-    "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "check": "npm run format && npm run lint && npm run typecheck"
   },
   "imports": {
@@ -42,6 +44,7 @@
     "@japa/assert": "^4.0.1",
     "@japa/plugin-adonisjs": "^4.0.0",
     "@japa/runner": "^4.2.0",
+    "@stylistic/eslint-plugin": "^5.6.1",
     "@swc/core": "1.11.24",
     "@types/luxon": "^3.6.2",
     "@types/node": "^22.15.18",
@@ -71,6 +74,9 @@
       "./app/controllers/**/*.ts",
       "./app/middleware/*.ts"
     ]
+  },
+  "overrides": {
+    "@stylistic/eslint-plugin-ts": "npm:@stylistic/eslint-plugin@^5.6.1"
   },
   "prettier": "@adonisjs/prettier-config"
 }

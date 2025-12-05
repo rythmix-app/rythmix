@@ -119,9 +119,7 @@ test.group('GameSessionsController - Functional', (group) => {
     })
   })
 
-  test('DELETE /api/game-sessions/:id returns 404 for non-existent session', async ({
-    client,
-  }) => {
+  test('DELETE /api/game-sessions/:id returns 404 for non-existent session', async ({ client }) => {
     const res = await client.delete('/api/game-sessions/non-existent-id')
     res.assertStatus(404)
     res.assertBodyContains({ message: 'GameSession not found' })

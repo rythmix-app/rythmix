@@ -1,12 +1,12 @@
-import { Redirect } from 'expo-router';
+import { Redirect } from "expo-router";
 
 export default function Index() {
-    // TODO: à remplacer par ta vraie logique d'auth
-    const isAuthenticated = false;
+  // TODO: à remplacer par ta vraie logique d'auth
+  const isAuthenticated = false;
 
-    if (!isAuthenticated) {
-        return <Redirect href="/auth/login" />;
-    }
+  if (!isAuthenticated) {
+    return <Redirect href="/auth/login" />;
+  }
 
-    return <Redirect href="/(tabs)" />;
+  return <Redirect href="/(tabs)" />;
 }
