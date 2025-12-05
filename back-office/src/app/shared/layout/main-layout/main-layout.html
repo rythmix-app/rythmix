@@ -1,5 +1,5 @@
 <div class="layout-container">
-  <aside class="sidebar">
+  <aside class="sidebar" [class.open]="isSidebarOpen">
     <div class="logo">
       <h1>RYTHMIX</h1>
     </div>
@@ -8,14 +8,14 @@
       @for (section of menuItems; track section) {
         <div class="menu-section">
           <div class="section-title">
-            <mat-icon>{{ section.icon }}</mat-icon>
+            <i class="fas {{ section.icon }}"></i>
             <span>{{ section.title }}</span>
           </div>
           <ul class="menu-items">
             @for (item of section.items; track item) {
               <li>
                 <a [routerLink]="item.route" routerLinkActive="active">
-                  <mat-icon>{{ item.icon }}</mat-icon>
+                  <i class="fas {{ item.icon }}"></i>
                   {{ item.label }}
                 </a>
               </li>
@@ -25,11 +25,42 @@
       }
     </nav>
 
-    <div class="user-profile">
-      <mat-icon>account_circle</mat-icon>
-      <span>Admin User</span>
+    <div class="theme-toggle">
+      <button (click)="toggleTheme()" [attr.aria-label]="isDarkMode ? 'Passer en mode clair' : 'Passer en mode sombre'">
+        <i class="fas" [class.fa-moon]="isDarkMode" [class.fa-sun]="!isDarkMode"></i>
+      </button>
+    </div>
+
+    <div class="user-profile" (click)="toggleUserMenu()">
+      <i class="fas fa-user-circle user-icon"></i>
+      <div class="user-info">
+        <span class="user-name">{{ getUserDisplayName() }}</span>
+        @if (currentUser?.role) {
+          <span class="user-role">{{ currentUser?.role }}</span>
+        }
+        @if (showUserMenu) {
+          <div class="user-menu">
+            <button class="menu-btn" (click)="onProfile($event)">
+              <i class="fas fa-cog"></i>
+              Profil
+            </button>
+            <button class="menu-btn" (click)="onLogout($event)">
+              <i class="fas fa-sign-out-alt"></i>
+              Déconnexion
+            </button>
+          </div>
+        }
+      </div>
     </div>
   </aside>
+
+  <button class="mobile-menu-toggle" (click)="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  @if (isSidebarOpen) {
+    <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+  }
 
   <main class="main-content">
     <router-outlet></router-outlet>

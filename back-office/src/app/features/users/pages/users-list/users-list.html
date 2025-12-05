@@ -1,116 +1,179 @@
 <div class="users-page">
   <div class="page-header">
     <h1 class="page-title">UTILISATEURS</h1>
-    <button mat-raised-button class="btn-create" (click)="createUser()">
-      <mat-icon>add</mat-icon>
+    <button class="btn-create" (click)="createUser()">
+      <i class="fas fa-plus icon"></i>
       Créer un utilisateur
     </button>
   </div>
 
   <div class="page-content">
     <div class="filters-bar">
-      <mat-form-field appearance="outline" class="search-field">
-        <input matInput (keyup)="applyFilter($event)" placeholder="Rechercher par username ou email...">
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
+      <div class="search-field">
+        <input
+          type="text"
+          placeholder="Rechercher par username ou email..."
+          (input)="applyFilter($event)"
+          class="search-input">
+        <i class="fas fa-search search-icon"></i>
+      </div>
 
-      <mat-slide-toggle
-        [(ngModel)]="filters.includeDeleted"
-        (change)="toggleIncludeDeleted()"
-        class="toggle-deleted">
-        Inclure les supprimés
-      </mat-slide-toggle>
+      <label class="toggle-deleted">
+        <input
+          type="checkbox"
+          [(ngModel)]="filters.includeDeleted"
+          (change)="toggleIncludeDeleted()"
+          class="toggle-input">
+        <span class="toggle-slider"></span>
+        <span class="toggle-label">Inclure les supprimés</span>
+      </label>
     </div>
 
-    <!-- Loader -->
     @if (isLoading) {
       <div class="loading-container">
-        <mat-spinner></mat-spinner>
+        <div class="spinner"></div>
       </div>
     }
 
     @if (!isLoading) {
-    <div class="table-wrapper">
-      <table mat-table [dataSource]="dataSource" matSort class="data-table">
-
-        <ng-container matColumnDef="username">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>USERNAME</th>
-          <td mat-cell *matCellDef="let user">
-            <div class="user-cell">
-              <span [class.deleted]="isUserDeleted(user)">{{ user.username }}</span>
-              @if (getUserFullName(user) !== '-') {
-                <span class="fullname">
-                {{ getUserFullName(user) }}
-              </span>
+      <div class="table-wrapper">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+            <tr>
+              <th (click)="sortBy('username')" class="sortable">
+                USERNAME
+                <i class="fas" [class.fa-sort]="sortColumn !== 'username'"
+                   [class.fa-sort-up]="sortColumn === 'username' && sortDirection === 'asc'"
+                   [class.fa-sort-down]="sortColumn === 'username' && sortDirection === 'desc'"
+                   [class.active]="sortColumn === 'username'"></i>
+              </th>
+              <th (click)="sortBy('email')" class="sortable">
+                EMAIL
+                <i class="fas" [class.fa-sort]="sortColumn !== 'email'"
+                   [class.fa-sort-up]="sortColumn === 'email' && sortDirection === 'asc'"
+                   [class.fa-sort-down]="sortColumn === 'email' && sortDirection === 'desc'"
+                   [class.active]="sortColumn === 'email'"></i>
+              </th>
+              <th (click)="sortBy('role')" class="sortable">
+                RÔLE
+                <i class="fas" [class.fa-sort]="sortColumn !== 'role'"
+                   [class.fa-sort-up]="sortColumn === 'role' && sortDirection === 'asc'"
+                   [class.fa-sort-down]="sortColumn === 'role' && sortDirection === 'desc'"
+                   [class.active]="sortColumn === 'role'"></i>
+              </th>
+              <th (click)="sortBy('createdAt')" class="sortable">
+                DATE DE CRÉATION
+                <i class="fas" [class.fa-sort]="sortColumn !== 'createdAt'"
+                   [class.fa-sort-up]="sortColumn === 'createdAt' && sortDirection === 'asc'"
+                   [class.fa-sort-down]="sortColumn === 'createdAt' && sortDirection === 'desc'"
+                   [class.active]="sortColumn === 'createdAt'"></i>
+              </th>
+              <th>STATUT</th>
+              <th class="actions-header"></th>
+            </tr>
+            </thead>
+            <tbody>
+              @for (user of paginatedUsers; track user.id) {
+                <tr>
+                  <td>
+                    <div class="user-cell">
+                      <span [class.deleted]="isUserDeleted(user)">{{ user.username }}</span>
+                      @if (getUserFullName(user) !== '-') {
+                        <span class="fullname">{{ getUserFullName(user) }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span [class.deleted]="isUserDeleted(user)">{{ user.email }}</span>
+                  </td>
+                  <td>
+                  <span class="badge" [class.badge-admin]="user.role === 'admin'" [class.badge-user]="user.role !== 'admin'">
+                    {{ user.role || 'user' }}
+                  </span>
+                  </td>
+                  <td>{{ user.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                  <span class="badge"
+                        [class.badge-active]="!isUserDeleted(user)"
+                        [class.badge-deleted]="isUserDeleted(user)">
+                    {{ isUserDeleted(user) ? 'Supprimé' : 'Actif' }}
+                  </span>
+                  </td>
+                  <td class="actions-cell">
+                    @if (!isUserDeleted(user)) {
+                      <button class="action-link" (click)="viewUser(user)">
+                        <i class="fas fa-eye"></i> Consulter
+                      </button>
+                      <button class="action-link" (click)="editUser(user)">
+                        <i class="fas fa-edit"></i> Modifier
+                      </button>
+                      <button class="action-link danger" (click)="deleteUser(user)">
+                        <i class="fas fa-trash"></i> Supprimer
+                      </button>
+                    }
+                    @if (isUserDeleted(user)) {
+                      <button class="action-link" (click)="restoreUser(user)">
+                        <i class="fas fa-undo"></i> Restaurer
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr class="no-data-row">
+                  <td colspan="6">Aucun utilisateur trouvé</td>
+                </tr>
               }
-            </div>
-          </td>
-        </ng-container>
+            </tbody>
+          </table>
+        </div>
 
-        <ng-container matColumnDef="email">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>EMAIL</th>
-          <td mat-cell *matCellDef="let user">
-            <span [class.deleted]="isUserDeleted(user)">{{ user.email }}</span>
-          </td>
-        </ng-container>
+        <div class="pagination-wrapper">
+          <div class="pagination-info">
+            <span>{{ getPaginationInfo() }}</span>
+          </div>
 
-        <ng-container matColumnDef="role">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>RÔLE</th>
-          <td mat-cell *matCellDef="let user">
-            <span class="badge" [class.badge-admin]="user.role === 'admin'">
-              {{ user.role || 'user' }}
-            </span>
-          </td>
-        </ng-container>
+          <div class="pagination-size">
+            <label>
+              Éléments par page:
+              <select [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+                <option [value]="10">10</option>
+                <option [value]="25">25</option>
+                <option [value]="50">50</option>
+                <option [value]="100">100</option>
+              </select>
+            </label>
+          </div>
 
-        <ng-container matColumnDef="createdAt">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>DATE DE CRÉATION</th>
-          <td mat-cell *matCellDef="let user">
-            {{ user.createdAt | date: 'dd/MM/yyyy HH:mm' }}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>STATUT</th>
-          <td mat-cell *matCellDef="let user">
-            <span
-              class="badge"
-              [class.badge-active]="!isUserDeleted(user)"
-              [class.badge-deleted]="isUserDeleted(user)">
-              {{ isUserDeleted(user) ? 'Supprimé' : 'Actif' }}
-            </span>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let user" class="actions-cell">
-            @if (!isUserDeleted(user)) {
-              <button mat-button class="action-link" (click)="viewUser(user)">Consulter</button>
-              <button mat-button class="action-link" (click)="editUser(user)">Modifier</button>
-              <button mat-button class="action-link danger" (click)="deleteUser(user)">Supprimer</button>
-            }
-            @if (isUserDeleted(user)) {
-              <button mat-button class="action-link" (click)="restoreUser(user)">Restaurer</button>
-            }
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-
-        <tr class="no-data-row" *matNoDataRow>
-          <td colspan="6">Aucun utilisateur trouvé</td>
-        </tr>
-      </table>
-
-      <div class="pagination-wrapper">
-        <mat-paginator
-          [pageSizeOptions]="[10, 25, 50, 100]"
-          showFirstLastButtons>
-        </mat-paginator>
+          <div class="pagination-controls">
+            <button
+              class="pagination-btn"
+              (click)="goToFirstPage()"
+              [disabled]="currentPage === 0">
+              <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button
+              class="pagination-btn"
+              (click)="previousPage()"
+              [disabled]="currentPage === 0">
+              <i class="fas fa-angle-left"></i>
+            </button>
+            <span class="page-number">{{ currentPage + 1 }} / {{ totalPages }}</span>
+            <button
+              class="pagination-btn"
+              (click)="nextPage()"
+              [disabled]="currentPage >= totalPages - 1">
+              <i class="fas fa-angle-right"></i>
+            </button>
+            <button
+              class="pagination-btn"
+              (click)="goToLastPage()"
+              [disabled]="currentPage >= totalPages - 1">
+              <i class="fas fa-angle-double-right"></i>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
     }
   </div>
 </div>
