@@ -21,6 +21,7 @@ export class AuthService {
       password: data.password,
       firstName: data.firstName,
       lastName: data.lastName,
+      //TODO : remove admin role assignment and remoove emailVerifiedAt
       role: 'admin',
       emailVerifiedAt: DateTime.now(),
     })
