@@ -9,65 +9,66 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function TabLayout() {
-    const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme();
 
-    return (
-        <Tabs
-            screenOptions={{
-                tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-                headerShown: false,
-                tabBarButton: HapticTab,
-                tabBarBackground: TabBarBackground,
-                tabBarStyle: Platform.select({
-                    ios: {
-                        position: 'absolute',
-                    },
-                    default: {},
-                }),
-            }}>
-            {/* Accueil */}
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: 'Accueil',
-                    tabBarIcon: ({ color }) => (
-                        <IconSymbol size={28} name="house.fill" color={color} />
-                    ),
-                }}
-            />
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        headerShown: false,
+        tabBarButton: HapticTab,
+        tabBarBackground: TabBarBackground,
+        tabBarStyle: Platform.select({
+          ios: {
+            position: "absolute",
+          },
+          default: {},
+        }),
+      }}
+    >
+      {/* Accueil */}
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Accueil",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="house.fill" color={color} />
+          ),
+        }}
+      />
 
-            {/* SwipeMix */}
-            <Tabs.Screen
-                name="swipemix"
-                options={{
-                    title: 'SwipeMix',
-                    tabBarIcon: ({ color }) => (
-                        <IconSymbol size={28} name="shuffle" color={color} />
-                    ),
-                }}
-            />
+      {/* SwipeMix */}
+      <Tabs.Screen
+        name="swipemix"
+        options={{
+          title: "SwipeMix",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="shuffle" color={color} />
+          ),
+        }}
+      />
 
-            {/* Profil (layout dédié) */}
-            <Tabs.Screen
-                name="profile"
-                options={{
-                    title: 'Profil',
-                    tabBarIcon: ({ color }) => (
-                        <IconSymbol size={28} name="person.fill" color={color} />
-                    ),
-                }}
-            />
+      {/* Profil (layout dédié) */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profil",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.fill" color={color} />
+          ),
+        }}
+      />
 
-            {/* Jeux (layout dédié) */}
-            <Tabs.Screen
-                name="games"
-                options={{
-                    title: 'Jeux',
-                    tabBarIcon: ({ color }) => (
-                        <IconSymbol size={28} name="gamecontroller.fill" color={color} />
-                    ),
-                }}
-            />
-        </Tabs>
-    );
+      {/* Jeux (layout dédié) */}
+      <Tabs.Screen
+        name="games"
+        options={{
+          title: "Jeux",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="gamecontroller.fill" color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
 }
