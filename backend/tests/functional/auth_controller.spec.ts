@@ -594,7 +594,7 @@ test.group('AuthController - Resend Verification Email', (group) => {
     await testUtils.db().truncate()
   })
 
-  test('POST /api/auth/resend-verification should send email', async ({ client, assert }) => {
+  test('POST /api/auth/resend-verification should send email', async ({ client }) => {
     const userData = makeUser('resend')
     await User.create(userData)
 
@@ -732,7 +732,6 @@ test.group('AuthController - Complete Authentication Flow', (group) => {
     assert,
   }) => {
     const userData = makeUser('complete')
-    const mailer = mail.fake()
 
     let response = await client.post('/api/auth/register').json({
       ...userData,
