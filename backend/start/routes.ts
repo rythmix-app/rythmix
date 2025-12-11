@@ -27,6 +27,7 @@ router
         router.post('/refresh', '#controllers/auth_controller.refresh')
         router.post('/logout', '#controllers/auth_controller.logout').use(middleware.auth())
         router.get('/verify-email', '#controllers/auth_controller.verifyEmail')
+        router.post('/verify-email', '#controllers/auth_controller.verifyEmail')
         router
           .post('/resend-verification', '#controllers/auth_controller.resendVerificationEmail')
           .use(resendVerificationThrottle)
