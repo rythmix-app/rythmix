@@ -733,6 +733,8 @@ test.group('AuthController - Complete Authentication Flow', (group) => {
   }) => {
     const userData = makeUser('complete')
 
+    mail.fake()
+
     let response = await client.post('/api/auth/register').json({
       ...userData,
       password_confirmation: userData.password,
