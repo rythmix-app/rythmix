@@ -40,10 +40,8 @@ help:
     @echo "  seeder               - Run database seeders"
     @echo ""
     @echo "🧪 Testing:"
-    @echo "  backend-test         - Run backend tests"
-    @echo "  backend-coverage     - Run backend tests with coverage report"
-    @echo "  backoffice-test      - Run back-office tests"
-    @echo "  backoffice-coverage  - Run back-office tests with coverage report"
+    @echo "  test SERVICE         - Run tests on SERVICE (backend, backoffice)"
+    @echo "  coverage SERVICE     - Run tests with coverage report on SERVICE (backend, backoffice)"
     @echo ""
 
 # Show detected Docker tool
@@ -162,7 +160,7 @@ backend-check:
 
 # Test commands
 test SERVICE:
-    {{_docker_cmd}} exec -T {{SERVICE}} npm run test
+    {{_docker_cmd}} exec {{SERVICE}} npm run test
 
 coverage SERVICE:
-    {{_docker_cmd}} exec -T {{SERVICE}} npm run test:coverage
+    {{_docker_cmd}} exec {{SERVICE}} npm run test:coverage

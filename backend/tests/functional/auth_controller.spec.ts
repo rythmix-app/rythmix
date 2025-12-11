@@ -735,7 +735,6 @@ test.group('AuthController - Complete Authentication Flow', (group) => {
 
     let response = await client.post('/api/auth/register').json({
       ...userData,
-      password_confirmation: userData.password,
       firstName: 'Complete',
       lastName: 'Flow',
     })
@@ -748,8 +747,7 @@ test.group('AuthController - Complete Authentication Flow', (group) => {
       .firstOrFail()
     const fullToken = `${verificationToken.selector}.verifier`
 
-    const tokenHash = await hash.make('verifier')
-    verificationToken.tokenHash = tokenHash
+    verificationToken.tokenHash = await hash.make('verifier')
     await verificationToken.save()
 
     response = await client.post('/api/auth/verify-email').json({
