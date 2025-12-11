@@ -735,6 +735,7 @@ test.group('AuthController - Complete Authentication Flow', (group) => {
 
     let response = await client.post('/api/auth/register').json({
       ...userData,
+      password_confirmation: userData.password,
       firstName: 'Complete',
       lastName: 'Flow',
     })
