@@ -85,11 +85,14 @@ test.group('GameSessionsController - Functional', (group) => {
       gameData: { manche: 1 },
     })
 
-    const res = await client.patch(`/api/game-sessions/${session.id}`).bearerToken(token).json({
-      status: 'terminee',
-      players: [{ userId: 'user-1', status: 'termine', score: 200, expGained: 100, rank: 1 }],
-      gameData: { manche: 5, winner: 'user-1' },
-    })
+    const res = await client
+      .patch(`/api/game-sessions/${session.id}`)
+      .bearerToken(token)
+      .json({
+        status: 'terminee',
+        players: [{ userId: 'user-1', status: 'termine', score: 200, expGained: 100, rank: 1 }],
+        gameData: { manche: 5, winner: 'user-1' },
+      })
 
     res.assertStatus(200)
     assert.equal(res.body().data.status, 'terminee')

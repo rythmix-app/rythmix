@@ -44,7 +44,10 @@ test.group('LikedTracksController - Functional', (group) => {
     const user = await createUser('patch')
     const rec = await user.related('likedTracks').create({ spotifyId: 'sp', title: 'Old' })
 
-    const res = await client.patch(`/api/liked-tracks/${rec.id}`).bearerToken(token).json({ title: 'New' })
+    const res = await client
+      .patch(`/api/liked-tracks/${rec.id}`)
+      .bearerToken(token)
+      .json({ title: 'New' })
 
     res.assertStatus(200)
     assert.equal(res.body().likedTrack.title, 'New')

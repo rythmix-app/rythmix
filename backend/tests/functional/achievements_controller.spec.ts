@@ -63,7 +63,10 @@ test.group('AchievementsController - CRUD Functional', (group) => {
 
   test('PATCH non-existent should return 404', async ({ client }) => {
     const { token } = await createAuthenticatedUser('update404')
-    const response = await client.patch('/api/achievements/999999').bearerToken(token).json({ description: 'x' })
+    const response = await client
+      .patch('/api/achievements/999999')
+      .bearerToken(token)
+      .json({ description: 'x' })
     response.assertStatus(404)
     response.assertBodyContains({ message: 'Achievement not found' })
   })

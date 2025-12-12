@@ -64,11 +64,14 @@ test.group('UsersController - CRUD Operations', (group) => {
   test('POST /api/users should create a new user', async ({ client, assert }) => {
     const { token } = await createAuthenticatedUser('admin4', 'admin')
     const userData = makeUser('newuser')
-    const response = await client.post('/api/users').bearerToken(token).json({
-      ...userData,
-      firstName: 'New',
-      lastName: 'User',
-    })
+    const response = await client
+      .post('/api/users')
+      .bearerToken(token)
+      .json({
+        ...userData,
+        firstName: 'New',
+        lastName: 'User',
+      })
 
     response.assertStatus(201)
 
@@ -97,10 +100,13 @@ test.group('UsersController - CRUD Operations', (group) => {
     const existing = makeUser('existing')
     await User.create(existing)
 
-    const response = await client.post('/api/users').bearerToken(token).json({
-      ...makeUser('new'),
-      email: existing.email,
-    })
+    const response = await client
+      .post('/api/users')
+      .bearerToken(token)
+      .json({
+        ...makeUser('new'),
+        email: existing.email,
+      })
 
     response.assertStatus(409)
     response.assertBodyContains({
@@ -113,10 +119,13 @@ test.group('UsersController - CRUD Operations', (group) => {
     const existing = makeUser('existing')
     await User.create(existing)
 
-    const response = await client.post('/api/users').bearerToken(token).json({
-      ...makeUser('new'),
-      username: existing.username,
-    })
+    const response = await client
+      .post('/api/users')
+      .bearerToken(token)
+      .json({
+        ...makeUser('new'),
+        username: existing.username,
+      })
 
     response.assertStatus(409)
     response.assertBodyContains({
@@ -161,9 +170,7 @@ test.group('UsersController - CRUD Operations', (group) => {
   test('DELETE /api/users/:id should soft delete the user', async ({ client, assert }) => {
     const { user, token } = await createAuthenticatedUser('admin10', 'admin')
 
-    const response = await client
-      .delete(`/api/users/${user.id}`)
-      .bearerToken(token)
+    const response = await client.delete(`/api/users/${user.id}`).bearerToken(token)
 
     response.assertStatus(200)
     response.assertBodyContains({
@@ -178,9 +185,7 @@ test.group('UsersController - CRUD Operations', (group) => {
     const { token } = await createAuthenticatedUser('admin11', 'admin')
     const user2 = await User.create(makeUser('user2'))
 
-    const response = await client
-      .delete(`/api/users/${user2.id}`)
-      .bearerToken(token)
+    const response = await client.delete(`/api/users/${user2.id}`).bearerToken(token)
 
     response.assertStatus(403)
     response.assertBodyContains({
@@ -191,9 +196,7 @@ test.group('UsersController - CRUD Operations', (group) => {
   test('DELETE /api/users/:id should return 404 for non-existent user', async ({ client }) => {
     const { token } = await createAuthenticatedUser('admin12', 'admin')
 
-    const response = await client
-      .delete('/api/users/non-existent-id')
-      .bearerToken(token)
+    const response = await client.delete('/api/users/non-existent-id').bearerToken(token)
 
     response.assertStatus(404)
     response.assertBodyContains({ message: 'User not found' })
@@ -266,10 +269,13 @@ test.group('UsersController - Soft Delete Features', (group) => {
     await deletedUser.softDelete()
 
     const newUserData = makeUser('newuser')
-    const response = await client.post('/api/users').bearerToken(token).json({
-      ...newUserData,
-      email: deletedData.email,
-    })
+    const response = await client
+      .post('/api/users')
+      .bearerToken(token)
+      .json({
+        ...newUserData,
+        email: deletedData.email,
+      })
 
     response.assertStatus(409)
     response.assertBodyContains({
@@ -458,9 +464,12 @@ test.group('UsersController - Edge Cases Coverage', (group) => {
     const { token } = await createAuthenticatedUser('admin24', 'admin')
     const user = await User.create(makeUser('patch'))
 
-    const response = await client.patch(`/api/users/${user.id}`).bearerToken(token).json({
-      firstName: 'x'.repeat(300),
-    })
+    const response = await client
+      .patch(`/api/users/${user.id}`)
+      .bearerToken(token)
+      .json({
+        firstName: 'x'.repeat(300),
+      })
 
     assert.isAtLeast(response.status(), 400)
   })
