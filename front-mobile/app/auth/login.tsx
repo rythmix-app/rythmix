@@ -15,9 +15,9 @@ import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
 import { Colors } from "@/constants/Colors";
 import { AuthSocialButton } from "@/components/auth/AuthSocialButton";
-import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
 import { AuthSeparator } from "@/components/auth/AuthSeparator";
 import Input from "@/components/Input";
+import Button from "@/components/Button";
 
 export default function LoginScreen() {
   const handleLogin = () => {
@@ -89,11 +89,13 @@ export default function LoginScreen() {
                 <Text style={styles.forgotPwd}>Mot de passe oublié ?</Text>
               </TouchableOpacity>
 
-              <AuthPrimaryButton
-                title="Se connecter"
-                onPress={handleLogin}
-                style={{ marginTop: 24 }}
-              />
+                <Button
+                    title="Se connecter"
+                    variant="primary"
+                    size="large"
+                    onPress={handleLogin}
+                    style={{ marginTop: 24, width: "100%" }}
+                />
 
               <View style={styles.bottomRow}>
                 <Text style={styles.bottomText}>
