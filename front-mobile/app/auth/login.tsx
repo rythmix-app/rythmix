@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
@@ -18,6 +17,7 @@ import { Colors } from "@/constants/Colors";
 import { AuthSocialButton } from "@/components/auth/AuthSocialButton";
 import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
 import { AuthSeparator } from "@/components/auth/AuthSeparator";
+import Input from "@/components/Input";
 
 export default function LoginScreen() {
   const handleLogin = () => {
@@ -61,20 +61,24 @@ export default function LoginScreen() {
             <AuthSeparator />
 
             <View style={styles.form}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
+              <Input
+                label="Email"
                 placeholder="votre@email.fr"
-                placeholderTextColor="#888"
-                style={styles.input}
                 keyboardType="email-address"
+                autoCapitalize="none"
+                size="large"
+                containerStyle={styles.inputContainer}
+                placeholderTextColor="#888"
               />
 
-              <Text style={styles.label}>Mot de passe</Text>
-              <TextInput
+              <Input
+                label="Mot de passe"
                 placeholder="********"
-                placeholderTextColor="#888"
                 secureTextEntry
-                style={styles.input}
+                autoCapitalize="none"
+                size="large"
+                containerStyle={styles.inputContainer}
+                placeholderTextColor="#888"
               />
 
               <TouchableOpacity
@@ -163,6 +167,11 @@ const styles = StyleSheet.create({
   bottomText: {
     color: Colors.light.background,
     fontSize: 13,
+  },
+  inputContainer: {
+    marginBottom: 12,
+    padding: 0,
+    alignItems: "stretch",
   },
   bottomLink: {
     color: Colors.secondary.turquoise,
