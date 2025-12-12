@@ -15,6 +15,16 @@ export const Colors = {
     tabIconDefault: "#687076",
     tabIconSelected: tintColorLight,
   },
+  primary: {
+    CTA: "#0D7377",
+    CTADark: "#052E30",
+    survol: "#14FFEC",
+    fondPremier: "#0D0D0D",
+    fondSecond: "#0A7EA4",
+  },
+  secondary: {
+      turquoise: "#19B3BD",
+  },
   dark: {
     text: "#ECEDEE",
     background: "#151718",
