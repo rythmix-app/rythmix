@@ -16,13 +16,14 @@ type AuthPrimaryButtonProps = {
   textStyle?: TextStyle;
 };
 
-export const AuthPrimaryButton: React.FC<AuthPrimaryButtonProps> = ({ title, onPress, style, textStyle, }) => {
+export const AuthPrimaryButton: React.FC<AuthPrimaryButtonProps> = ({
+  title,
+  onPress,
+  style,
+  textStyle,
+}) => {
   return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={onPress}
-      style={style}
-    >
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={style}>
       <LinearGradient
         colors={[Colors.primary.CTADark, Colors.primary.CTA]} // turquoise sombre -> turquoise normal
         start={{ x: 0, y: 0.5 }}
@@ -31,7 +32,6 @@ export const AuthPrimaryButton: React.FC<AuthPrimaryButtonProps> = ({ title, onP
       >
         <Text style={[styles.text, textStyle]}>{title}</Text>
       </LinearGradient>
-
     </TouchableOpacity>
   );
 };

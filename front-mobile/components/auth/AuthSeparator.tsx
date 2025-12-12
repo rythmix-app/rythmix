@@ -8,9 +8,9 @@ type AuthSeparatorProps = {
 };
 
 export const AuthSeparator: React.FC<AuthSeparatorProps> = ({
-                                                              label = "OU",
-                                                              style,
-                                                            }) => {
+  label = "OU",
+  style,
+}) => {
   return (
     <View style={[styles.container, style]}>
       <View style={styles.line} />

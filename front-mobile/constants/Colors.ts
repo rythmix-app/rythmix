@@ -23,7 +23,7 @@ export const Colors = {
     fondSecond: "#0A7EA4",
   },
   secondary: {
-      turquoise: "#19B3BD",
+    turquoise: "#19B3BD",
   },
   dark: {
     text: "#ECEDEE",

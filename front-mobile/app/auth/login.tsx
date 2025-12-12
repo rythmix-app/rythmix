@@ -102,8 +102,8 @@ export default function LoginScreen() {
             </View>
 
             <AuthFooter
-              // onPressTerms={() => router.push("/legal/terms")}
-              // onPressPrivacy={() => router.push("/legal/privacy")}
+            // onPressTerms={() => router.push("/legal/terms")}
+            // onPressPrivacy={() => router.push("/legal/privacy")}
             />
           </View>
         </ScrollView>

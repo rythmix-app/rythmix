@@ -34,7 +34,12 @@ const providerStyles: Record<
   },
 };
 
-export const AuthSocialButton: React.FC<AuthSocialButtonProps> = ({provider, label, onPress, style, }) => {
+export const AuthSocialButton: React.FC<AuthSocialButtonProps> = ({
+  provider,
+  label,
+  onPress,
+  style,
+}) => {
   const config = providerStyles[provider];
   const IconComp = config.Icon;
 
@@ -42,7 +47,11 @@ export const AuthSocialButton: React.FC<AuthSocialButtonProps> = ({provider, lab
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onPress}
-      style={[styles.button, { backgroundColor: config.backgroundColor }, style]}
+      style={[
+        styles.button,
+        { backgroundColor: config.backgroundColor },
+        style,
+      ]}
     >
       <View style={styles.content}>
         <IconComp
