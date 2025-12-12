@@ -2,10 +2,9 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { GameService } from '#services/game_service'
 import Game from '#models/game'
 import { inject } from '@adonisjs/core'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiSecurity, ApiBody } from '@foadonis/openapi/decorators'
+import { ApiOperation, ApiResponse, ApiParam, ApiSecurity, ApiBody } from '@foadonis/openapi/decorators'
 
 @inject()
-@ApiTags('Games')
 export default class GamesController {
   constructor(private readonly gameService: GameService) {}
 

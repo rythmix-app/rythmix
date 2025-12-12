@@ -7,9 +7,8 @@ import {
   resendVerificationValidator,
 } from '#validators/auth_validator'
 import { errors } from '@vinejs/vine'
-import { ApiTags, ApiOperation, ApiResponse, ApiSecurity, ApiBody } from '@foadonis/openapi/decorators'
+import { ApiOperation, ApiResponse, ApiSecurity, ApiBody } from '@foadonis/openapi/decorators'
 
-@ApiTags('Authentication')
 export default class AuthController {
   private authService: AuthService
 

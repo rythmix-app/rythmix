@@ -37,12 +37,12 @@ export default defineConfig({
       },
     },
     tags: [
-      { name: 'Authentication', description: 'User authentication and authorization endpoints' },
+      { name: 'Auth', description: 'User authentication and authorization endpoints' },
       { name: 'Users', description: 'User management endpoints' },
       { name: 'Games', description: 'Game management endpoints (admin)' },
       { name: 'Achievements', description: 'Achievement management endpoints' },
-      { name: 'Game Sessions', description: 'Game session management endpoints' },
-      { name: 'Liked Tracks', description: 'User liked tracks endpoints' },
+      { name: 'GameSessions', description: 'Game session management endpoints' },
+      { name: 'LikedTracks', description: 'User liked tracks endpoints' },
     ],
     externalDocs: {
       description: 'Rythmix Project Documentation',

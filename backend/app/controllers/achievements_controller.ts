@@ -3,10 +3,9 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { AchievementService } from '#services/achievement_service'
 import Achievement from '#models/achievement'
 import { inject } from '@adonisjs/core'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@foadonis/openapi/decorators'
+import { ApiOperation, ApiResponse, ApiParam, ApiBody } from '@foadonis/openapi/decorators'
 
 @inject()
-@ApiTags('Achievements')
 export default class AchievementsController {
   constructor(private achievementService: AchievementService) {}
 

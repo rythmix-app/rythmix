@@ -2,10 +2,9 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { LikedTrackService } from '#services/liked_track_service'
 import LikedTrack from '#models/liked_track'
 import { inject } from '@adonisjs/core'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@foadonis/openapi/decorators'
+import { ApiOperation, ApiResponse, ApiParam, ApiBody } from '@foadonis/openapi/decorators'
 
 @inject()
-@ApiTags('Liked Tracks')
 export default class LikedTracksController {
   constructor(private likedTrackService: LikedTrackService) {}
 

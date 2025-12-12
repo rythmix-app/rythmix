@@ -2,10 +2,9 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { UserService } from '#services/user_service'
 import User from '#models/user'
 import { inject } from '@adonisjs/core'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiSecurity, ApiBody } from '@foadonis/openapi/decorators'
+import { ApiOperation, ApiResponse, ApiParam, ApiSecurity, ApiBody } from '@foadonis/openapi/decorators'
 
 @inject()
-@ApiTags('Users')
 export default class UsersController {
   constructor(private userService: UserService) {}
 
