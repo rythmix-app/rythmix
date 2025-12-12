@@ -52,11 +52,17 @@ router
       .group(() => {
         router.get('/', [UsersController, 'index']).use(middleware.role({ roles: ['admin'] }))
         router.post('/', [UsersController, 'create']).use(middleware.role({ roles: ['admin'] }))
-        router.get('/trashed', [UsersController, 'trashed']).use(middleware.role({ roles: ['admin'] }))
+        router
+          .get('/trashed', [UsersController, 'trashed'])
+          .use(middleware.role({ roles: ['admin'] }))
         router.get('/:id', [UsersController, 'show']).use(middleware.role({ roles: ['admin'] }))
         router.patch('/:id', [UsersController, 'update']).use(middleware.role({ roles: ['admin'] }))
-        router.delete('/:id', [UsersController, 'delete']).use(middleware.role({ roles: ['admin'] }))
-        router.post('/:id/restore', [UsersController, 'restore']).use(middleware.role({ roles: ['admin'] }))
+        router
+          .delete('/:id', [UsersController, 'delete'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .post('/:id/restore', [UsersController, 'restore'])
+          .use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/users')
     router
@@ -74,7 +80,9 @@ router
         router.post('/', [GamesController, 'create']).use(middleware.role({ roles: ['admin'] }))
         router.get('/:id', [GamesController, 'show'])
         router.patch('/:id', [GamesController, 'update']).use(middleware.role({ roles: ['admin'] }))
-        router.delete('/:id', [GamesController, 'destroy']).use(middleware.role({ roles: ['admin'] }))
+        router
+          .delete('/:id', [GamesController, 'destroy'])
+          .use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/games')
     router

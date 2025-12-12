@@ -2,7 +2,13 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { UserService } from '#services/user_service'
 import User from '#models/user'
 import { inject } from '@adonisjs/core'
-import { ApiOperation, ApiResponse, ApiParam, ApiSecurity, ApiBody } from '@foadonis/openapi/decorators'
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiSecurity,
+  ApiBody,
+} from '@foadonis/openapi/decorators'
 
 @inject()
 export default class UsersController {
@@ -59,7 +65,10 @@ export default class UsersController {
     return response.json({ user })
   }
 
-  @ApiOperation({ summary: 'Update user', description: 'Update user information (role, firstName, lastName)' })
+  @ApiOperation({
+    summary: 'Update user',
+    description: 'Update user information (role, firstName, lastName)',
+  })
   @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'User ID (UUID)', required: true })
   @ApiBody({
@@ -88,7 +97,10 @@ export default class UsersController {
     return response.json({ user: result })
   }
 
-  @ApiOperation({ summary: 'Soft delete user', description: 'Soft delete a user (requires authentication)' })
+  @ApiOperation({
+    summary: 'Soft delete user',
+    description: 'Soft delete a user (requires authentication)',
+  })
   @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'User ID (UUID)', required: true })
   @ApiResponse({ status: 200, description: 'User soft deleted successfully' })
@@ -104,7 +116,10 @@ export default class UsersController {
     return response.json({ message: `User with ID: ${userId} soft deleted successfully` })
   }
 
-  @ApiOperation({ summary: 'Restore soft-deleted user', description: 'Restore a previously soft-deleted user' })
+  @ApiOperation({
+    summary: 'Restore soft-deleted user',
+    description: 'Restore a previously soft-deleted user',
+  })
   @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'User ID (UUID)', required: true })
   @ApiResponse({ status: 200, description: 'User restored successfully' })
@@ -118,7 +133,10 @@ export default class UsersController {
     return response.json({ message: `User with ID: ${userId} restored successfully` })
   }
 
-  @ApiOperation({ summary: 'List soft-deleted users', description: 'Get a list of all soft-deleted users' })
+  @ApiOperation({
+    summary: 'List soft-deleted users',
+    description: 'Get a list of all soft-deleted users',
+  })
   @ApiSecurity('bearerAuth')
   @ApiResponse({ status: 200, description: 'List of soft-deleted users retrieved successfully' })
   public async trashed({ response }: HttpContext) {

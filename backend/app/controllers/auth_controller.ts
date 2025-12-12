@@ -18,7 +18,8 @@ export default class AuthController {
 
   @ApiOperation({
     summary: 'Register a new user',
-    description: 'Create a new user account. An email verification link will be sent to the provided email address. Rate limited to 5 requests per 15 minutes per IP.',
+    description:
+      'Create a new user account. An email verification link will be sent to the provided email address. Rate limited to 5 requests per 15 minutes per IP.',
   })
   @ApiBody({
     description: 'User registration data',
@@ -30,7 +31,12 @@ export default class AuthController {
         email: { type: 'string', format: 'email', example: 'john@example.com' },
         username: { type: 'string', minLength: 3, example: 'johndoe' },
         password: { type: 'string', format: 'password', minLength: 8, example: 'SecurePass123!' },
-        password_confirmation: { type: 'string', format: 'password', minLength: 8, example: 'SecurePass123!' },
+        password_confirmation: {
+          type: 'string',
+          format: 'password',
+          minLength: 8,
+          example: 'SecurePass123!',
+        },
         firstName: { type: 'string', example: 'John' },
         lastName: { type: 'string', example: 'Doe' },
       },
@@ -72,7 +78,8 @@ export default class AuthController {
 
   @ApiOperation({
     summary: 'Login user',
-    description: 'Authenticate user and receive access and refresh tokens. Email must be verified. Rate limited to 10 requests per 15 minutes.',
+    description:
+      'Authenticate user and receive access and refresh tokens. Email must be verified. Rate limited to 10 requests per 15 minutes.',
   })
   @ApiBody({
     description: 'Login credentials',

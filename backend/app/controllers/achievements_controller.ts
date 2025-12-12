@@ -9,7 +9,10 @@ import { ApiOperation, ApiResponse, ApiParam, ApiBody } from '@foadonis/openapi/
 export default class AchievementsController {
   constructor(private achievementService: AchievementService) {}
 
-  @ApiOperation({ summary: 'List all achievements', description: 'Get a list of all achievements in the system' })
+  @ApiOperation({
+    summary: 'List all achievements',
+    description: 'Get a list of all achievements in the system',
+  })
   @ApiResponse({ status: 200, description: 'List of achievements retrieved successfully' })
   @ApiResponse({ status: 500, description: 'Error while fetching achievements' })
   public async index({ response }: HttpContext) {
@@ -21,7 +24,10 @@ export default class AchievementsController {
     }
   }
 
-  @ApiOperation({ summary: 'Create a new achievement', description: 'Create a new achievement with description and type' })
+  @ApiOperation({
+    summary: 'Create a new achievement',
+    description: 'Create a new achievement with description and type',
+  })
   @ApiBody({
     description: 'Achievement data',
     required: true,
@@ -54,7 +60,10 @@ export default class AchievementsController {
     }
   }
 
-  @ApiOperation({ summary: 'Get achievement by ID', description: 'Retrieve a specific achievement by its ID' })
+  @ApiOperation({
+    summary: 'Get achievement by ID',
+    description: 'Retrieve a specific achievement by its ID',
+  })
   @ApiParam({ name: 'id', description: 'Achievement ID', required: true })
   @ApiResponse({ status: 200, description: 'Achievement found' })
   @ApiResponse({ status: 404, description: 'Achievement not found' })
@@ -71,7 +80,10 @@ export default class AchievementsController {
     }
   }
 
-  @ApiOperation({ summary: 'Update achievement', description: 'Update achievement description and/or type' })
+  @ApiOperation({
+    summary: 'Update achievement',
+    description: 'Update achievement description and/or type',
+  })
   @ApiParam({ name: 'id', description: 'Achievement ID', required: true })
   @ApiBody({
     description: 'Achievement data to update',

@@ -1,6 +1,7 @@
 import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import User from '#models/user'
+import { createAuthenticatedUser } from '../utils/auth_helpers.js'
 
 async function createUser(tag: string) {
   return User.create({
@@ -22,6 +23,7 @@ test.group('LikedTracksController - Functional', (group) => {
   })
 
   test('POST /api/liked-tracks creates record', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('post')
     const user = await createUser('post')
     const payload = {
       userId: user.id,
@@ -31,27 +33,29 @@ test.group('LikedTracksController - Functional', (group) => {
       type: 'like',
     }
 
-    const res = await client.post('/api/liked-tracks').json(payload)
+    const res = await client.post('/api/liked-tracks').bearerToken(token).json(payload)
 
     res.assertStatus(201)
     assert.equal(res.body().likedTrack.userId, payload.userId)
   })
 
   test('PATCH /api/liked-tracks/:id updates record', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('patch')
     const user = await createUser('patch')
     const rec = await user.related('likedTracks').create({ spotifyId: 'sp', title: 'Old' })
 
-    const res = await client.patch(`/api/liked-tracks/${rec.id}`).json({ title: 'New' })
+    const res = await client.patch(`/api/liked-tracks/${rec.id}`).bearerToken(token).json({ title: 'New' })
 
     res.assertStatus(200)
     assert.equal(res.body().likedTrack.title, 'New')
   })
 
   test('DELETE /api/liked-tracks/:id deletes record', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('delete')
     const user = await createUser('delete')
     const rec = await user.related('likedTracks').create({ spotifyId: 'x' })
 
-    const res = await client.delete(`/api/liked-tracks/${rec.id}`)
+    const res = await client.delete(`/api/liked-tracks/${rec.id}`).bearerToken(token)
 
     res.assertStatus(200)
   })

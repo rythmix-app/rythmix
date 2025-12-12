@@ -86,7 +86,11 @@ export default defineConfig({
           type: 'object',
           properties: {
             id: { type: 'integer', example: 1 },
-            userId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
+            userId: {
+              type: 'string',
+              format: 'uuid',
+              example: '550e8400-e29b-41d4-a716-446655440000',
+            },
             spotifyId: { type: 'string', example: '3n3Ppam7vgaVa1iaRUc9Lp' },
             title: { type: 'string', example: 'Bohemian Rhapsody' },
             artist: { type: 'string', example: 'Queen' },
@@ -99,7 +103,10 @@ export default defineConfig({
           type: 'object',
           properties: {
             message: { type: 'string', example: 'An error occurred' },
-            errors: { type: 'object', additionalProperties: { type: 'array', items: { type: 'string' } } },
+            errors: {
+              type: 'object',
+              additionalProperties: { type: 'array', items: { type: 'string' } },
+            },
           },
         },
         AuthTokens: {

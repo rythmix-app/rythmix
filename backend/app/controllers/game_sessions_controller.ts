@@ -2,13 +2,22 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { GameSessionService } from '#services/game_session_service'
 import GameSession from '#models/game_session'
 import { inject } from '@adonisjs/core'
-import { ApiOperation, ApiResponse, ApiParam, ApiBody, ApiSecurity } from '@foadonis/openapi/decorators'
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiSecurity,
+} from '@foadonis/openapi/decorators'
 
 @inject()
 export default class GameSessionsController {
   constructor(private gameSessionService: GameSessionService) {}
 
-  @ApiOperation({ summary: 'List all game sessions', description: 'Get a list of all game sessions' })
+  @ApiOperation({
+    summary: 'List all game sessions',
+    description: 'Get a list of all game sessions',
+  })
   @ApiResponse({ status: 200, description: 'List of game sessions retrieved successfully' })
   @ApiResponse({ status: 500, description: 'Error while fetching game sessions' })
   public async index({ response }: HttpContext) {
@@ -20,7 +29,10 @@ export default class GameSessionsController {
     }
   }
 
-  @ApiOperation({ summary: 'Create a new game session', description: 'Create a new game session with game ID, status, players, and game data' })
+  @ApiOperation({
+    summary: 'Create a new game session',
+    description: 'Create a new game session with game ID, status, players, and game data',
+  })
   @ApiSecurity('bearerAuth')
   @ApiBody({
     description: 'Game session data',
@@ -51,7 +63,10 @@ export default class GameSessionsController {
     }
   }
 
-  @ApiOperation({ summary: 'Get game session by ID', description: 'Retrieve a specific game session by its ID (UUID)' })
+  @ApiOperation({
+    summary: 'Get game session by ID',
+    description: 'Retrieve a specific game session by its ID (UUID)',
+  })
   @ApiParam({ name: 'id', description: 'Game session ID (UUID)', required: true })
   @ApiResponse({ status: 200, description: 'Game session found' })
   @ApiResponse({ status: 404, description: 'Game session not found' })
@@ -71,7 +86,10 @@ export default class GameSessionsController {
     }
   }
 
-  @ApiOperation({ summary: 'Update game session', description: 'Update game session status, players, or game data' })
+  @ApiOperation({
+    summary: 'Update game session',
+    description: 'Update game session status, players, or game data',
+  })
   @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'Game session ID (UUID)', required: true })
   @ApiBody({
@@ -105,7 +123,10 @@ export default class GameSessionsController {
     }
   }
 
-  @ApiOperation({ summary: 'Delete game session', description: 'Delete a game session permanently' })
+  @ApiOperation({
+    summary: 'Delete game session',
+    description: 'Delete a game session permanently',
+  })
   @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'Game session ID (UUID)', required: true })
   @ApiResponse({ status: 200, description: 'Game session deleted successfully' })
@@ -127,7 +148,10 @@ export default class GameSessionsController {
     }
   }
 
-  @ApiOperation({ summary: 'Get sessions by game ID', description: 'Retrieve all game sessions for a specific game' })
+  @ApiOperation({
+    summary: 'Get sessions by game ID',
+    description: 'Retrieve all game sessions for a specific game',
+  })
   @ApiParam({ name: 'gameId', description: 'Game ID', required: true })
   @ApiResponse({ status: 200, description: 'Game sessions retrieved successfully' })
   @ApiResponse({ status: 500, description: 'Error while fetching game sessions' })
@@ -143,8 +167,15 @@ export default class GameSessionsController {
     }
   }
 
-  @ApiOperation({ summary: 'Get sessions by status', description: 'Retrieve all game sessions with a specific status (pending, active, completed)' })
-  @ApiParam({ name: 'status', description: 'Session status (pending, active, completed)', required: true })
+  @ApiOperation({
+    summary: 'Get sessions by status',
+    description: 'Retrieve all game sessions with a specific status (pending, active, completed)',
+  })
+  @ApiParam({
+    name: 'status',
+    description: 'Session status (pending, active, completed)',
+    required: true,
+  })
   @ApiResponse({ status: 200, description: 'Game sessions retrieved successfully' })
   @ApiResponse({ status: 500, description: 'Error while fetching game sessions' })
   public async getByStatus({ params, response }: HttpContext) {

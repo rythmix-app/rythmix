@@ -2,13 +2,22 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { LikedTrackService } from '#services/liked_track_service'
 import LikedTrack from '#models/liked_track'
 import { inject } from '@adonisjs/core'
-import { ApiOperation, ApiResponse, ApiParam, ApiBody, ApiSecurity } from '@foadonis/openapi/decorators'
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiSecurity,
+} from '@foadonis/openapi/decorators'
 
 @inject()
 export default class LikedTracksController {
   constructor(private likedTrackService: LikedTrackService) {}
 
-  @ApiOperation({ summary: 'List all liked tracks', description: 'Get a list of all liked tracks from users' })
+  @ApiOperation({
+    summary: 'List all liked tracks',
+    description: 'Get a list of all liked tracks from users',
+  })
   @ApiResponse({ status: 200, description: 'List of liked tracks retrieved successfully' })
   @ApiResponse({ status: 500, description: 'Error while fetching liked tracks' })
   public async index({ response }: HttpContext) {
@@ -20,7 +29,10 @@ export default class LikedTracksController {
     }
   }
 
-  @ApiOperation({ summary: 'Add a liked track', description: 'Add a track to user liked tracks collection (requires userId, spotifyId)' })
+  @ApiOperation({
+    summary: 'Add a liked track',
+    description: 'Add a track to user liked tracks collection (requires userId, spotifyId)',
+  })
   @ApiSecurity('bearerAuth')
   @ApiBody({
     description: 'Liked track data',
@@ -52,7 +64,10 @@ export default class LikedTracksController {
     }
   }
 
-  @ApiOperation({ summary: 'Get liked track by ID', description: 'Retrieve a specific liked track by its ID' })
+  @ApiOperation({
+    summary: 'Get liked track by ID',
+    description: 'Retrieve a specific liked track by its ID',
+  })
   @ApiParam({ name: 'id', description: 'Liked track ID', required: true })
   @ApiResponse({ status: 200, description: 'Liked track found' })
   @ApiResponse({ status: 404, description: 'Liked track not found' })
@@ -69,7 +84,10 @@ export default class LikedTracksController {
     }
   }
 
-  @ApiOperation({ summary: 'Update liked track', description: 'Update liked track information (title, artist, type, etc.)' })
+  @ApiOperation({
+    summary: 'Update liked track',
+    description: 'Update liked track information (title, artist, type, etc.)',
+  })
   @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'Liked track ID', required: true })
   @ApiBody({
@@ -104,7 +122,10 @@ export default class LikedTracksController {
     }
   }
 
-  @ApiOperation({ summary: 'Delete liked track', description: 'Remove a track from liked tracks collection' })
+  @ApiOperation({
+    summary: 'Delete liked track',
+    description: 'Remove a track from liked tracks collection',
+  })
   @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'Liked track ID', required: true })
   @ApiResponse({ status: 200, description: 'Liked track deleted successfully' })
