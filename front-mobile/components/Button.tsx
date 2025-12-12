@@ -39,15 +39,16 @@ const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
 }) => {
-  const buttonStyles = [
+  const buttonStyles: ViewStyle[] = [
     styles.button,
-    variant !== "primary" &&
-      variant !== "validate" &&
-      variant !== "cancel" &&
-      styles[variant as keyof typeof styles],
+    ...(variant !== "primary" &&
+    variant !== "validate" &&
+    variant !== "cancel"
+      ? [styles[variant]]
+      : []),
     styles[size],
-    disabled && styles.disabled,
-    style,
+    ...(disabled ? [styles.disabled] : []),
+    ...(style ? [style] : []),
   ];
 
   const textStyles = [
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   secondary: {
-    backgroundColor: "#E5E5EA",
+    backgroundColor: "#",
   },
   outline: {
     backgroundColor: "transparent",
