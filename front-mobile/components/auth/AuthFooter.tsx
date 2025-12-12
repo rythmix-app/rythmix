@@ -1,6 +1,6 @@
 // src/components/auth/AuthFooter.tsx
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Colors } from "@/constants/Colors";
 
 type AuthFooterProps = {
@@ -15,7 +15,7 @@ export const AuthFooter: React.FC<AuthFooterProps> = ({onPressTerms, onPressPriv
       <Text style={styles.infoText}>
         En vous connectant, vous acceptez nos{" "}
         <Text style={styles.linkText} onPress={onPressTerms}>
-          Conditions d'utilisation
+          Conditions d&apos;utilisation
         </Text>{" "}
         et notre{" "}
         <Text style={styles.linkText} onPress={onPressPrivacy}>
