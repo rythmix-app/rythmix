@@ -9,7 +9,7 @@ import {
   TextInputProps,
 } from "react-native";
 
-type InputSize = "small" | "medium" | "large";
+type InputSize = "small" | "medium" | "large" | "auto";
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -65,6 +65,10 @@ const Input: React.FC<InputProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
+    padding: 20,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   label: {
     fontSize: 16,
@@ -78,22 +82,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#000",
     color: "#fff",
-  },
-  // Sizes
-  small: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    fontSize: 14,
-  },
-  medium: {
     paddingVertical: 14,
     paddingHorizontal: 18,
     fontSize: 16,
   },
+  // Sizes
+  small: {
+    width: "30%",
+  },
+  medium: {
+    width: "60%",
+  },
   large: {
-    paddingVertical: 18,
-    paddingHorizontal: 22,
-    fontSize: 18,
+    width: "100%",
+  },
+  auto: {
+    width: "auto",
   },
   // States
   focused: {
