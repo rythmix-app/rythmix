@@ -54,6 +54,7 @@ export default defineConfig({
     () => import('@adonisjs/mail/mail_provider'),
     () => import('@adonisjs/core/providers/edge_provider'),
     () => import('@adonisjs/limiter/limiter_provider'),
+    () => import('@foadonis/openapi/openapi_provider'),
   ],
 
   /*

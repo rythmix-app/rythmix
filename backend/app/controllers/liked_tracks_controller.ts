@@ -2,11 +2,24 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { LikedTrackService } from '#services/liked_track_service'
 import LikedTrack from '#models/liked_track'
 import { inject } from '@adonisjs/core'
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiSecurity,
+} from '@foadonis/openapi/decorators'
 
 @inject()
 export default class LikedTracksController {
   constructor(private likedTrackService: LikedTrackService) {}
 
+  @ApiOperation({
+    summary: 'List all liked tracks',
+    description: 'Get a list of all liked tracks from users',
+  })
+  @ApiResponse({ status: 200, description: 'List of liked tracks retrieved successfully' })
+  @ApiResponse({ status: 500, description: 'Error while fetching liked tracks' })
   public async index({ response }: HttpContext) {
     try {
       const likedTracks = await this.likedTrackService.getAll()
@@ -16,6 +29,28 @@ export default class LikedTracksController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Add a liked track',
+    description: 'Add a track to user liked tracks collection (requires userId, spotifyId)',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiBody({
+    description: 'Liked track data',
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['userId', 'spotifyId'],
+      properties: {
+        userId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
+        spotifyId: { type: 'string', example: '3n3Ppam7vgaVa1iaRUc9Lp' },
+        title: { type: 'string', example: 'Bohemian Rhapsody' },
+        artist: { type: 'string', example: 'Queen' },
+        type: { type: 'string', example: 'song' },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Liked track added successfully' })
+  @ApiResponse({ status: 500, description: 'Error while creating liked track' })
   public async create({ request, response }: HttpContext) {
     try {
       const payload = request.only(['userId', 'spotifyId', 'title', 'artist', 'type'])
@@ -29,6 +64,14 @@ export default class LikedTracksController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Get liked track by ID',
+    description: 'Retrieve a specific liked track by its ID',
+  })
+  @ApiParam({ name: 'id', description: 'Liked track ID', required: true })
+  @ApiResponse({ status: 200, description: 'Liked track found' })
+  @ApiResponse({ status: 404, description: 'Liked track not found' })
+  @ApiResponse({ status: 500, description: 'Error while fetching liked track' })
   public async show({ params, response }: HttpContext) {
     try {
       const likedTrack = await this.likedTrackService.getById(params.id)
@@ -41,6 +84,29 @@ export default class LikedTracksController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Update liked track',
+    description: 'Update liked track information (title, artist, type, etc.)',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiParam({ name: 'id', description: 'Liked track ID', required: true })
+  @ApiBody({
+    description: 'Liked track data to update',
+    required: true,
+    schema: {
+      type: 'object',
+      properties: {
+        spotifyId: { type: 'string', example: '3n3Ppam7vgaVa1iaRUc9Lp' },
+        title: { type: 'string', example: 'Bohemian Rhapsody' },
+        artist: { type: 'string', example: 'Queen' },
+        type: { type: 'string', example: 'song' },
+        userId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Liked track updated successfully' })
+  @ApiResponse({ status: 404, description: 'Liked track not found' })
+  @ApiResponse({ status: 500, description: 'Error while updating liked track' })
   public async update({ params, request, response }: HttpContext) {
     try {
       const result = await this.likedTrackService.updateLikedTrack(
@@ -56,6 +122,15 @@ export default class LikedTracksController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Delete liked track',
+    description: 'Remove a track from liked tracks collection',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiParam({ name: 'id', description: 'Liked track ID', required: true })
+  @ApiResponse({ status: 200, description: 'Liked track deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Liked track not found' })
+  @ApiResponse({ status: 500, description: 'Error while deleting liked track' })
   public async delete({ params, response }: HttpContext) {
     try {
       const result = await this.likedTrackService.deleteLikedTrack(params.id)
