@@ -8,8 +8,14 @@ import {
   TextStyle,
   TouchableOpacityProps,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
-type ButtonVariant = "primary" | "secondary" | "outline";
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "validate"
+  | "cancel";
 type ButtonSize = "small" | "medium" | "large";
 
 interface ButtonProps {
@@ -35,7 +41,10 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const buttonStyles = [
     styles.button,
-    styles[variant],
+    variant !== "primary" &&
+      variant !== "validate" &&
+      variant !== "cancel" &&
+      styles[variant as keyof typeof styles],
     styles[size],
     disabled && styles.disabled,
     style,
@@ -43,10 +52,50 @@ const Button: React.FC<ButtonProps> = ({
 
   const textStyles = [
     styles.text,
-    styles[`${variant}Text` as keyof typeof styles],
+    styles.primaryText,
+    variant !== "primary" && styles[`${variant}Text` as keyof typeof styles],
     styles[`${size}Text` as keyof typeof styles],
     textStyle,
   ];
+
+  const buttonContent = (
+    <>
+      {loading ? (
+        <ActivityIndicator color="#fff" />
+      ) : (
+        <Text style={textStyles}>{title}</Text>
+      )}
+    </>
+  );
+
+  if (variant === "primary" || variant === "validate" || variant === "cancel") {
+    let gradientColors: [string, string] = ["#052E30", "#0D7377"];
+
+    if (variant === "validate") {
+      gradientColors = ["#216E00", "#40D400"];
+    } else if (variant === "cancel") {
+      gradientColors = ["#6E0000", "#D40000"];
+    }
+
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled || loading}
+        activeOpacity={0.7}
+        style={[styles.button, disabled && styles.disabled, style]}
+      >
+        <LinearGradient
+          colors={gradientColors}
+          start={{ x: 0, y: 1 }}
+          end={{ x: 1, y: 1 }}
+          locations={[0, 1]}
+          style={[styles.gradient, styles[size]]}
+        >
+          {buttonContent}
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <TouchableOpacity
@@ -55,24 +104,27 @@ const Button: React.FC<ButtonProps> = ({
       disabled={disabled || loading}
       activeOpacity={0.7}
     >
-      {loading ? (
-        <ActivityIndicator color={variant === "primary" ? "#fff" : "#007AFF"} />
-      ) : (
-        <Text style={textStyles}>{title}</Text>
-      )}
+      {buttonContent}
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 8,
+    borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  gradient: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 50,
   },
   // Variants
   primary: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "transparent",
   },
   secondary: {
     backgroundColor: "#E5E5EA",
@@ -80,7 +132,7 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "#007AFF",
+    borderColor: "#0D7377",
   },
   // Sizes
   small: {
@@ -110,7 +162,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   outlineText: {
-    color: "#007AFF",
+    color: "#0D7377",
   },
   smallText: {
     fontSize: 14,
@@ -127,6 +179,8 @@ export default Button;
 
 // Usage examples:
 // <Button title="Click Me" onPress={() => console.log('pressed')} />
+// <Button title="Valider" variant="validate" onPress={handlePress} />
+// <Button title="Annuler" variant="cancel" onPress={handlePress} />
 // <Button title="Secondary" variant="secondary" onPress={handlePress} />
 // <Button title="Outline" variant="outline" size="large" onPress={handlePress} />
 // <Button title="Loading" loading={true} onPress={handlePress} />
