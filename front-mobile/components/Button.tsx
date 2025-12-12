@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
-  TouchableOpacityProps,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -41,9 +40,7 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const buttonStyles: ViewStyle[] = [
     styles.button,
-    ...(variant !== "primary" &&
-    variant !== "validate" &&
-    variant !== "cancel"
+    ...(variant !== "primary" && variant !== "validate" && variant !== "cancel"
       ? [styles[variant]]
       : []),
     styles[size],
