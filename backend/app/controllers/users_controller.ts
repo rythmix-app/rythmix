@@ -7,8 +7,13 @@ import { inject } from '@adonisjs/core'
 export default class UsersController {
   constructor(private userService: UserService) {}
 
-  public async index({ response }: HttpContext) {
-    const users = await this.userService.getAll()
+  public async index({ request, response }: HttpContext) {
+    const includeDeleted = request.input('includeDeleted') === 'true' || request.input('includeDeleted') === true
+
+    const users = includeDeleted
+      ? await this.userService.getAllWithTrashed()
+      : await this.userService.getAll()
+
     return response.json({ users: users })
   }
 
@@ -35,7 +40,7 @@ export default class UsersController {
     const userId = params.id
     const result = await this.userService.updateUser(
       userId,
-      request.only(['role', 'firstName', 'lastName'])
+      request.only(['role', 'firstName', 'lastName', 'username'])
     )
     if (!(result instanceof User)) {
       return response.status(result.status || 500).json({ message: result.error })
