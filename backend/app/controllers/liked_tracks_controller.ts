@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { LikedTrackService } from '#services/liked_track_service'
 import LikedTrack from '#models/liked_track'
 import { inject } from '@adonisjs/core'
-import { ApiOperation, ApiResponse, ApiParam, ApiBody } from '@foadonis/openapi/decorators'
+import { ApiOperation, ApiResponse, ApiParam, ApiBody, ApiSecurity } from '@foadonis/openapi/decorators'
 
 @inject()
 export default class LikedTracksController {
@@ -21,6 +21,7 @@ export default class LikedTracksController {
   }
 
   @ApiOperation({ summary: 'Add a liked track', description: 'Add a track to user liked tracks collection (requires userId, spotifyId)' })
+  @ApiSecurity('bearerAuth')
   @ApiBody({
     description: 'Liked track data',
     required: true,
@@ -69,6 +70,7 @@ export default class LikedTracksController {
   }
 
   @ApiOperation({ summary: 'Update liked track', description: 'Update liked track information (title, artist, type, etc.)' })
+  @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'Liked track ID', required: true })
   @ApiBody({
     description: 'Liked track data to update',
@@ -103,6 +105,7 @@ export default class LikedTracksController {
   }
 
   @ApiOperation({ summary: 'Delete liked track', description: 'Remove a track from liked tracks collection' })
+  @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'Liked track ID', required: true })
   @ApiResponse({ status: 200, description: 'Liked track deleted successfully' })
   @ApiResponse({ status: 404, description: 'Liked track not found' })

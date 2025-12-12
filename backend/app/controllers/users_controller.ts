@@ -9,6 +9,7 @@ export default class UsersController {
   constructor(private userService: UserService) {}
 
   @ApiOperation({ summary: 'List all users', description: 'Get a list of all users in the system' })
+  @ApiSecurity('bearerAuth')
   @ApiResponse({ status: 200, description: 'List of users retrieved successfully' })
   public async index({ response }: HttpContext) {
     const users = await this.userService.getAll()
@@ -16,6 +17,7 @@ export default class UsersController {
   }
 
   @ApiOperation({ summary: 'Create a new user', description: 'Create a new user account' })
+  @ApiSecurity('bearerAuth')
   @ApiBody({
     description: 'User data',
     required: true,
@@ -44,6 +46,7 @@ export default class UsersController {
   }
 
   @ApiOperation({ summary: 'Get user by ID', description: 'Retrieve a specific user by their ID' })
+  @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'User ID (UUID)', required: true })
   @ApiResponse({ status: 200, description: 'User found' })
   @ApiResponse({ status: 404, description: 'User not found' })
@@ -57,6 +60,7 @@ export default class UsersController {
   }
 
   @ApiOperation({ summary: 'Update user', description: 'Update user information (role, firstName, lastName)' })
+  @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'User ID (UUID)', required: true })
   @ApiBody({
     description: 'User data to update',
@@ -101,6 +105,7 @@ export default class UsersController {
   }
 
   @ApiOperation({ summary: 'Restore soft-deleted user', description: 'Restore a previously soft-deleted user' })
+  @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'User ID (UUID)', required: true })
   @ApiResponse({ status: 200, description: 'User restored successfully' })
   @ApiResponse({ status: 404, description: 'User not found or not deleted' })
@@ -114,6 +119,7 @@ export default class UsersController {
   }
 
   @ApiOperation({ summary: 'List soft-deleted users', description: 'Get a list of all soft-deleted users' })
+  @ApiSecurity('bearerAuth')
   @ApiResponse({ status: 200, description: 'List of soft-deleted users retrieved successfully' })
   public async trashed({ response }: HttpContext) {
     const users = await this.userService.getOnlyTrashed()

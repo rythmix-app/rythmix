@@ -50,13 +50,13 @@ router
 
     router
       .group(() => {
-        router.get('/', [UsersController, 'index'])
-        router.post('/', [UsersController, 'create'])
-        router.get('/trashed', [UsersController, 'trashed'])
-        router.get('/:id', [UsersController, 'show'])
-        router.patch('/:id', [UsersController, 'update'])
-        router.delete('/:id', [UsersController, 'delete']).use(middleware.auth())
-        router.post('/:id/restore', [UsersController, 'restore'])
+        router.get('/', [UsersController, 'index']).use(middleware.role({ roles: ['admin'] }))
+        router.post('/', [UsersController, 'create']).use(middleware.role({ roles: ['admin'] }))
+        router.get('/trashed', [UsersController, 'trashed']).use(middleware.role({ roles: ['admin'] }))
+        router.get('/:id', [UsersController, 'show']).use(middleware.role({ roles: ['admin'] }))
+        router.patch('/:id', [UsersController, 'update']).use(middleware.role({ roles: ['admin'] }))
+        router.delete('/:id', [UsersController, 'delete']).use(middleware.role({ roles: ['admin'] }))
+        router.post('/:id/restore', [UsersController, 'restore']).use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/users')
     router
@@ -74,33 +74,27 @@ router
         router.post('/', [GamesController, 'create']).use(middleware.role({ roles: ['admin'] }))
         router.get('/:id', [GamesController, 'show'])
         router.patch('/:id', [GamesController, 'update']).use(middleware.role({ roles: ['admin'] }))
-        router
-          .delete('/:id', [GamesController, 'destroy'])
-          .use(middleware.role({ roles: ['admin'] }))
+        router.delete('/:id', [GamesController, 'destroy']).use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/games')
     router
       .group(() => {
         router.get('/', [GameSessionsController, 'index'])
-        router.post('/', [GameSessionsController, 'create'])
-        router.get('/status/:status', [GameSessionsController, 'getByStatus'])
+        router.post('/', [GameSessionsController, 'create']).use(middleware.auth())
         router.get('/:id', [GameSessionsController, 'show'])
-        router.patch('/:id', [GameSessionsController, 'update'])
-        router.delete('/:id', [GameSessionsController, 'delete'])
+        router.get('/:gameId/sessions', [GameSessionsController, 'getByGame'])
+        router.get('/status/:status', [GameSessionsController, 'getByStatus'])
+        router.patch('/:id', [GameSessionsController, 'update']).use(middleware.auth())
+        router.delete('/:id', [GameSessionsController, 'delete']).use(middleware.auth())
       })
       .prefix('/game-sessions')
     router
       .group(() => {
-        router.get('/:gameId/sessions', [GameSessionsController, 'getByGame'])
-      })
-      .prefix('/games')
-    router
-      .group(() => {
         router.get('/', [LikedTracksController, 'index'])
-        router.post('/', [LikedTracksController, 'create'])
+        router.post('/', [LikedTracksController, 'create']).use(middleware.auth())
         router.get('/:id', [LikedTracksController, 'show'])
-        router.patch('/:id', [LikedTracksController, 'update'])
-        router.delete('/:id', [LikedTracksController, 'delete'])
+        router.patch('/:id', [LikedTracksController, 'update']).use(middleware.auth())
+        router.delete('/:id', [LikedTracksController, 'delete']).use(middleware.auth())
       })
       .prefix('/liked-tracks')
   })

@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { GameSessionService } from '#services/game_session_service'
 import GameSession from '#models/game_session'
 import { inject } from '@adonisjs/core'
-import { ApiOperation, ApiResponse, ApiParam, ApiBody } from '@foadonis/openapi/decorators'
+import { ApiOperation, ApiResponse, ApiParam, ApiBody, ApiSecurity } from '@foadonis/openapi/decorators'
 
 @inject()
 export default class GameSessionsController {
@@ -21,6 +21,7 @@ export default class GameSessionsController {
   }
 
   @ApiOperation({ summary: 'Create a new game session', description: 'Create a new game session with game ID, status, players, and game data' })
+  @ApiSecurity('bearerAuth')
   @ApiBody({
     description: 'Game session data',
     required: true,
@@ -71,6 +72,7 @@ export default class GameSessionsController {
   }
 
   @ApiOperation({ summary: 'Update game session', description: 'Update game session status, players, or game data' })
+  @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'Game session ID (UUID)', required: true })
   @ApiBody({
     description: 'Game session data to update',
@@ -104,6 +106,7 @@ export default class GameSessionsController {
   }
 
   @ApiOperation({ summary: 'Delete game session', description: 'Delete a game session permanently' })
+  @ApiSecurity('bearerAuth')
   @ApiParam({ name: 'id', description: 'Game session ID (UUID)', required: true })
   @ApiResponse({ status: 200, description: 'Game session deleted successfully' })
   @ApiResponse({ status: 404, description: 'Game session not found' })
