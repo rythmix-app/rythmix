@@ -9,7 +9,7 @@ import {
   TextInputProps,
 } from "react-native";
 
-type InputSize = "small" | "medium" | "large" | "auto";
+type InputSize = "small" | "medium" | "large";
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -95,9 +95,6 @@ const styles = StyleSheet.create({
   },
   large: {
     width: "100%",
-  },
-  auto: {
-    width: "auto",
   },
   // States
   focused: {
