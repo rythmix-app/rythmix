@@ -85,8 +85,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
 
     const mockResponse = {
       json: (data: any) => {
-        assert.equal(data.message, 'List of games')
-        assert.equal(data.data, mockGames)
+        assert.equal(data.games, mockGames)
         return data
       },
     } as any
@@ -113,8 +112,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
 
     const mockResponse = {
       json: (data: any) => {
-        assert.equal(data.message, 'Game details for ID: 1')
-        assert.equal(data.data, mockGame)
+        assert.equal(data.game, mockGame)
         return data
       },
     } as any
@@ -361,7 +359,9 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
     await controller.index(mockContext)
   })
 
-  test('index should return 500 with fallback error when thrown error has no message', async ({ assert }) => {
+  test('index should return 500 with fallback error when thrown error has no message', async ({
+    assert,
+  }) => {
     const mockService = {
       getAll: async () => {
         throw 'String error without message property'
@@ -390,7 +390,9 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
     await controller.index(mockContext)
   })
 
-  test('destroy should return 500 with fallback error when thrown error has no message', async ({ assert }) => {
+  test('destroy should return 500 with fallback error when thrown error has no message', async ({
+    assert,
+  }) => {
     const mockService = {
       deleteGame: async () => {
         throw { code: 'UNKNOWN_ERROR', details: 'Something went wrong' }

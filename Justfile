@@ -1,5 +1,5 @@
 # Automatic detection of the Docker tool
-_docker_cmd := if `command -v docker-compose >/dev/null 2>&1; echo $?` == "0" { "docker-compose" } else { "docker compose" }
+_docker_cmd := if `command -v docker compose >/dev/null 2>&1; echo $?` == "0" { "docker compose" } else { "docker-compose" }
 
 # Show help with all available commands
 help:
@@ -12,6 +12,8 @@ help:
     @echo "⚡ Installation:"
     @echo "  install-dev       - Complete installation for development"
     @echo "  install-prod      - Complete installation for production"
+    @echo "  setup-env         - Copy environment file templates"
+    @echo "  setup-dev-certs   - Generate development SSL certificates"
     @echo ""
     @echo "🔧 Development:"
     @echo "  up-dev            - Start development environment"
@@ -24,20 +26,22 @@ help:
     @echo "  logs-prod         - Show real-time logs (prod)"
     @echo ""
     @echo "🐚 Container shells:"
-    @echo "  sh-backend      - Enter backend container shell"
-    @echo "  sh-backoffice   - Enter back-office container shell"
-    @echo "  sh-db           - Enter database container shell"
+    @echo "  sh-backend        - Enter backend container shell"
+    @echo "  sh-backoffice     - Enter back-office container shell"
+    @echo "  sh-db             - Enter database container shell"
+    @echo "  psql-db           - Enter PostgreSQL interactive shell"
     @echo ""
     @echo "🗃️  Database:"
-    @echo "  make-model NAME   - Create a new AdonisJS model"
-    @echo "  make-migration NAME - Create a new migration"
-    @echo "  migrate           - Run pending migrations"
+    @echo "  make-model NAME      - Create a new AdonisJS model"
+    @echo "  make-controller NAME - Create a new AdonisJS controller"
+    @echo "  make-service NAME    - Create a new AdonisJS service"
+    @echo "  make-migration NAME  - Create a new migration"
+    @echo "  migrate              - Run pending migrations"
+    @echo "  seeder               - Run database seeders"
     @echo ""
     @echo "🧪 Testing:"
-    @echo "  backend-test      - Run backend tests"
-    @echo "  backend-coverage  - Run backend tests with coverage report"
-    @echo "  backoffice-test   - Run back-office tests"
-    @echo "  backoffice-build  - Build back-office application"
+    @echo "  test SERVICE         - Run tests on SERVICE (backend, backoffice)"
+    @echo "  coverage SERVICE     - Run tests with coverage report on SERVICE (backend, backoffice)"
     @echo ""
 
 # Show detected Docker tool
@@ -63,10 +67,7 @@ install-dev:
     @echo "✅ Development SSL certificates generated"
     @echo ""
     @echo "🐳 Building and starting containers..."
-    just up-dev
-    @echo ""
-    @echo "⏳ Waiting for services to start..."
-    sleep 10
+    {{_docker_cmd}} up --build -d
     @echo ""
     @echo "🔑 Generating APP_KEY for backend..."
     {{_docker_cmd}} exec backend node ace generate:key
@@ -94,10 +95,7 @@ install-prod:
     @echo "⚠️  IMPORTANT: Check and update the .env.prod files with your production values"
     @echo ""
     @echo "🐳 Building and starting containers in production mode..."
-    just up-prod
-    @echo ""
-    @echo "⏳ Waiting for services to start..."
-    sleep 15
+    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml up --build -d
     @echo ""
     @echo "🗃️ Running migrations..."
     just migrate
@@ -107,7 +105,7 @@ install-prod:
 
 # Docker commands for development
 up-dev:
-    {{_docker_cmd}} up --build -d
+    {{_docker_cmd}} up --build --wait
 
 down-dev:
     {{_docker_cmd}} down
@@ -135,6 +133,9 @@ sh-backoffice:
 sh-db:
     {{_docker_cmd}} exec database sh
 
+psql-db:
+    {{_docker_cmd}} exec database sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB'
+
 # AdonisJS commands
 make-model NAME:
     {{_docker_cmd}} exec backend node ace make:model {{NAME}}
@@ -154,18 +155,12 @@ migrate:
 seeder:
     {{_docker_cmd}} exec backend node ace db:seed
 
+backend-check:
+    {{_docker_cmd}} exec backend npm run check
+
 # Test commands
+test SERVICE:
+    {{_docker_cmd}} exec {{SERVICE}} npm run test
 
-#backend-test:
-backend-test:
-    {{_docker_cmd}} exec backend node ace test
-
-backend-coverage:
-    {{_docker_cmd}} exec backend npm run test:coverage
-
-#backoffice-test:
-backoffice-test:
-    {{_docker_cmd}} exec -T back-office ng test --watch=false --browsers=ChromeHeadless
-
-backoffice-coverage:
-    {{_docker_cmd}} exec -T back-office ng test --watch=false --browsers=ChromeHeadless --code-coverage
+coverage SERVICE:
+    {{_docker_cmd}} exec {{SERVICE}} npm run test:coverage

@@ -23,24 +23,33 @@ services:
       - traefik.http.routers.dashboard.service=api@internal
       - traefik.http.routers.dashboard.entrypoints=websecure
       - traefik.http.routers.dashboard.tls=true
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 
   database:
     image: postgres:alpine
     restart: unless-stopped
-    env_file:
-      - ./backend/.env
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     build:
       context: ./backend
-    env_file:
-      - ./backend/.env
     networks:
       - database
       - backend
@@ -50,14 +59,18 @@ services:
       - traefik.http.routers.backend.entrypoints=websecure
       - traefik.http.routers.backend.tls=true
       - traefik.http.services.backend.loadbalancer.server.port=3333
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3333"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
 
   back-office:
     depends_on:
       - backend
     build:
       context: ./back-office
-    env_file:
-      - ./back-office/.env
     networks:
       - backend
       - frontend
@@ -65,6 +78,12 @@ services:
       - traefik.enable=true
       - traefik.http.routers.backoffice.entrypoints=websecure
       - traefik.http.routers.backoffice.tls=true
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4200"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
 
 volumes:
   pgdata:

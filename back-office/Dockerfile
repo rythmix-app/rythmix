@@ -1,5 +1,6 @@
 # Base stage with Node.js (using Node 20 for Angular 20 compatibility)
 FROM node:20-alpine AS base
+RUN apk add --no-cache wget
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci

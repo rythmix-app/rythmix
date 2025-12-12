@@ -9,10 +9,13 @@
     "build": "node ace build",
     "dev": "node ace serve --hmr",
     "test": "node ace test",
-    "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura node ace test", 
+    "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura node ace test",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit"
+    "format:check": "prettier --check .",
+    "check": "npm run format && npm run lint && npm run typecheck"
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",
@@ -41,6 +44,7 @@
     "@japa/assert": "^4.0.1",
     "@japa/plugin-adonisjs": "^4.0.0",
     "@japa/runner": "^4.2.0",
+    "@stylistic/eslint-plugin": "^5.6.1",
     "@swc/core": "1.11.24",
     "@types/luxon": "^3.6.2",
     "@types/node": "^22.15.18",
@@ -56,8 +60,11 @@
     "@adonisjs/auth": "^9.4.0",
     "@adonisjs/core": "^6.18.0",
     "@adonisjs/cors": "^2.2.1",
+    "@adonisjs/limiter": "^2.4.0",
     "@adonisjs/lucid": "^21.6.1",
+    "@adonisjs/mail": "^9.2.2",
     "@vinejs/vine": "^3.0.1",
+    "edge.js": "^6.3.0",
     "luxon": "^3.7.1",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2"
@@ -67,6 +74,9 @@
       "./app/controllers/**/*.ts",
       "./app/middleware/*.ts"
     ]
+  },
+  "overrides": {
+    "@stylistic/eslint-plugin-ts": "npm:@stylistic/eslint-plugin@^5.6.1"
   },
   "prettier": "@adonisjs/prettier-config"
 }

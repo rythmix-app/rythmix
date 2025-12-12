@@ -6,7 +6,7 @@ import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { randomUUID } from 'node:crypto'
 import { hasMany } from '@adonisjs/lucid/orm'
-import LikedTrack from './licked_track.js'
+import LikedTrack from '#models/liked_track'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
@@ -35,13 +35,12 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 
+  @column.dateTime()
+  declare emailVerifiedAt: DateTime | null
+
   @hasMany(() => LikedTrack)
   declare likedTracks: HasMany<typeof LikedTrack>
-  /*
-   *   declaration of the relation with the user in LikedTrack model
-   *   @belongsTo(() => User)
-   *   declare user: BelongsTo<typeof User>
-   */
+
   @column.dateTime()
   declare deletedAt: DateTime | null
 
