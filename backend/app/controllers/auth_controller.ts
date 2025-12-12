@@ -7,7 +7,9 @@ import {
   resendVerificationValidator,
 } from '#validators/auth_validator'
 import { errors } from '@vinejs/vine'
+import { ApiTags, ApiOperation, ApiResponse, ApiSecurity, ApiBody } from '@foadonis/openapi/decorators'
 
+@ApiTags('Authentication')
 export default class AuthController {
   private authService: AuthService
 
@@ -15,6 +17,29 @@ export default class AuthController {
     this.authService = new AuthService()
   }
 
+  @ApiOperation({
+    summary: 'Register a new user',
+    description: 'Create a new user account. An email verification link will be sent to the provided email address. Rate limited to 5 requests per 15 minutes per IP.',
+  })
+  @ApiBody({
+    description: 'User registration data',
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['email', 'username', 'password', 'password_confirmation'],
+      properties: {
+        email: { type: 'string', format: 'email', example: 'john@example.com' },
+        username: { type: 'string', minLength: 3, example: 'johndoe' },
+        password: { type: 'string', format: 'password', minLength: 8, example: 'SecurePass123!' },
+        password_confirmation: { type: 'string', format: 'password', minLength: 8, example: 'SecurePass123!' },
+        firstName: { type: 'string', example: 'John' },
+        lastName: { type: 'string', example: 'Doe' },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'User created successfully' })
+  @ApiResponse({ status: 422, description: 'Validation failed' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async register({ request, response }: HttpContext) {
     try {
       const data = await request.validateUsing(registerValidator)
@@ -46,6 +71,26 @@ export default class AuthController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Login user',
+    description: 'Authenticate user and receive access and refresh tokens. Email must be verified. Rate limited to 10 requests per 15 minutes.',
+  })
+  @ApiBody({
+    description: 'Login credentials',
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['email', 'password'],
+      properties: {
+        email: { type: 'string', format: 'email', example: 'john@example.com' },
+        password: { type: 'string', format: 'password', example: 'SecurePass123!' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Login successful, returns access and refresh tokens' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 403, description: 'Email not verified' })
+  @ApiResponse({ status: 422, description: 'Validation failed' })
   async login({ request, response }: HttpContext) {
     try {
       const { email, password } = await request.validateUsing(loginValidator)
@@ -82,6 +127,24 @@ export default class AuthController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description: 'Generate a new access token using a valid refresh token',
+  })
+  @ApiBody({
+    description: 'Refresh token',
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['refreshToken'],
+      properties: {
+        refreshToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  @ApiResponse({ status: 422, description: 'Validation failed' })
   async refresh({ request, response }: HttpContext) {
     try {
       const { refreshToken } = await request.validateUsing(refreshTokenValidator)
@@ -114,6 +177,23 @@ export default class AuthController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Logout user',
+    description: 'Invalidate access and refresh tokens. Requires Bearer authentication.',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiBody({
+    description: 'Optional refresh token to invalidate',
+    required: false,
+    schema: {
+      type: 'object',
+      properties: {
+        refreshToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout({ auth, request, response }: HttpContext) {
     try {
       const user = auth.getUserOrFail()
@@ -138,6 +218,23 @@ export default class AuthController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Verify user email',
+    description: 'Verify user email address using the token sent via email',
+  })
+  @ApiBody({
+    description: 'Verification token',
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['token'],
+      properties: {
+        token: { type: 'string', example: '1a2b3c4d5e6f7g8h9i0j' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async verifyEmail({ request, response }: HttpContext) {
     try {
       const token = request.input('token')
@@ -176,6 +273,23 @@ export default class AuthController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Resend verification email',
+    description: 'Resend email verification link. Rate limited to 3 requests per 15 minutes.',
+  })
+  @ApiBody({
+    description: 'User email',
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['email'],
+      properties: {
+        email: { type: 'string', format: 'email', example: 'john@example.com' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Verification email sent if account exists' })
+  @ApiResponse({ status: 422, description: 'Validation failed' })
   async resendVerificationEmail({ request, response }: HttpContext) {
     try {
       const { email } = await request.validateUsing(resendVerificationValidator)
@@ -199,6 +313,13 @@ export default class AuthController {
     }
   }
 
+  @ApiOperation({
+    summary: 'Get current user profile',
+    description: 'Get authenticated user information. Requires Bearer authentication.',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async me({ auth, response }: HttpContext) {
     try {
       const user = auth.getUserOrFail()
