@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     color: "white",
     textTransform: "uppercase",
     fontSize: 10,
-    fontFamily: 'Semibold'
+    fontFamily: "Semibold",
   },
 });
 

@@ -11,7 +11,7 @@ export interface MusicCardData {
     primary: string;
     secondary: string;
   };
-  color: 'darkGreen' | 'cyan' | 'lightBLue'
+  color: "darkGreen" | "cyan" | "lightBLue";
 }
 
 interface MusicCardProps {
@@ -19,23 +19,22 @@ interface MusicCardProps {
 }
 
 export default function MusicCard({ data }: MusicCardProps) {
-
   return (
     <View style={[styles.container, styles[data.color]]}>
-        <Image source={{ uri: data.coverImage }} style={styles.coverImage} />
+      <Image source={{ uri: data.coverImage }} style={styles.coverImage} />
 
-        <View style={styles.bottomContainer}>
-          <View style={styles.textContainer}>
-            <Text style={styles.title}>{data.title}</Text>
-            <Text style={styles.artist}>{data.artist}</Text>
-            <Text style={styles.album}>{data.album}</Text>
-          </View>
-
-          <View style={styles.tagsContainer}>
-            <MusicTag text={data.tags.primary} color={'primary'} />
-            <MusicTag text={data.tags.secondary} color={'primary'} />
-          </View>
+      <View style={styles.bottomContainer}>
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>{data.title}</Text>
+          <Text style={styles.artist}>{data.artist}</Text>
+          <Text style={styles.album}>{data.album}</Text>
         </View>
+
+        <View style={styles.tagsContainer}>
+          <MusicTag text={data.tags.primary} color={"primary"} />
+          <MusicTag text={data.tags.secondary} color={"primary"} />
+        </View>
+      </View>
     </View>
   );
 }
@@ -49,38 +48,38 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   darkGreen: {
-    backgroundColor: "#052E30"
+    backgroundColor: "#052E30",
   },
   cyan: {
-    backgroundColor: "#0D7377"
+    backgroundColor: "#0D7377",
   },
   lightBLue: {
-    backgroundColor: "#19B3BD"
+    backgroundColor: "#19B3BD",
   },
   coverImage: {
     width: 284,
     height: 250,
     borderRadius: 8,
     marginBottom: 12,
-    alignSelf: "center"
+    alignSelf: "center",
   },
   title: {
     fontSize: 22,
     color: "#FFFFFF",
-    fontFamily: "Bold"
+    fontFamily: "Bold",
   },
   artist: {
     fontSize: 20,
     color: "#FFFFFF",
     marginBottom: 2,
-    fontFamily: "Medium"
+    fontFamily: "Medium",
   },
   album: {
     fontSize: 13,
-    color: "#FFFFFF"
+    color: "#FFFFFF",
   },
   tagsContainer: {
-    flexDirection: 'column',
+    flexDirection: "column",
     alignSelf: "flex-end",
     gap: 4,
   },
