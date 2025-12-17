@@ -11,7 +11,7 @@ export interface MusicCardData {
     primary: string;
     secondary: string;
   };
-  color: "darkGreen" | "cyan" | "lightBLue";
+  color: "darkGreen" | "cyan" | "lightBlue";
 }
 
 interface MusicCardProps {
@@ -32,7 +32,7 @@ export default function MusicCard({ data }: MusicCardProps) {
 
         <View style={styles.tagsContainer}>
           <MusicTag text={data.tags.primary} color={"primary"} />
-          <MusicTag text={data.tags.secondary} color={"primary"} />
+          <MusicTag text={data.tags.secondary} color={"secondary"} />
         </View>
       </View>
     </View>
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   cyan: {
     backgroundColor: "#0D7377",
   },
-  lightBLue: {
+  lightBlue: {
     backgroundColor: "#19B3BD",
   },
   coverImage: {
@@ -83,28 +83,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     gap: 4,
   },
-  tagPrimary: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-  },
-  tagPrimaryText: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#0D7D70",
-  },
-  tagSecondary: {
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-  },
-  tagSecondaryText: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
+
   textContainer: {
     flexDirection: "column",
     gap: 6,
