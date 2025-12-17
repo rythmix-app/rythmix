@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import CardStack from "../../components/swipe/CardStack";
-import { MusicCardData } from "../../components/swipe/MusicCard";
+import CardStack from "@/components/swipe/CardStack";
+import { MusicCardData } from "@/components/swipe";
 
 const SAMPLE_CARDS: MusicCardData[] = [
   {
@@ -39,7 +39,7 @@ const SAMPLE_CARDS: MusicCardData[] = [
       primary: "SYNTH-POP",
       secondary: "ELECTRO",
     },
-    color: "lightBLue",
+    color: "lightBlue",
   },
   {
     id: "4",
@@ -71,14 +71,15 @@ export default function SwipeMixScreen() {
   const { top, bottom } = useSafeAreaInsets();
 
   const handleSwipeLeft = (card: MusicCardData) => {
+    // TODO: Implement left-swipe behavior (e.g., skip or dislike this track).
     console.log("Swiped left:", card.title);
   };
-
   const handleSwipeRight = (card: MusicCardData) => {
+    // TODO: Implement right-swipe behavior (e.g., like or save this track).
     console.log("Swiped right:", card.title);
   };
-
   const handleEmpty = () => {
+    // TODO: Implement behavior when there are no more cards (e.g., fetch more or show a message).
     console.log("No more cards!");
   };
 

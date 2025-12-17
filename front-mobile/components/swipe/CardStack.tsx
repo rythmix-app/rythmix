@@ -19,7 +19,7 @@ export default function CardStack({
   onSwipeRight,
   onEmpty,
 }: CardStackProps) {
-  const [cards, setCards] = useState(initialCards);
+  const cards = initialCards;
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleSwipeLeft = (card: MusicCardData) => {
@@ -101,7 +101,7 @@ export default function CardStack({
         <SwipeButton
           type={"replay"}
           onPress={() => {
-            console.log("replay");
+            // TODO: Implement replay functionality (e.g., show the previous card again)
           }}
           size={"small"}
         />
@@ -137,27 +137,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: 320,
-  },
-  actionButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  nopeButton: {
-    borderWidth: 2,
-    borderColor: "#F44336",
-  },
-  likeButton: {
-    borderWidth: 2,
-    borderColor: "#4CAF50",
   },
   emptyContainer: {
     flex: 1,

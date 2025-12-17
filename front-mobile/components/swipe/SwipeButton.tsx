@@ -41,9 +41,9 @@ const ICONS = {
   like: ({ size }: { size: number }) => (
     <FontAwesome name="heart" size={size} />
   ),
-  dislike: ({ size }: { size: number }) => <Entypo name="cross" size={50} />,
+  dislike: ({ size }: { size: number }) => <Entypo name="cross" size={size} />,
   replay: ({ size }: { size: number }) => (
-    <MaterialCommunityIcons name="replay" size={40} />
+    <MaterialCommunityIcons name="replay" size={size} />
   ),
 };
 
