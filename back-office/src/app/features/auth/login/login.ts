@@ -1,5 +1,10 @@
-import {Component, inject} from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Component, inject } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth';
@@ -42,7 +47,8 @@ export class LoginComponent {
           if (error.status === 401) {
             this.errorMessage = 'Email ou mot de passe incorrect';
           } else if (error.status === 403) {
-            this.errorMessage = 'Veuillez vérifier votre email avant de vous connecter';
+            this.errorMessage =
+              'Veuillez vérifier votre email avant de vous connecter';
           } else {
             this.errorMessage = 'Une erreur est survenue, veuillez réessayer';
           }

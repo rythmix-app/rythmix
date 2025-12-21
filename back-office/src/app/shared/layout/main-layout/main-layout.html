@@ -26,12 +26,28 @@
     </nav>
 
     <div class="theme-toggle">
-      <button (click)="toggleTheme()" [attr.aria-label]="isDarkMode ? 'Passer en mode clair' : 'Passer en mode sombre'">
-        <i class="fas" [class.fa-moon]="isDarkMode" [class.fa-sun]="!isDarkMode"></i>
+      <button
+        (click)="toggleTheme()"
+        [attr.aria-label]="
+          isDarkMode ? 'Passer en mode clair' : 'Passer en mode sombre'
+        "
+      >
+        <i
+          class="fas"
+          [class.fa-moon]="isDarkMode"
+          [class.fa-sun]="!isDarkMode"
+        ></i>
       </button>
     </div>
 
-    <div class="user-profile" (click)="toggleUserMenu()" (keydown.enter)="toggleUserMenu()" (keydown.space)="toggleUserMenu()" tabindex="0" role="button">
+    <div
+      class="user-profile"
+      (click)="toggleUserMenu()"
+      (keydown.enter)="toggleUserMenu()"
+      (keydown.space)="toggleUserMenu()"
+      tabindex="0"
+      role="button"
+    >
       <i class="fas fa-user-circle user-icon"></i>
       <div class="user-info">
         <span class="user-name">{{ getUserDisplayName() }}</span>
@@ -59,7 +75,14 @@
   </button>
 
   @if (isSidebarOpen) {
-    <div class="sidebar-overlay" (click)="closeSidebar()" (keydown.enter)="closeSidebar()" (keydown.space)="closeSidebar()" tabindex="0" role="button"></div>
+    <div
+      class="sidebar-overlay"
+      (click)="closeSidebar()"
+      (keydown.enter)="closeSidebar()"
+      (keydown.space)="closeSidebar()"
+      tabindex="0"
+      role="button"
+    ></div>
   }
 
   <main class="main-content">

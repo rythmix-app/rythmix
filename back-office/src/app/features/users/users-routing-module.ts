@@ -6,27 +6,27 @@ import { UserDetail } from './pages/user-detail/user-detail';
 const routes: Routes = [
   {
     path: '',
-    component: UsersList
+    component: UsersList,
   },
   {
     path: 'new',
     component: UserDetail,
-    data: { mode: 'create' }
+    data: { mode: 'create' },
   },
   {
     path: ':id',
     component: UserDetail,
-    data: { mode: 'view' }
+    data: { mode: 'view' },
   },
   {
     path: ':id/edit',
     component: UserDetail,
-    data: { mode: 'edit' }
-  }
+    data: { mode: 'edit' },
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class UsersRoutingModule { }
+export class UsersRoutingModule {}

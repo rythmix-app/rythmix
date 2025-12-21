@@ -29,11 +29,7 @@ import { UserDetail } from './pages/user-detail/user-detail';
 import { UserForm } from './components/user-form/user-form';
 
 @NgModule({
-  declarations: [
-    UsersList,
-    UserDetail,
-    UserForm
-  ],
+  declarations: [UsersList, UserDetail, UserForm],
   imports: [
     CommonModule,
     FormsModule,
@@ -56,7 +52,7 @@ import { UserForm } from './components/user-form/user-form';
     MatSnackBarModule,
     MatDialogModule,
     MatSelectModule,
-    MatDividerModule
-  ]
+    MatDividerModule,
+  ],
 })
-export class UsersModule { }
+export class UsersModule {}

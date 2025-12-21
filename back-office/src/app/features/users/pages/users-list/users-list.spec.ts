@@ -21,7 +21,7 @@ describe('UsersList', () => {
       role: 'user',
       createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-01'),
-      deletedAt: null
+      deletedAt: null,
     },
     {
       id: '2',
@@ -32,7 +32,7 @@ describe('UsersList', () => {
       role: 'admin',
       createdAt: new Date('2024-01-02'),
       updatedAt: new Date('2024-01-02'),
-      deletedAt: null
+      deletedAt: null,
     },
     {
       id: '3',
@@ -43,15 +43,15 @@ describe('UsersList', () => {
       role: 'user',
       createdAt: new Date('2024-01-03'),
       updatedAt: new Date('2024-01-03'),
-      deletedAt: new Date('2024-02-01')
-    }
+      deletedAt: new Date('2024-02-01'),
+    },
   ];
 
   beforeEach(async () => {
     const userServiceSpy = jasmine.createSpyObj('UserService', [
       'getUsers',
       'deleteUser',
-      'restoreUser'
+      'restoreUser',
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
@@ -59,8 +59,8 @@ describe('UsersList', () => {
       declarations: [UsersList],
       providers: [
         { provide: UserService, useValue: userServiceSpy },
-        { provide: Router, useValue: routerSpy }
-      ]
+        { provide: Router, useValue: routerSpy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(UsersList);
@@ -89,7 +89,10 @@ describe('UsersList', () => {
 
       component.ngOnInit();
 
-      expect(component['showSnackbar']).toHaveBeenCalledWith('Erreur lors du chargement des utilisateurs', 'error');
+      expect(component['showSnackbar']).toHaveBeenCalledWith(
+        'Erreur lors du chargement des utilisateurs',
+        'error',
+      );
       expect(component.isLoading).toBe(false);
     });
   });
@@ -101,7 +104,9 @@ describe('UsersList', () => {
 
       component.loadUsers();
 
-      expect(userService.getUsers).toHaveBeenCalledWith({ includeDeleted: true });
+      expect(userService.getUsers).toHaveBeenCalledWith({
+        includeDeleted: true,
+      });
       expect(component.allUsers.length).toBe(3);
     });
 
@@ -122,7 +127,8 @@ describe('UsersList', () => {
     });
 
     it('should filter users by username', () => {
-      const event = { target: { value: 'admin' } } as Event;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const event = { target: { value: 'admin' } } as any;
       component.applyFilter(event);
 
       expect(component.filteredUsers.length).toBe(1);
@@ -130,7 +136,8 @@ describe('UsersList', () => {
     });
 
     it('should filter users by email', () => {
-      const event = { target: { value: 'john@' } } as Event;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const event = { target: { value: 'john@' } } as any;
       component.applyFilter(event);
 
       expect(component.filteredUsers.length).toBe(1);
@@ -139,7 +146,8 @@ describe('UsersList', () => {
 
     it('should reset filter when search is empty', () => {
       component.filteredUsers = [mockUsers[0]];
-      const event = { target: { value: '' } } as Event;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const event = { target: { value: '' } } as any;
 
       component.applyFilter(event);
 
@@ -147,7 +155,8 @@ describe('UsersList', () => {
     });
 
     it('should be case insensitive', () => {
-      const event = { target: { value: 'ADMIN' } } as Event;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const event = { target: { value: 'ADMIN' } } as any;
       component.applyFilter(event);
 
       expect(component.filteredUsers.length).toBe(1);
@@ -156,7 +165,8 @@ describe('UsersList', () => {
 
     it('should reset page to 0 when filtering', () => {
       component.currentPage = 2;
-      const event = { target: { value: 'test' } } as Event;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const event = { target: { value: 'test' } } as any;
 
       component.applyFilter(event);
 
@@ -195,7 +205,7 @@ describe('UsersList', () => {
     it('should handle null values', () => {
       component.filteredUsers = [
         { ...mockUsers[0], firstName: null },
-        mockUsers[1]
+        mockUsers[1],
       ];
 
       component.sortBy('firstName');
@@ -349,7 +359,10 @@ describe('UsersList', () => {
       component.deleteUser(mockUsers[0]);
 
       expect(userService.deleteUser).toHaveBeenCalledWith('1');
-      expect(component['showSnackbar']).toHaveBeenCalledWith('Utilisateur supprimé avec succès', 'success');
+      expect(component['showSnackbar']).toHaveBeenCalledWith(
+        'Utilisateur supprimé avec succès',
+        'success',
+      );
     });
 
     it('should not delete user when cancelled', () => {
@@ -368,7 +381,10 @@ describe('UsersList', () => {
 
       component.deleteUser(mockUsers[0]);
 
-      expect(component['showSnackbar']).toHaveBeenCalledWith('Erreur lors de la suppression', 'error');
+      expect(component['showSnackbar']).toHaveBeenCalledWith(
+        'Erreur lors de la suppression',
+        'error',
+      );
     });
   });
 
@@ -381,7 +397,10 @@ describe('UsersList', () => {
       component.restoreUser(mockUsers[2]);
 
       expect(userService.restoreUser).toHaveBeenCalledWith('3');
-      expect(component['showSnackbar']).toHaveBeenCalledWith('Utilisateur restauré avec succès', 'success');
+      expect(component['showSnackbar']).toHaveBeenCalledWith(
+        'Utilisateur restauré avec succès',
+        'success',
+      );
     });
 
     it('should handle restore error', () => {
@@ -391,7 +410,10 @@ describe('UsersList', () => {
 
       component.restoreUser(mockUsers[2]);
 
-      expect(component['showSnackbar']).toHaveBeenCalledWith('Erreur lors de la restauration', 'error');
+      expect(component['showSnackbar']).toHaveBeenCalledWith(
+        'Erreur lors de la restauration',
+        'error',
+      );
     });
   });
 

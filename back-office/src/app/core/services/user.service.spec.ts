@@ -2,7 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { UserService } from './user.service';
 import { ApiService } from './api.service';
 import { of, throwError } from 'rxjs';
-import { User, CreateUserDto, UpdateUserDto, UserFilters } from '../models/user.model';
+import {
+  User,
+  CreateUserDto,
+  UpdateUserDto,
+  UserFilters,
+} from '../models/user.model';
 
 describe('UserService', () => {
   let service: UserService;
@@ -17,7 +22,7 @@ describe('UserService', () => {
     role: 'user',
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
-    deletedAt: null
+    deletedAt: null,
   };
 
   const mockUsers: User[] = [
@@ -31,18 +36,20 @@ describe('UserService', () => {
       role: 'admin',
       createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-01'),
-      deletedAt: null
-    }
+      deletedAt: null,
+    },
   ];
 
   beforeEach(() => {
-    const apiSpy = jasmine.createSpyObj('ApiService', ['get', 'post', 'patch', 'delete']);
+    const apiSpy = jasmine.createSpyObj('ApiService', [
+      'get',
+      'post',
+      'patch',
+      'delete',
+    ]);
 
     TestBed.configureTestingModule({
-      providers: [
-        UserService,
-        { provide: ApiService, useValue: apiSpy }
-      ]
+      providers: [UserService, { provide: ApiService, useValue: apiSpy }],
     });
 
     service = TestBed.inject(UserService);
@@ -62,7 +69,7 @@ describe('UserService', () => {
           expect(users).toEqual(mockUsers);
           expect(apiService.get).toHaveBeenCalledWith('/users', undefined);
           done();
-        }
+        },
       });
     });
 
@@ -75,13 +82,13 @@ describe('UserService', () => {
           expect(users).toEqual([mockUser]);
           expect(apiService.get).toHaveBeenCalledWith('/users', filters);
           done();
-        }
+        },
       });
     });
 
     it('should fetch users with role filter', (done) => {
       const filters: UserFilters = { role: 'admin' };
-      const adminUser = mockUsers.find(u => u.role === 'admin')!;
+      const adminUser = mockUsers.find((u) => u.role === 'admin')!;
       apiService.get.and.returnValue(of({ users: [adminUser] }));
 
       service.getUsers(filters).subscribe({
@@ -89,7 +96,7 @@ describe('UserService', () => {
           expect(users).toEqual([adminUser]);
           expect(apiService.get).toHaveBeenCalledWith('/users', filters);
           done();
-        }
+        },
       });
     });
 
@@ -102,7 +109,7 @@ describe('UserService', () => {
           expect(users).toEqual(mockUsers);
           expect(apiService.get).toHaveBeenCalledWith('/users', filters);
           done();
-        }
+        },
       });
     });
 
@@ -114,7 +121,7 @@ describe('UserService', () => {
         error: (err) => {
           expect(err).toBe(error);
           done();
-        }
+        },
       });
     });
   });
@@ -128,7 +135,7 @@ describe('UserService', () => {
           expect(user).toEqual(mockUser);
           expect(apiService.get).toHaveBeenCalledWith('/users/1');
           done();
-        }
+        },
       });
     });
 
@@ -140,7 +147,7 @@ describe('UserService', () => {
         error: (err) => {
           expect(err).toBe(error);
           done();
-        }
+        },
       });
     });
   });
@@ -153,7 +160,7 @@ describe('UserService', () => {
         lastName: 'User',
         email: 'new@example.com',
         password: 'password123',
-        role: 'user'
+        role: 'user',
       };
       const createdUser: User = { ...mockUser, ...createDto, id: '3' };
       apiService.post.and.returnValue(of({ user: createdUser }));
@@ -163,7 +170,7 @@ describe('UserService', () => {
           expect(user).toEqual(createdUser);
           expect(apiService.post).toHaveBeenCalledWith('/users', createDto);
           done();
-        }
+        },
       });
     });
 
@@ -171,7 +178,7 @@ describe('UserService', () => {
       const createDto: CreateUserDto = {
         username: 'minimal',
         email: 'minimal@example.com',
-        password: 'password123'
+        password: 'password123',
       };
       const createdUser: User = {
         id: '4',
@@ -180,7 +187,7 @@ describe('UserService', () => {
         role: 'user',
         createdAt: new Date(),
         updatedAt: null,
-        deletedAt: null
+        deletedAt: null,
       };
       apiService.post.and.returnValue(of({ user: createdUser }));
 
@@ -189,7 +196,7 @@ describe('UserService', () => {
           expect(user).toEqual(createdUser);
           expect(apiService.post).toHaveBeenCalledWith('/users', createDto);
           done();
-        }
+        },
       });
     });
 
@@ -197,7 +204,7 @@ describe('UserService', () => {
       const createDto: CreateUserDto = {
         username: 'duplicate',
         email: 'duplicate@example.com',
-        password: 'password123'
+        password: 'password123',
       };
       const error = new Error('Email already exists');
       apiService.post.and.returnValue(throwError(() => error));
@@ -206,7 +213,7 @@ describe('UserService', () => {
         error: (err) => {
           expect(err).toBe(error);
           done();
-        }
+        },
       });
     });
   });
@@ -216,7 +223,7 @@ describe('UserService', () => {
       const updateDto: UpdateUserDto = {
         username: 'updated',
         firstName: 'Updated',
-        lastName: 'Name'
+        lastName: 'Name',
       };
       const updatedUser: User = { ...mockUser, ...updateDto };
       apiService.patch.and.returnValue(of({ user: updatedUser }));
@@ -226,7 +233,7 @@ describe('UserService', () => {
           expect(user).toEqual(updatedUser);
           expect(apiService.patch).toHaveBeenCalledWith('/users/1', updateDto);
           done();
-        }
+        },
       });
     });
 
@@ -240,7 +247,7 @@ describe('UserService', () => {
           expect(user.role).toBe('admin');
           expect(apiService.patch).toHaveBeenCalledWith('/users/1', updateDto);
           done();
-        }
+        },
       });
     });
 
@@ -253,7 +260,7 @@ describe('UserService', () => {
         error: (err) => {
           expect(err).toBe(error);
           done();
-        }
+        },
       });
     });
   });
@@ -266,7 +273,7 @@ describe('UserService', () => {
         next: () => {
           expect(apiService.delete).toHaveBeenCalledWith('/users/1');
           done();
-        }
+        },
       });
     });
 
@@ -278,7 +285,7 @@ describe('UserService', () => {
         error: (err) => {
           expect(err).toBe(error);
           done();
-        }
+        },
       });
     });
   });
@@ -294,7 +301,7 @@ describe('UserService', () => {
           expect(user.deletedAt).toBeNull();
           expect(apiService.post).toHaveBeenCalledWith('/users/1/restore', {});
           done();
-        }
+        },
       });
     });
 
@@ -306,7 +313,7 @@ describe('UserService', () => {
         error: (err) => {
           expect(err).toBe(error);
           done();
-        }
+        },
       });
     });
   });
@@ -319,7 +326,7 @@ describe('UserService', () => {
         next: () => {
           expect(apiService.delete).toHaveBeenCalledWith('/users/1/permanent');
           done();
-        }
+        },
       });
     });
 
@@ -331,7 +338,7 @@ describe('UserService', () => {
         error: (err) => {
           expect(err).toBe(error);
           done();
-        }
+        },
       });
     });
   });
@@ -346,7 +353,7 @@ describe('UserService', () => {
           expect(users).toEqual([trashedUser]);
           expect(apiService.get).toHaveBeenCalledWith('/users/trashed');
           done();
-        }
+        },
       });
     });
 
@@ -358,7 +365,7 @@ describe('UserService', () => {
           expect(users).toEqual([]);
           expect(apiService.get).toHaveBeenCalledWith('/users/trashed');
           done();
-        }
+        },
       });
     });
 
@@ -370,7 +377,7 @@ describe('UserService', () => {
         error: (err) => {
           expect(err).toBe(error);
           done();
-        }
+        },
       });
     });
   });

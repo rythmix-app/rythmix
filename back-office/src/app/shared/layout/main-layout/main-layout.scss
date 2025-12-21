@@ -1,7 +1,11 @@
 .layout-container {
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-gradient-start) 0%,
+    var(--bg-gradient-end) 100%
+  );
   position: relative;
   transition: background 0.3s ease;
 
@@ -13,7 +17,11 @@
     z-index: 1001;
     width: 44px;
     height: 44px;
-    background: linear-gradient(135deg, var(--primary-dark-green) 0%, var(--secondary-blue-normal) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--primary-dark-green) 0%,
+      var(--secondary-blue-normal) 100%
+    );
     border: none;
     border-radius: 8px;
     color: var(--secondary-dark);
@@ -51,7 +59,11 @@
 
   .sidebar {
     width: 260px;
-    background: linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
+    background: linear-gradient(
+      180deg,
+      var(--sidebar-gradient-start) 0%,
+      var(--sidebar-gradient-end) 100%
+    );
     color: var(--text-primary);
     display: flex;
     flex-direction: column;
@@ -74,7 +86,11 @@
         font-weight: 700;
         letter-spacing: 3px;
         text-align: center;
-        background: linear-gradient(90deg, var(--primary-dark-green) 0%, var(--primary-blue-light) 100%);
+        background: linear-gradient(
+          90deg,
+          var(--primary-dark-green) 0%,
+          var(--primary-blue-light) 100%
+        );
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -142,13 +158,17 @@
               position: relative;
 
               &::before {
-                content: '';
+                content: "";
                 position: absolute;
                 left: 0;
                 top: 0;
                 bottom: 0;
                 width: 0;
-                background: linear-gradient(90deg, var(--primary-dark-green) 0%, var(--primary-blue-light) 100%);
+                background: linear-gradient(
+                  90deg,
+                  var(--primary-dark-green) 0%,
+                  var(--primary-blue-light) 100%
+                );
                 transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
               }
 
@@ -296,7 +316,11 @@
         justify-content: center;
         width: 44px;
         height: 44px;
-        background: linear-gradient(135deg, var(--primary-dark-green) 0%, var(--secondary-blue-normal) 100%);
+        background: linear-gradient(
+          135deg,
+          var(--primary-dark-green) 0%,
+          var(--secondary-blue-normal) 100%
+        );
         border: none;
         border-radius: 50%;
         color: var(--primary-dark);

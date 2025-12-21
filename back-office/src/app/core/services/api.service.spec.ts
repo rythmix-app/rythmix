@@ -1,5 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import {
+  HttpClientTestingModule,
+  HttpTestingController,
+} from '@angular/common/http/testing';
 import { ApiService } from './api.service';
 import { environment } from '../../../environnements/environment';
 
@@ -11,7 +14,7 @@ describe('ApiService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [ApiService]
+      providers: [ApiService],
     });
 
     service = TestBed.inject(ApiService);
@@ -54,7 +57,7 @@ describe('ApiService', () => {
           request.url === `${baseUrl}${endpoint}` &&
           request.params.get('search') === 'test' &&
           request.params.get('role') === 'admin' &&
-          request.params.get('page') === '1'
+          request.params.get('page') === '1',
       );
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
@@ -74,7 +77,7 @@ describe('ApiService', () => {
           request.url === `${baseUrl}${endpoint}` &&
           request.params.get('search') === 'test' &&
           !request.params.has('role') &&
-          !request.params.has('page')
+          !request.params.has('page'),
       );
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
@@ -89,7 +92,7 @@ describe('ApiService', () => {
           expect(error.status).toBe(404);
           expect(error.statusText).toBe('Not Found');
           done();
-        }
+        },
       });
 
       const req = httpMock.expectOne(`${baseUrl}${endpoint}`);
@@ -138,7 +141,7 @@ describe('ApiService', () => {
           expect(error.status).toBe(400);
           expect(error.statusText).toBe('Bad Request');
           done();
-        }
+        },
       });
 
       const req = httpMock.expectOne(`${baseUrl}${endpoint}`);
@@ -172,7 +175,7 @@ describe('ApiService', () => {
           expect(error.status).toBe(403);
           expect(error.statusText).toBe('Forbidden');
           done();
-        }
+        },
       });
 
       const req = httpMock.expectOne(`${baseUrl}${endpoint}`);
@@ -221,7 +224,7 @@ describe('ApiService', () => {
           expect(error.status).toBe(409);
           expect(error.statusText).toBe('Conflict');
           done();
-        }
+        },
       });
 
       const req = httpMock.expectOne(`${baseUrl}${endpoint}`);
@@ -264,7 +267,7 @@ describe('ApiService', () => {
           expect(error.status).toBe(401);
           expect(error.statusText).toBe('Unauthorized');
           done();
-        }
+        },
       });
 
       const req = httpMock.expectOne(`${baseUrl}${endpoint}`);
