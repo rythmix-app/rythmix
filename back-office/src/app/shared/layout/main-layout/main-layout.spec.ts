@@ -21,13 +21,13 @@ describe('MainLayoutComponent', () => {
     role: 'admin',
     createdAt: new Date(),
     updatedAt: new Date(),
-    deletedAt: null
+    deletedAt: null,
   };
 
   beforeEach(async () => {
     currentUserSubject = new BehaviorSubject<User | null>(null);
     const authSpy = jasmine.createSpyObj('AuthService', ['logout'], {
-      currentUser$: currentUserSubject.asObservable()
+      currentUser$: currentUserSubject.asObservable(),
     });
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
@@ -35,8 +35,8 @@ describe('MainLayoutComponent', () => {
       imports: [MainLayoutComponent],
       providers: [
         { provide: AuthService, useValue: authSpy },
-        { provide: Router, useValue: routerSpy }
-      ]
+        { provide: Router, useValue: routerSpy },
+      ],
     }).compileComponents();
 
     // Clear localStorage before each test
@@ -336,7 +336,7 @@ describe('MainLayoutComponent', () => {
   describe('menu items', () => {
     it('should have UTILISATEURS section', () => {
       const userSection = component.menuItems.find(
-        (section) => section.title === 'UTILISATEURS'
+        (section) => section.title === 'UTILISATEURS',
       );
 
       expect(userSection).toBeDefined();
@@ -345,7 +345,7 @@ describe('MainLayoutComponent', () => {
 
     it('should have CONTENU section', () => {
       const contentSection = component.menuItems.find(
-        (section) => section.title === 'CONTENU'
+        (section) => section.title === 'CONTENU',
       );
 
       expect(contentSection).toBeDefined();
@@ -354,7 +354,7 @@ describe('MainLayoutComponent', () => {
 
     it('should have JEUX section', () => {
       const gamesSection = component.menuItems.find(
-        (section) => section.title === 'JEUX'
+        (section) => section.title === 'JEUX',
       );
 
       expect(gamesSection).toBeDefined();
@@ -363,9 +363,11 @@ describe('MainLayoutComponent', () => {
 
     it('should have users route in UTILISATEURS section', () => {
       const userSection = component.menuItems.find(
-        (section) => section.title === 'UTILISATEURS'
+        (section) => section.title === 'UTILISATEURS',
       );
-      const usersItem = userSection?.items.find((item) => item.route === '/users');
+      const usersItem = userSection?.items.find(
+        (item) => item.route === '/users',
+      );
 
       expect(usersItem).toBeDefined();
       expect(usersItem?.label).toBe('Utilisateurs');

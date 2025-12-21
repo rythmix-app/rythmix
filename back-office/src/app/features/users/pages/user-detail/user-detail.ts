@@ -1,14 +1,18 @@
-import {Component, inject, OnInit} from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { User, CreateUserDto, UpdateUserDto } from '../../../../core/models/user.model';
+import {
+  User,
+  CreateUserDto,
+  UpdateUserDto,
+} from '../../../../core/models/user.model';
 import { UserService } from '../../../../core/services/user.service';
 
 @Component({
   standalone: false,
   selector: 'app-user-detail',
   templateUrl: './user-detail.html',
-  styleUrls: ['./user-detail.scss']
+  styleUrls: ['./user-detail.scss'],
 })
 export class UserDetail implements OnInit {
   userForm!: FormGroup;
@@ -19,7 +23,7 @@ export class UserDetail implements OnInit {
   isSubmitting = false;
   route = inject(ActivatedRoute);
   router = inject(Router);
-  fb = inject(FormBuilder)
+  fb = inject(FormBuilder);
   userService = inject(UserService);
   private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -40,8 +44,13 @@ export class UserDetail implements OnInit {
       firstName: [''],
       lastName: [''],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', this.mode === 'create' ? [Validators.required, Validators.minLength(6)] : []],
-      role: ['user', [Validators.required]]
+      password: [
+        '',
+        this.mode === 'create'
+          ? [Validators.required, Validators.minLength(6)]
+          : [],
+      ],
+      role: ['user', [Validators.required]],
     });
 
     if (this.mode === 'view') {
@@ -67,10 +76,13 @@ export class UserDetail implements OnInit {
       },
       error: (error) => {
         console.error('Error loading user:', error);
-        this.showSnackbar('Erreur lors du chargement de l\'utilisateur', 'error');
+        this.showSnackbar(
+          "Erreur lors du chargement de l'utilisateur",
+          'error',
+        );
         this.isLoading = false;
         this.router.navigate(['/users']);
-      }
+      },
     });
   }
 
@@ -90,7 +102,7 @@ export class UserDetail implements OnInit {
         lastName: formValue.lastName,
         email: formValue.email,
         password: formValue.password,
-        role: formValue.role
+        role: formValue.role,
       };
 
       this.userService.createUser(createDto).subscribe({
@@ -104,14 +116,14 @@ export class UserDetail implements OnInit {
           console.error('Error creating user:', error);
           this.showSnackbar('Erreur lors de la création', 'error');
           this.isSubmitting = false;
-        }
+        },
       });
     } else if (this.mode === 'edit' && this.userId) {
       const updateDto: UpdateUserDto = {
         username: formValue.username,
         firstName: formValue.firstName,
         lastName: formValue.lastName,
-        role: formValue.role
+        role: formValue.role,
       };
 
       this.userService.updateUser(this.userId, updateDto).subscribe({
@@ -125,7 +137,7 @@ export class UserDetail implements OnInit {
           console.error('Error updating user:', error);
           this.showSnackbar('Erreur lors de la modification', 'error');
           this.isSubmitting = false;
-        }
+        },
       });
     }
   }
@@ -139,14 +151,17 @@ export class UserDetail implements OnInit {
       case 'create':
         return 'CRÉER UN UTILISATEUR';
       case 'edit':
-        return 'MODIFIER L\'UTILISATEUR';
+        return "MODIFIER L'UTILISATEUR";
       case 'view':
       default:
-        return 'DÉTAILS DE L\'UTILISATEUR';
+        return "DÉTAILS DE L'UTILISATEUR";
     }
   }
 
-  private showSnackbar(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info'): void {
+  private showSnackbar(
+    message: string,
+    type: 'success' | 'error' | 'info' | 'warning' = 'info',
+  ): void {
     const snackbar = document.createElement('div');
     snackbar.className = `custom-snackbar snackbar-${type}`;
     snackbar.textContent = message;

@@ -1,13 +1,15 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { UserDetail } from './user-detail';
 import { UserService } from '../../../../core/services/user.service';
 import { User } from '../../../../core/models/user.model';
-
-// Helper type for accessing private methods
-type ComponentWithPrivate = UserDetail & { showSnackbar: (message: string, type: string) => void };
 
 describe('UserDetail', () => {
   let component: UserDetail;
@@ -30,14 +32,14 @@ describe('UserDetail', () => {
     role: 'user',
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
-    deletedAt: null
+    deletedAt: null,
   };
 
   beforeEach(async () => {
     const userServiceSpy = jasmine.createSpyObj('UserService', [
       'getUserById',
       'createUser',
-      'updateUser'
+      'updateUser',
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
@@ -45,9 +47,9 @@ describe('UserDetail', () => {
       snapshot: {
         data: { mode: 'view' },
         paramMap: {
-          get: jasmine.createSpy('get').and.returnValue('1')
-        }
-      }
+          get: jasmine.createSpy('get').and.returnValue('1'),
+        },
+      },
     };
 
     await TestBed.configureTestingModule({
@@ -56,8 +58,8 @@ describe('UserDetail', () => {
       providers: [
         { provide: UserService, useValue: userServiceSpy },
         { provide: Router, useValue: routerSpy },
-        { provide: ActivatedRoute, useValue: activatedRoute }
-      ]
+        { provide: ActivatedRoute, useValue: activatedRoute },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(UserDetail);
@@ -108,7 +110,9 @@ describe('UserDetail', () => {
       component.mode = 'view';
       component.initForm();
 
-      expect(component.userForm.get('username')?.hasError('required')).toBe(true);
+      expect(component.userForm.get('username')?.hasError('required')).toBe(
+        true,
+      );
       expect(component.userForm.get('email')?.hasError('required')).toBe(true);
       expect(component.userForm.disabled).toBe(true);
     });
@@ -117,7 +121,9 @@ describe('UserDetail', () => {
       component.mode = 'create';
       component.initForm();
 
-      expect(component.userForm.get('password')?.hasError('required')).toBe(true);
+      expect(component.userForm.get('password')?.hasError('required')).toBe(
+        true,
+      );
     });
 
     it('should not require password in edit mode', () => {
@@ -190,14 +196,19 @@ describe('UserDetail', () => {
     });
 
     it('should handle error and navigate to users list', () => {
-      spyOn(component as ComponentWithPrivate, 'showSnackbar');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      spyOn(component as any, 'showSnackbar');
       component.userId = '1';
       const error = new Error('User not found');
       userService.getUserById.and.returnValue(throwError(() => error));
 
       component.loadUser();
 
-      expect((component as ComponentWithPrivate).showSnackbar).toHaveBeenCalledWith('Erreur lors du chargement de l\'utilisateur', 'error');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((component as any).showSnackbar).toHaveBeenCalledWith(
+        "Erreur lors du chargement de l'utilisateur",
+        'error',
+      );
       expect(component.isLoading).toBe(false);
       expect(router.navigate).toHaveBeenCalledWith(['/users']);
     });
@@ -248,7 +259,7 @@ describe('UserDetail', () => {
           lastName: 'User',
           email: 'new@example.com',
           password: 'password123',
-          role: 'user' as 'user' | 'admin'
+          role: 'user' as 'user' | 'admin',
         };
         component.userForm.patchValue(formValue);
         userService.createUser.and.returnValue(of(mockUser));
@@ -256,7 +267,10 @@ describe('UserDetail', () => {
         component.onSubmit();
 
         expect(userService.createUser).toHaveBeenCalledWith(formValue);
-        expect(component['showSnackbar']).toHaveBeenCalledWith('Utilisateur créé avec succès', 'success');
+        expect(component['showSnackbar']).toHaveBeenCalledWith(
+          'Utilisateur créé avec succès',
+          'success',
+        );
 
         tick(1000);
         expect(router.navigate).toHaveBeenCalledWith(['/users']);
@@ -268,14 +282,17 @@ describe('UserDetail', () => {
           username: 'newuser',
           email: 'new@example.com',
           password: 'password123',
-          role: 'user'
+          role: 'user',
         });
         const error = new Error('Email already exists');
         userService.createUser.and.returnValue(throwError(() => error));
 
         component.onSubmit();
 
-        expect(component['showSnackbar']).toHaveBeenCalledWith('Erreur lors de la création', 'error');
+        expect(component['showSnackbar']).toHaveBeenCalledWith(
+          'Erreur lors de la création',
+          'error',
+        );
         expect(component.isSubmitting).toBe(false);
       });
     });
@@ -293,7 +310,7 @@ describe('UserDetail', () => {
           username: 'updated',
           firstName: 'Updated',
           lastName: 'User',
-          role: 'admin' as 'user' | 'admin'
+          role: 'admin' as 'user' | 'admin',
         };
         component.userForm.patchValue(formValue);
         userService.updateUser.and.returnValue(of(mockUser));
@@ -301,7 +318,10 @@ describe('UserDetail', () => {
         component.onSubmit();
 
         expect(userService.updateUser).toHaveBeenCalledWith('1', formValue);
-        expect(component['showSnackbar']).toHaveBeenCalledWith('Utilisateur modifié avec succès', 'success');
+        expect(component['showSnackbar']).toHaveBeenCalledWith(
+          'Utilisateur modifié avec succès',
+          'success',
+        );
 
         tick(1000);
         expect(router.navigate).toHaveBeenCalledWith(['/users']);
@@ -311,14 +331,17 @@ describe('UserDetail', () => {
         spyOn(component as never, 'showSnackbar');
         component.userForm.patchValue({
           username: 'updated',
-          role: 'admin'
+          role: 'admin',
         });
         const error = new Error('Username taken');
         userService.updateUser.and.returnValue(throwError(() => error));
 
         component.onSubmit();
 
-        expect(component['showSnackbar']).toHaveBeenCalledWith('Erreur lors de la modification', 'error');
+        expect(component['showSnackbar']).toHaveBeenCalledWith(
+          'Erreur lors de la modification',
+          'error',
+        );
         expect(component.isSubmitting).toBe(false);
       });
 
@@ -327,7 +350,7 @@ describe('UserDetail', () => {
         component.userForm.patchValue({
           username: 'updated',
           email: 'test@example.com',
-          role: 'user'
+          role: 'user',
         });
 
         component.onSubmit();
@@ -355,13 +378,13 @@ describe('UserDetail', () => {
     it('should return correct title for edit mode', () => {
       component.mode = 'edit';
 
-      expect(component.title).toBe('MODIFIER L\'UTILISATEUR');
+      expect(component.title).toBe("MODIFIER L'UTILISATEUR");
     });
 
     it('should return correct title for view mode', () => {
       component.mode = 'view';
 
-      expect(component.title).toBe('DÉTAILS DE L\'UTILISATEUR');
+      expect(component.title).toBe("DÉTAILS DE L'UTILISATEUR");
     });
   });
 
@@ -407,7 +430,7 @@ describe('UserDetail', () => {
         username: 'test',
         email: 'test@example.com',
         password: 'password123',
-        role: 'user'
+        role: 'user',
       });
       userService.createUser.and.returnValue(of(mockUser));
 

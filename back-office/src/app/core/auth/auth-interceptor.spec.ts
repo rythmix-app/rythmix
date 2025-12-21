@@ -1,6 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { authInterceptor } from './auth-interceptor';
 import { AuthService } from './auth';
 import { of, throwError } from 'rxjs';
@@ -11,14 +19,18 @@ describe('authInterceptor', () => {
   let authService: jasmine.SpyObj<AuthService>;
 
   beforeEach(() => {
-    const authSpy = jasmine.createSpyObj('AuthService', ['getAccessToken', 'refreshToken', 'logout']);
+    const authSpy = jasmine.createSpyObj('AuthService', [
+      'getAccessToken',
+      'refreshToken',
+      'logout',
+    ]);
 
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
-        { provide: AuthService, useValue: authSpy }
-      ]
+        { provide: AuthService, useValue: authSpy },
+      ],
     });
 
     httpClient = TestBed.inject(HttpClient);
@@ -68,7 +80,7 @@ describe('authInterceptor', () => {
       next: () => {
         expect(authService.refreshToken).toHaveBeenCalled();
         done();
-      }
+      },
     });
 
     const req = httpMock.expectOne('/api/test');
@@ -77,21 +89,23 @@ describe('authInterceptor', () => {
     // After refresh, the request should be retried
     authService.getAccessToken.and.returnValue('new-token');
     const retryReq = httpMock.expectOne('/api/test');
-    expect(retryReq.request.headers.get('Authorization')).toBe('Bearer new-token');
+    expect(retryReq.request.headers.get('Authorization')).toBe(
+      'Bearer new-token',
+    );
     retryReq.flush({ success: true });
   });
 
   it('should logout when refresh fails', (done) => {
     authService.getAccessToken.and.returnValue('expired-token');
     authService.refreshToken.and.returnValue(
-      throwError(() => new HttpErrorResponse({ status: 401 }))
+      throwError(() => new HttpErrorResponse({ status: 401 })),
     );
 
     httpClient.get('/api/test').subscribe({
       error: () => {
         expect(authService.logout).toHaveBeenCalled();
         done();
-      }
+      },
     });
 
     const req = httpMock.expectOne('/api/test');
@@ -106,10 +120,13 @@ describe('authInterceptor', () => {
         expect(error.status).toBe(401);
         expect(authService.refreshToken).not.toHaveBeenCalled();
         done();
-      }
+      },
     });
 
     const req = httpMock.expectOne('/auth/login');
-    req.flush('Invalid credentials', { status: 401, statusText: 'Unauthorized' });
+    req.flush('Invalid credentials', {
+      status: 401,
+      statusText: 'Unauthorized',
+    });
   });
 });

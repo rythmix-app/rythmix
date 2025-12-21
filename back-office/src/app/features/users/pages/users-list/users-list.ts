@@ -1,4 +1,4 @@
-import {Component, inject, OnInit} from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { User, UserFilters } from '../../../../core/models/user.model';
 import { UserService } from '../../../../core/services/user.service';
@@ -8,7 +8,7 @@ import { AuthService } from '../../../../core/auth/auth';
   standalone: false,
   selector: 'app-users-list',
   templateUrl: './users-list.html',
-  styleUrls: ['./users-list.scss']
+  styleUrls: ['./users-list.scss'],
 })
 export class UsersList implements OnInit {
   allUsers: User[] = [];
@@ -17,12 +17,12 @@ export class UsersList implements OnInit {
 
   isLoading = false;
   filters: UserFilters = {
-    includeDeleted: false
+    includeDeleted: false,
   };
 
   userService = inject(UserService);
   authService = inject(AuthService);
-  router = inject(Router)
+  router = inject(Router);
 
   currentPage = 0;
   pageSize = 10;
@@ -50,21 +50,27 @@ export class UsersList implements OnInit {
       },
       error: (error) => {
         console.error('Error loading users:', error);
-        this.showSnackbar('Erreur lors du chargement des utilisateurs', 'error');
+        this.showSnackbar(
+          'Erreur lors du chargement des utilisateurs',
+          'error',
+        );
         this.isLoading = false;
-      }
+      },
     });
   }
 
   applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value.toLowerCase().trim();
+    const filterValue = (event.target as HTMLInputElement).value
+      .toLowerCase()
+      .trim();
 
     if (!filterValue) {
       this.filteredUsers = [...this.allUsers];
     } else {
-      this.filteredUsers = this.allUsers.filter(user =>
-        user.username.toLowerCase().includes(filterValue) ||
-        user.email.toLowerCase().includes(filterValue)
+      this.filteredUsers = this.allUsers.filter(
+        (user) =>
+          user.username.toLowerCase().includes(filterValue) ||
+          user.email.toLowerCase().includes(filterValue),
       );
     }
 
@@ -85,8 +91,10 @@ export class UsersList implements OnInit {
     }
 
     this.filteredUsers.sort((a, b) => {
-      let aValue: string | number | Date | null | undefined = a[column as keyof User];
-      let bValue: string | number | Date | null | undefined = b[column as keyof User];
+      let aValue: string | number | Date | null | undefined =
+        a[column as keyof User];
+      let bValue: string | number | Date | null | undefined =
+        b[column as keyof User];
 
       if (aValue === null || aValue === undefined) return 1;
       if (bValue === null || bValue === undefined) return -1;
@@ -178,10 +186,17 @@ export class UsersList implements OnInit {
     console.log('Current user role:', currentUser?.role);
     console.log('Is admin?', this.authService.isAdmin());
     console.log('User to delete:', user);
-    console.log('Token:', this.authService.getAccessToken()?.substring(0, 20) + '...');
+    console.log(
+      'Token:',
+      this.authService.getAccessToken()?.substring(0, 20) + '...',
+    );
     // === END DEBUG ===
 
-    if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.username} ?`)) {
+    if (
+      confirm(
+        `Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.username} ?`,
+      )
+    ) {
       this.userService.deleteUser(user.id).subscribe({
         next: () => {
           this.showSnackbar('Utilisateur supprimé avec succès', 'success');
@@ -195,9 +210,10 @@ export class UsersList implements OnInit {
           console.error('Error message:', error.message);
 
           // Afficher le message exact du backend si disponible
-          const errorMessage = error.error?.message || 'Erreur lors de la suppression';
+          const errorMessage =
+            error.error?.message || 'Erreur lors de la suppression';
           this.showSnackbar(errorMessage, 'error');
-        }
+        },
       });
     }
   }
@@ -211,7 +227,7 @@ export class UsersList implements OnInit {
       error: (error) => {
         console.error('Error restoring user:', error);
         this.showSnackbar('Erreur lors de la restauration', 'error');
-      }
+      },
     });
   }
 
@@ -225,12 +241,15 @@ export class UsersList implements OnInit {
   }
 
   getUserFullName(user: User): string {
-    const parts = [user.firstName, user.lastName].filter(p => p);
+    const parts = [user.firstName, user.lastName].filter((p) => p);
     return parts.length > 0 ? parts.join(' ') : '-';
   }
 
   // ============ SNACKBAR CUSTOM ============
-  private showSnackbar(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info'): void {
+  private showSnackbar(
+    message: string,
+    type: 'success' | 'error' | 'info' | 'warning' = 'info',
+  ): void {
     // Créer et afficher un snackbar custom
     const snackbar = document.createElement('div');
     snackbar.className = `custom-snackbar snackbar-${type}`;

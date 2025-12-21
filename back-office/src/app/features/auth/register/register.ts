@@ -1,8 +1,15 @@
-import {Component, inject} from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import { Component, inject } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import {AuthService} from '../../../core/auth/auth';
+import { AuthService } from '../../../core/auth/auth';
 
 @Component({
   selector: 'app-register',
@@ -24,14 +31,24 @@ export class RegisterComponent {
   router = inject(Router);
 
   constructor() {
-    this.registerForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
-      password_confirmation: ['', [Validators.required]],
-      firstName: [''],
-      lastName: [''],
-    }, { validators: this.passwordMatchValidator });
+    this.registerForm = this.fb.group(
+      {
+        email: ['', [Validators.required, Validators.email]],
+        username: [
+          '',
+          [
+            Validators.required,
+            Validators.minLength(3),
+            Validators.maxLength(50),
+          ],
+        ],
+        password: ['', [Validators.required, Validators.minLength(8)]],
+        password_confirmation: ['', [Validators.required]],
+        firstName: [''],
+        lastName: [''],
+      },
+      { validators: this.passwordMatchValidator },
+    );
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -42,7 +59,9 @@ export class RegisterComponent {
       return null;
     }
 
-    return password.value === passwordConfirmation.value ? null : { passwordMismatch: true };
+    return password.value === passwordConfirmation.value
+      ? null
+      : { passwordMismatch: true };
   }
 
   onSubmit(): void {
@@ -53,7 +72,8 @@ export class RegisterComponent {
 
       this.authService.register(this.registerForm.value).subscribe({
         next: () => {
-          this.successMessage = 'Compte créé avec succès ! Vous pouvez maintenant vous connecter.';
+          this.successMessage =
+            'Compte créé avec succès ! Vous pouvez maintenant vous connecter.';
           this.isLoading = false;
           setTimeout(() => {
             this.router.navigate(['/login']);

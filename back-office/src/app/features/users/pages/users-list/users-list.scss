@@ -14,7 +14,11 @@
       font-size: 28px;
       font-weight: 700;
       letter-spacing: 2px;
-      background: linear-gradient(90deg, var(--primary-blue-light) 0%, var(--secondary-blue-normal) 100%);
+      background: linear-gradient(
+        90deg,
+        var(--primary-blue-light) 0%,
+        var(--secondary-blue-normal) 100%
+      );
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -24,7 +28,11 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: linear-gradient(135deg, var(--primary-dark-green) 0%, var(--secondary-blue-normal) 100%);
+      background: linear-gradient(
+        135deg,
+        var(--primary-dark-green) 0%,
+        var(--secondary-blue-normal) 100%
+      );
       color: var(--secondary-dark);
       font-size: 14px;
       font-weight: 600;
@@ -117,7 +125,7 @@
         transition: all 0.3s;
 
         &::after {
-          content: '';
+          content: "";
           position: absolute;
           width: 18px;
           height: 18px;
@@ -134,7 +142,11 @@
 
         &::after {
           transform: translateX(20px);
-          background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--secondary-blue-normal) 100%);
+          background: linear-gradient(
+            135deg,
+            var(--primary-blue-light) 0%,
+            var(--secondary-blue-normal) 100%
+          );
         }
       }
 
@@ -162,7 +174,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .table-wrapper {
@@ -268,7 +282,11 @@
         letter-spacing: 0.5px;
 
         &.badge-admin {
-          background: linear-gradient(135deg, var(--primary-dark-green) 0%, var(--primary-blue-light) 100%);
+          background: linear-gradient(
+            135deg,
+            var(--primary-dark-green) 0%,
+            var(--primary-blue-light) 100%
+          );
           color: var(--secondary-dark);
           box-shadow: 0 2px 8px rgba(20, 255, 236, 0.3);
         }
@@ -411,7 +429,11 @@
           justify-content: center;
 
           &:hover:not(:disabled) {
-            background: linear-gradient(135deg, var(--primary-dark-green) 0%, var(--secondary-blue-normal) 100%);
+            background: linear-gradient(
+              135deg,
+              var(--primary-dark-green) 0%,
+              var(--secondary-blue-normal) 100%
+            );
             border-color: var(--primary-blue-light);
             color: var(--secondary-dark);
             transform: translateY(-2px);

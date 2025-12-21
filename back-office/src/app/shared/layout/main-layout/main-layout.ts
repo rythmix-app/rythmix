@@ -1,5 +1,10 @@
-import {Component, HostListener, inject, OnInit} from '@angular/core';
-import {Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
+import { Component, HostListener, inject, OnInit } from '@angular/core';
+import {
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { AuthService } from '../../../core/auth/auth';
 import { User } from '../../../core/models/user.model';
 

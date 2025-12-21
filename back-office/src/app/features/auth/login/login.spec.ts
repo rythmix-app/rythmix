@@ -20,8 +20,8 @@ describe('LoginComponent', () => {
       imports: [LoginComponent, ReactiveFormsModule],
       providers: [
         { provide: AuthService, useValue: authSpy },
-        { provide: Router, useValue: routerSpy }
-      ]
+        { provide: Router, useValue: routerSpy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
@@ -106,9 +106,14 @@ describe('LoginComponent', () => {
     });
 
     it('should submit valid credentials and navigate on success', () => {
-      const credentials = { email: 'test@example.com', password: 'password123' };
+      const credentials = {
+        email: 'test@example.com',
+        password: 'password123',
+      };
       component.loginForm.patchValue(credentials);
-      authService.login.and.returnValue(of({ accessToken: 'token', refreshToken: 'refresh' }));
+      authService.login.and.returnValue(
+        of({ accessToken: 'token', refreshToken: 'refresh' }),
+      );
 
       component.onSubmit();
 
@@ -121,10 +126,12 @@ describe('LoginComponent', () => {
     it('should clear error message before submit', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       });
       component.errorMessage = 'Previous error';
-      authService.login.and.returnValue(of({ accessToken: 'token', refreshToken: 'refresh' }));
+      authService.login.and.returnValue(
+        of({ accessToken: 'token', refreshToken: 'refresh' }),
+      );
 
       component.onSubmit();
 
@@ -134,7 +141,7 @@ describe('LoginComponent', () => {
     it('should handle 401 unauthorized error', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: 'wrongpassword'
+        password: 'wrongpassword',
       });
       const error = new HttpErrorResponse({ status: 401 });
       authService.login.and.returnValue(throwError(() => error));
@@ -148,37 +155,43 @@ describe('LoginComponent', () => {
     it('should handle 403 forbidden error (unverified email)', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       });
       const error = new HttpErrorResponse({ status: 403 });
       authService.login.and.returnValue(throwError(() => error));
 
       component.onSubmit();
 
-      expect(component.errorMessage).toBe('Veuillez vérifier votre email avant de vous connecter');
+      expect(component.errorMessage).toBe(
+        'Veuillez vérifier votre email avant de vous connecter',
+      );
       expect(component.isLoading).toBe(false);
     });
 
     it('should handle other errors with generic message', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       });
       const error = new HttpErrorResponse({ status: 500 });
       authService.login.and.returnValue(throwError(() => error));
 
       component.onSubmit();
 
-      expect(component.errorMessage).toBe('Une erreur est survenue, veuillez réessayer');
+      expect(component.errorMessage).toBe(
+        'Une erreur est survenue, veuillez réessayer',
+      );
       expect(component.isLoading).toBe(false);
     });
 
     it('should set isLoading to true during submission', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       });
-      authService.login.and.returnValue(of({ accessToken: 'token', refreshToken: 'refresh' }));
+      authService.login.and.returnValue(
+        of({ accessToken: 'token', refreshToken: 'refresh' }),
+      );
 
       component.isLoading = false;
       component.onSubmit();
@@ -189,7 +202,7 @@ describe('LoginComponent', () => {
     it('should reset isLoading to false on error', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       });
       const error = new HttpErrorResponse({ status: 500 });
       authService.login.and.returnValue(throwError(() => error));
@@ -204,7 +217,7 @@ describe('LoginComponent', () => {
     it('should be invalid with empty email and valid password', () => {
       component.loginForm.patchValue({
         email: '',
-        password: 'validpassword'
+        password: 'validpassword',
       });
 
       expect(component.loginForm.valid).toBe(false);
@@ -213,7 +226,7 @@ describe('LoginComponent', () => {
     it('should be invalid with valid email and empty password', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: ''
+        password: '',
       });
 
       expect(component.loginForm.valid).toBe(false);
@@ -222,7 +235,7 @@ describe('LoginComponent', () => {
     it('should be invalid with invalid email format', () => {
       component.loginForm.patchValue({
         email: 'not-an-email',
-        password: 'validpassword'
+        password: 'validpassword',
       });
 
       expect(component.loginForm.valid).toBe(false);
@@ -231,7 +244,7 @@ describe('LoginComponent', () => {
     it('should be invalid with password less than 8 characters', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: 'short'
+        password: 'short',
       });
 
       expect(component.loginForm.valid).toBe(false);
@@ -240,7 +253,7 @@ describe('LoginComponent', () => {
     it('should be valid with correct email and password', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: 'validpassword123'
+        password: 'validpassword123',
       });
 
       expect(component.loginForm.valid).toBe(true);
@@ -251,10 +264,12 @@ describe('LoginComponent', () => {
     it('should clear previous errors on new submission', () => {
       component.loginForm.patchValue({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       });
       component.errorMessage = 'Previous error';
-      authService.login.and.returnValue(of({ accessToken: 'token', refreshToken: 'refresh' }));
+      authService.login.and.returnValue(
+        of({ accessToken: 'token', refreshToken: 'refresh' }),
+      );
 
       component.onSubmit();
 
@@ -262,7 +277,10 @@ describe('LoginComponent', () => {
     });
 
     it('should display error without clearing form', () => {
-      const credentials = { email: 'test@example.com', password: 'wrongpass12' };
+      const credentials = {
+        email: 'test@example.com',
+        password: 'wrongpass12',
+      };
       component.loginForm.patchValue(credentials);
       const error = new HttpErrorResponse({ status: 401 });
       authService.login.and.returnValue(throwError(() => error));
@@ -270,7 +288,9 @@ describe('LoginComponent', () => {
       component.onSubmit();
 
       expect(component.loginForm.get('email')?.value).toBe(credentials.email);
-      expect(component.loginForm.get('password')?.value).toBe(credentials.password);
+      expect(component.loginForm.get('password')?.value).toBe(
+        credentials.password,
+      );
     });
   });
 });

@@ -7,19 +7,20 @@ export const routes: Routes = [
   {
     path: '',
     redirectTo: '/users',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: 'login',
-    component: LoginComponent
+    component: LoginComponent,
   },
   {
     path: 'register',
-    component: RegisterComponent
+    component: RegisterComponent,
   },
   {
     path: 'users',
-    loadChildren: () => import('./features/users/users-module').then(m => m.UsersModule),
-    canActivate: [authGuard]
-  }
+    loadChildren: () =>
+      import('./features/users/users-module').then((m) => m.UsersModule),
+    canActivate: [authGuard],
+  },
 ];

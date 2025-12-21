@@ -4,8 +4,6 @@ import { Component } from '@angular/core';
   standalone: false,
   selector: 'app-user-form',
   templateUrl: './user-form.html',
-  styleUrl: './user-form.scss'
+  styleUrl: './user-form.scss',
 })
-export class UserForm {
-
-}
+export class UserForm {}

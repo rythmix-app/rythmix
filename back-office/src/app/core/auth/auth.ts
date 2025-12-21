@@ -1,4 +1,4 @@
-import {inject, Injectable} from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
@@ -63,7 +63,7 @@ export class AuthService {
         }),
         catchError((error) => {
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -80,7 +80,7 @@ export class AuthService {
         catchError((error) => {
           console.error('Registration error:', error);
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -124,7 +124,7 @@ export class AuthService {
         catchError((error) => {
           this.clearAuthData();
           return throwError(() => error);
-        })
+        }),
       );
   }
 
@@ -139,10 +139,9 @@ export class AuthService {
       }),
       catchError((error) => {
         return throwError(() => error);
-      })
+      }),
     );
   }
-
 
   getAccessToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
@@ -168,7 +167,6 @@ export class AuthService {
   isAdmin(): boolean {
     return this.hasRole('admin');
   }
-
 
   private setTokens(accessToken: string, refreshToken: string): void {
     localStorage.setItem(this.TOKEN_KEY, accessToken);

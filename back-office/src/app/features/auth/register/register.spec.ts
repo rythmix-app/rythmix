@@ -1,4 +1,9 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -20,8 +25,8 @@ describe('RegisterComponent', () => {
       imports: [RegisterComponent, ReactiveFormsModule],
       providers: [
         { provide: AuthService, useValue: authSpy },
-        { provide: Router, useValue: routerSpy }
-      ]
+        { provide: Router, useValue: routerSpy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RegisterComponent);
@@ -40,7 +45,9 @@ describe('RegisterComponent', () => {
       expect(component.registerForm.get('email')?.value).toBe('');
       expect(component.registerForm.get('username')?.value).toBe('');
       expect(component.registerForm.get('password')?.value).toBe('');
-      expect(component.registerForm.get('password_confirmation')?.value).toBe('');
+      expect(component.registerForm.get('password_confirmation')?.value).toBe(
+        '',
+      );
       expect(component.registerForm.get('firstName')?.value).toBe('');
       expect(component.registerForm.get('lastName')?.value).toBe('');
     });
@@ -49,7 +56,9 @@ describe('RegisterComponent', () => {
       const emailControl = component.registerForm.get('email');
       const usernameControl = component.registerForm.get('username');
       const passwordControl = component.registerForm.get('password');
-      const passwordConfirmControl = component.registerForm.get('password_confirmation');
+      const passwordConfirmControl = component.registerForm.get(
+        'password_confirmation',
+      );
 
       expect(emailControl?.hasError('required')).toBe(true);
       expect(usernameControl?.hasError('required')).toBe(true);
@@ -127,7 +136,7 @@ describe('RegisterComponent', () => {
     it('should return null when passwords match', () => {
       component.registerForm.patchValue({
         password: 'password123',
-        password_confirmation: 'password123'
+        password_confirmation: 'password123',
       });
 
       expect(component.registerForm.hasError('passwordMismatch')).toBe(false);
@@ -136,7 +145,7 @@ describe('RegisterComponent', () => {
     it('should return error when passwords do not match', () => {
       component.registerForm.patchValue({
         password: 'password123',
-        password_confirmation: 'different123'
+        password_confirmation: 'different123',
       });
 
       expect(component.registerForm.hasError('passwordMismatch')).toBe(true);
@@ -152,12 +161,12 @@ describe('RegisterComponent', () => {
     it('should validate on password change', () => {
       component.registerForm.patchValue({
         password: 'password123',
-        password_confirmation: 'password123'
+        password_confirmation: 'password123',
       });
       expect(component.registerForm.hasError('passwordMismatch')).toBe(false);
 
       component.registerForm.patchValue({
-        password: 'changed123'
+        password: 'changed123',
       });
       expect(component.registerForm.hasError('passwordMismatch')).toBe(true);
     });
@@ -198,7 +207,7 @@ describe('RegisterComponent', () => {
       password: 'password123',
       password_confirmation: 'password123',
       firstName: 'Test',
-      lastName: 'User'
+      lastName: 'User',
     };
 
     it('should not submit if form is invalid', () => {
@@ -212,7 +221,7 @@ describe('RegisterComponent', () => {
     it('should not submit if passwords do not match', () => {
       component.registerForm.patchValue({
         ...validFormData,
-        password_confirmation: 'different123'
+        password_confirmation: 'different123',
       });
 
       component.onSubmit();
@@ -228,7 +237,9 @@ describe('RegisterComponent', () => {
 
       expect(component.isLoading).toBe(false);
       expect(component.errorMessage).toBe('');
-      expect(component.successMessage).toBe('Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
+      expect(component.successMessage).toBe(
+        'Compte créé avec succès ! Vous pouvez maintenant vous connecter.',
+      );
       expect(authService.register).toHaveBeenCalledWith(validFormData);
 
       tick(2000);
@@ -251,10 +262,8 @@ describe('RegisterComponent', () => {
       component.registerForm.patchValue(validFormData);
       const error = {
         error: {
-          errors: [
-            { message: 'Email already exists' }
-          ]
-        }
+          errors: [{ message: 'Email already exists' }],
+        },
       };
       authService.register.and.returnValue(throwError(() => error));
 
@@ -269,8 +278,8 @@ describe('RegisterComponent', () => {
       component.registerForm.patchValue(validFormData);
       const error = {
         error: {
-          message: 'Username already taken'
-        }
+          message: 'Username already taken',
+        },
       };
       authService.register.and.returnValue(throwError(() => error));
 
@@ -287,7 +296,9 @@ describe('RegisterComponent', () => {
 
       component.onSubmit();
 
-      expect(component.errorMessage).toBe('Une erreur est survenue, veuillez réessayer');
+      expect(component.errorMessage).toBe(
+        'Une erreur est survenue, veuillez réessayer',
+      );
       expect(component.isLoading).toBe(false);
     });
 
@@ -309,7 +320,7 @@ describe('RegisterComponent', () => {
         password: 'password123',
         password_confirmation: 'password123',
         firstName: '',
-        lastName: ''
+        lastName: '',
       };
       component.registerForm.patchValue(minimalData);
       authService.register.and.returnValue(of({ message: 'User created' }));
@@ -317,7 +328,9 @@ describe('RegisterComponent', () => {
       component.onSubmit();
 
       expect(authService.register).toHaveBeenCalledWith(minimalData);
-      expect(component.successMessage).toBe('Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
+      expect(component.successMessage).toBe(
+        'Compte créé avec succès ! Vous pouvez maintenant vous connecter.',
+      );
     }));
   });
 
@@ -336,7 +349,7 @@ describe('RegisterComponent', () => {
         email: 'not-an-email',
         username: 'testuser',
         password: 'password123',
-        password_confirmation: 'password123'
+        password_confirmation: 'password123',
       });
       expect(component.registerForm.valid).toBe(false);
     });
@@ -346,7 +359,7 @@ describe('RegisterComponent', () => {
         email: 'test@example.com',
         username: 'ab',
         password: 'password123',
-        password_confirmation: 'password123'
+        password_confirmation: 'password123',
       });
       expect(component.registerForm.valid).toBe(false);
     });
@@ -356,7 +369,7 @@ describe('RegisterComponent', () => {
         email: 'test@example.com',
         username: 'testuser',
         password: 'short',
-        password_confirmation: 'short'
+        password_confirmation: 'short',
       });
       expect(component.registerForm.valid).toBe(false);
     });
@@ -366,7 +379,7 @@ describe('RegisterComponent', () => {
         email: 'test@example.com',
         username: 'testuser',
         password: 'password123',
-        password_confirmation: 'password123'
+        password_confirmation: 'password123',
       });
       expect(component.registerForm.valid).toBe(true);
     });
@@ -378,7 +391,7 @@ describe('RegisterComponent', () => {
         password: 'password123',
         password_confirmation: 'password123',
         firstName: 'Test',
-        lastName: 'User'
+        lastName: 'User',
       });
       expect(component.registerForm.valid).toBe(true);
     });
@@ -390,14 +403,16 @@ describe('RegisterComponent', () => {
         email: 'test@example.com',
         username: 'testuser',
         password: 'password123',
-        password_confirmation: 'password123'
+        password_confirmation: 'password123',
       });
       const error = { error: { errors: [] } };
       authService.register.and.returnValue(throwError(() => error));
 
       component.onSubmit();
 
-      expect(component.errorMessage).toBe('Une erreur est survenue, veuillez réessayer');
+      expect(component.errorMessage).toBe(
+        'Une erreur est survenue, veuillez réessayer',
+      );
     });
 
     it('should handle multiple errors and show first one', () => {
@@ -405,15 +420,12 @@ describe('RegisterComponent', () => {
         email: 'test@example.com',
         username: 'testuser',
         password: 'password123',
-        password_confirmation: 'password123'
+        password_confirmation: 'password123',
       });
       const error = {
         error: {
-          errors: [
-            { message: 'First error' },
-            { message: 'Second error' }
-          ]
-        }
+          errors: [{ message: 'First error' }, { message: 'Second error' }],
+        },
       };
       authService.register.and.returnValue(throwError(() => error));
 
