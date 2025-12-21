@@ -73,7 +73,7 @@ describe('authInterceptor', () => {
   });
 
   it('should refresh token on 401 error', (done) => {
-    authService.getAccessToken.and.returnValue('expired-token');
+    authService.getAccessToken.and.returnValues('expired-token', 'new-token');
     authService.refreshToken.and.returnValue(of({ accessToken: 'new-token' }));
 
     httpClient.get('/api/test').subscribe({
@@ -87,7 +87,6 @@ describe('authInterceptor', () => {
     req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
     // After refresh, the request should be retried
-    authService.getAccessToken.and.returnValue('new-token');
     const retryReq = httpMock.expectOne('/api/test');
     expect(retryReq.request.headers.get('Authorization')).toBe(
       'Bearer new-token',
