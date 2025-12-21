@@ -43,6 +43,7 @@ export class AuthService {
     if (token) {
       this.loadCurrentUser().subscribe({
         error: () => {
+          // Silently ignore errors during initial auth check
         },
       });
     }
@@ -95,7 +96,8 @@ export class AuthService {
           complete: () => {
             this.clearAuthData();
           },
-          error: () => {
+          error: (error: unknown) => {
+            console.error('Logout error:', error);
             this.clearAuthData();
           },
         });

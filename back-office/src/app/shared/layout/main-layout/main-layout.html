@@ -31,7 +31,7 @@
       </button>
     </div>
 
-    <div class="user-profile" (click)="toggleUserMenu()">
+    <div class="user-profile" (click)="toggleUserMenu()" (keydown.enter)="toggleUserMenu()" (keydown.space)="toggleUserMenu()" tabindex="0" role="button">
       <i class="fas fa-user-circle user-icon"></i>
       <div class="user-info">
         <span class="user-name">{{ getUserDisplayName() }}</span>
@@ -59,7 +59,7 @@
   </button>
 
   @if (isSidebarOpen) {
-    <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+    <div class="sidebar-overlay" (click)="closeSidebar()" (keydown.enter)="closeSidebar()" (keydown.space)="closeSidebar()" tabindex="0" role="button"></div>
   }
 
   <main class="main-content">

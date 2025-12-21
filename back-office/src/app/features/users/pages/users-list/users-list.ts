@@ -2,6 +2,7 @@ import {Component, inject, OnInit} from '@angular/core';
 import { Router } from '@angular/router';
 import { User, UserFilters } from '../../../../core/models/user.model';
 import { UserService } from '../../../../core/services/user.service';
+import { AuthService } from '../../../../core/auth/auth';
 
 @Component({
   standalone: false,
@@ -20,6 +21,7 @@ export class UsersList implements OnInit {
   };
 
   userService = inject(UserService);
+  authService = inject(AuthService);
   router = inject(Router)
 
   currentPage = 0;
@@ -27,10 +29,10 @@ export class UsersList implements OnInit {
   totalPages = 0;
   pageSizeOptions = [10, 25, 50, 100];
 
-  sortColumn: string = '';
+  sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  private snackbarTimeout: any;
+  private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
     this.loadUsers();
@@ -83,16 +85,16 @@ export class UsersList implements OnInit {
     }
 
     this.filteredUsers.sort((a, b) => {
-      let aValue: any = a[column as keyof User];
-      let bValue: any = b[column as keyof User];
+      let aValue: string | number | Date | null | undefined = a[column as keyof User];
+      let bValue: string | number | Date | null | undefined = b[column as keyof User];
+
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
 
       if (column === 'createdAt') {
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
       }
-
-      if (aValue === null || aValue === undefined) return 1;
-      if (bValue === null || bValue === undefined) return -1;
 
       if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1;
       if (aValue > bValue) return this.sortDirection === 'asc' ? 1 : -1;
@@ -169,6 +171,16 @@ export class UsersList implements OnInit {
   }
 
   deleteUser(user: User): void {
+    // === DEBUG LOGS ===
+    const currentUser = this.authService.getCurrentUser();
+    console.log('🔍 DEBUG - Tentative de suppression');
+    console.log('Current user:', currentUser);
+    console.log('Current user role:', currentUser?.role);
+    console.log('Is admin?', this.authService.isAdmin());
+    console.log('User to delete:', user);
+    console.log('Token:', this.authService.getAccessToken()?.substring(0, 20) + '...');
+    // === END DEBUG ===
+
     if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${user.username} ?`)) {
       this.userService.deleteUser(user.id).subscribe({
         next: () => {
@@ -176,8 +188,15 @@ export class UsersList implements OnInit {
           this.loadUsers();
         },
         error: (error) => {
-          console.error('Error deleting user:', error);
-          this.showSnackbar('Erreur lors de la suppression', 'error');
+          console.error('❌ Error deleting user:', error);
+          console.error('Error status:', error.status);
+          console.error('Error statusText:', error.statusText);
+          console.error('Error body:', error.error);
+          console.error('Error message:', error.message);
+
+          // Afficher le message exact du backend si disponible
+          const errorMessage = error.error?.message || 'Erreur lors de la suppression';
+          this.showSnackbar(errorMessage, 'error');
         }
       });
     }

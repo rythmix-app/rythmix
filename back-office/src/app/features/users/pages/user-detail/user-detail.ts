@@ -21,7 +21,7 @@ export class UserDetail implements OnInit {
   router = inject(Router);
   fb = inject(FormBuilder)
   userService = inject(UserService);
-  private snackbarTimeout: any;
+  private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
     this.mode = this.route.snapshot.data['mode'] || 'view';
@@ -94,7 +94,7 @@ export class UserDetail implements OnInit {
       };
 
       this.userService.createUser(createDto).subscribe({
-        next: (user) => {
+        next: () => {
           this.showSnackbar('Utilisateur créé avec succès', 'success');
           setTimeout(() => {
             this.router.navigate(['/users']);
@@ -115,7 +115,7 @@ export class UserDetail implements OnInit {
       };
 
       this.userService.updateUser(this.userId, updateDto).subscribe({
-        next: (user) => {
+        next: () => {
           this.showSnackbar('Utilisateur modifié avec succès', 'success');
           setTimeout(() => {
             this.router.navigate(['/users']);

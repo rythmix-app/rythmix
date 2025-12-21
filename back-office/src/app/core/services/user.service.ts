@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { User, CreateUserDto, UpdateUserDto, UserFilters } from '../models/user.model';
@@ -8,8 +8,7 @@ import { User, CreateUserDto, UpdateUserDto, UserFilters } from '../models/user.
 })
 export class UserService {
   private endpoint = '/users';
-
-  constructor(private api: ApiService) {}
+  private api = inject(ApiService);
 
   getUsers(filters?: UserFilters): Observable<User[]> {
     return this.api.get<{ users: User[] }>(this.endpoint, filters)
