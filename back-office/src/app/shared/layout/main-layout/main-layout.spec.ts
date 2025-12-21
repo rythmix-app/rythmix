@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 import { BehaviorSubject } from 'rxjs';
 import { MainLayoutComponent } from './main-layout';
 import { AuthService } from '../../../core/auth/auth';
@@ -9,7 +10,7 @@ describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
   let fixture: ComponentFixture<MainLayoutComponent>;
   let authService: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
+  let router: Router;
   let currentUserSubject: BehaviorSubject<User | null>;
 
   const mockUser: User = {
@@ -29,14 +30,10 @@ describe('MainLayoutComponent', () => {
     const authSpy = jasmine.createSpyObj('AuthService', ['logout'], {
       currentUser$: currentUserSubject.asObservable(),
     });
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
-      imports: [MainLayoutComponent],
-      providers: [
-        { provide: AuthService, useValue: authSpy },
-        { provide: Router, useValue: routerSpy },
-      ],
+      imports: [MainLayoutComponent, RouterTestingModule],
+      providers: [{ provide: AuthService, useValue: authSpy }],
     }).compileComponents();
 
     // Clear localStorage before each test
@@ -45,7 +42,8 @@ describe('MainLayoutComponent', () => {
     fixture = TestBed.createComponent(MainLayoutComponent);
     component = fixture.componentInstance;
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
   });
 
   afterEach(() => {
