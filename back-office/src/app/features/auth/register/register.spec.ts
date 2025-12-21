@@ -6,6 +6,7 @@ import {
 } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 import { RegisterComponent } from './register';
 import { AuthService } from '../../../core/auth/auth';
@@ -15,24 +16,21 @@ describe('RegisterComponent', () => {
   let component: RegisterComponent;
   let fixture: ComponentFixture<RegisterComponent>;
   let authService: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
+  let router: Router;
 
   beforeEach(async () => {
     const authSpy = jasmine.createSpyObj('AuthService', ['register']);
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
-      imports: [RegisterComponent, ReactiveFormsModule],
-      providers: [
-        { provide: AuthService, useValue: authSpy },
-        { provide: Router, useValue: routerSpy },
-      ],
+      imports: [RegisterComponent, ReactiveFormsModule, RouterTestingModule],
+      providers: [{ provide: AuthService, useValue: authSpy }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RegisterComponent);
     component = fixture.componentInstance;
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
     fixture.detectChanges();
   });
 
