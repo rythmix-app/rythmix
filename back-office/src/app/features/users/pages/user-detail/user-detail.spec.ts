@@ -75,7 +75,7 @@ describe('UserDetail', () => {
   afterEach(() => {
     // Clean up any snackbars added to DOM
     const snackbars = document.querySelectorAll('.custom-snackbar');
-    snackbars.forEach(snackbar => snackbar.remove());
+    snackbars.forEach((snackbar) => snackbar.remove());
 
     // Destroy the component fixture to clean up any pending timers
     if (fixture) {
