@@ -19,7 +19,7 @@ export default class AuthMiddleware {
     } catch (error) {
       ctx.logger.error('Authentication failed', error)
       return ctx.response.unauthorized({
-        message: 'Unauthorized - Invalid or missing authentication token',
+        message: 'Unauthorized access',
       })
     }
     return next()
