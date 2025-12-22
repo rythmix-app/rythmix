@@ -31,7 +31,7 @@ services:
       start_period: 5s
 
   ngrok:
-    image: ngrok/ngrok:latest
+    image: ngrok/ngrok:3.13.0
     restart: unless-stopped
     command: http backend:3333
     environment:
