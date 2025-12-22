@@ -35,6 +35,11 @@ services:
     restart: unless-stopped
     command: http backend:3333
     environment:
+      # NGROK_AUTHTOKEN is required for ngrok to authenticate your tunnel.
+      # Set this variable in your shell environment or in a .env file as:
+      # NGROK_AUTHTOKEN=your-token-here
+      # You can obtain an auth token from the ngrok dashboard:
+      # https://dashboard.ngrok.com/get-started/your-authtoken
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     ports:
       - "4040:4040"
