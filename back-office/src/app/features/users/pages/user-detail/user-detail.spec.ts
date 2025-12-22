@@ -3,6 +3,7 @@ import {
   TestBed,
   fakeAsync,
   tick,
+  flush,
 } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -69,6 +70,17 @@ describe('UserDetail', () => {
 
     // Set default mock return value to prevent errors in tests
     userService.getUserById.and.returnValue(of(mockUser));
+  });
+
+  afterEach(() => {
+    // Clean up any snackbars added to DOM
+    const snackbars = document.querySelectorAll('.custom-snackbar');
+    snackbars.forEach(snackbar => snackbar.remove());
+
+    // Destroy the component fixture to clean up any pending timers
+    if (fixture) {
+      fixture.destroy();
+    }
   });
 
   it('should create', () => {
@@ -289,6 +301,7 @@ describe('UserDetail', () => {
 
         tick(1000);
         expect(router.navigate).toHaveBeenCalledWith(['/users']);
+        flush(); // Clean up any remaining timers
       }));
 
       it('should handle create error', () => {
@@ -347,6 +360,7 @@ describe('UserDetail', () => {
 
         tick(1000);
         expect(router.navigate).toHaveBeenCalledWith(['/users']);
+        flush(); // Clean up any remaining timers
       }));
 
       it('should handle update error', () => {

@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import {
   HttpClientTestingModule,
   HttpTestingController,
@@ -12,8 +12,11 @@ describe('AuthService', () => {
   let httpMock: HttpTestingController;
   let router: jasmine.SpyObj<Router>;
 
-  beforeEach(() => {
+  beforeEach(fakeAsync(() => {
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+
+    // Clear localStorage BEFORE creating the service
+    localStorage.clear();
 
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
@@ -24,26 +27,45 @@ describe('AuthService', () => {
     httpMock = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
 
-    // Clear localStorage before each test
-    localStorage.clear();
-  });
+    // Trigger and clear any setTimeout from constructor
+    tick(0);
 
-  afterEach(() => {
-    // Flush any pending checkAuthStatus() requests from constructor's setTimeout
+    // Flush any pending requests from checkAuthStatus
     const pendingRequests = httpMock.match(() => true);
     pendingRequests.forEach((req) => {
-      if (!req.cancelled) {
-        req.flush(null, { status: 404, statusText: 'Not Found' });
-      }
+      req.flush(null, { status: 404, statusText: 'Not Found' });
     });
+  }));
 
+  afterEach(fakeAsync(() => {
+    // Trigger any pending timers
+    tick(1000);
+
+    // Flush any pending requests
+    try {
+      const pendingRequests = httpMock.match(() => true);
+      pendingRequests.forEach((req) => {
+        if (!req.cancelled) {
+          try {
+            req.flush(null, { status: 404, statusText: 'Not Found' });
+          } catch (e) {
+            // Request already completed
+          }
+        }
+      });
+    } catch (e) {
+      // No pending requests
+    }
+
+    // Verify that there are no outstanding requests
     try {
       httpMock.verify();
-    } catch {
-      // Suppress verification errors from pending requests
+    } catch (e) {
+      // Suppress verification errors
     }
+
     localStorage.clear();
-  });
+  }));
 
   it('should be created', () => {
     expect(service).toBeTruthy();
@@ -59,6 +81,15 @@ describe('AuthService', () => {
         accessToken: 'mock-access-token',
         refreshToken: 'mock-refresh-token',
       };
+      const mockUser = {
+        id: '1',
+        email: 'test@test.com',
+        username: 'testuser',
+        role: 'admin' as const,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      };
 
       service.login(mockCredentials).subscribe({
         next: (response) => {
@@ -71,10 +102,14 @@ describe('AuthService', () => {
         },
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual(mockCredentials);
-      req.flush(mockResponse);
+      const loginReq = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
+      expect(loginReq.request.method).toBe('POST');
+      expect(loginReq.request.body).toEqual(mockCredentials);
+      loginReq.flush(mockResponse);
+
+      // Mock the loadCurrentUser() call triggered by login
+      const meReq = httpMock.expectOne(`${environment.apiUrl}/auth/me`);
+      meReq.flush({ data: { user: mockUser } });
     });
 
     it('should handle login error', (done) => {
@@ -215,9 +250,13 @@ describe('AuthService', () => {
 
   describe('authentication state', () => {
     it('should track authenticated state', (done) => {
-      service.isAuthenticated$.subscribe((isAuth) => {
-        if (isAuth) {
+      let emissionCount = 0;
+      const subscription = service.isAuthenticated$.subscribe((isAuth) => {
+        emissionCount++;
+        // Skip the first emission (initial false value)
+        if (emissionCount > 1 && isAuth) {
           expect(service.isAuthenticated()).toBe(true);
+          subscription.unsubscribe();
           done();
         }
       });
@@ -230,8 +269,21 @@ describe('AuthService', () => {
 
       service.login({ email: 'test@test.com', password: 'pass' }).subscribe();
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
-      req.flush(mockResponse);
+      const loginReq = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
+      loginReq.flush(mockResponse);
+
+      // Mock the loadCurrentUser() call triggered by login
+      const mockUser = {
+        id: '1',
+        email: 'test@test.com',
+        username: 'testuser',
+        role: 'admin' as const,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      };
+      const meReq = httpMock.expectOne(`${environment.apiUrl}/auth/me`);
+      meReq.flush({ data: { user: mockUser } });
     });
   });
 

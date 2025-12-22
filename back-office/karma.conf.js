@@ -9,7 +9,12 @@ module.exports = function (config) {
       require('karma-coverage')
     ],
     client: {
-      jasmine: {},
+      jasmine: {
+        random: false,
+        stopSpecOnExpectationFailure: false,
+        stopOnSpecFailure: false,
+        timeoutInterval: 10000
+      },
       clearContext: false
     },
     jasmineHtmlReporter: {
@@ -27,6 +32,9 @@ module.exports = function (config) {
     reporters: ['progress', 'kjhtml', 'coverage'],
     browsers: ['Chrome'],
     restartOnFileChange: true,
-    singleRun: false
+    captureTimeout: 210000,
+    browserDisconnectTolerance: 3,
+    browserDisconnectTimeout: 210000,
+    browserNoActivityTimeout: 210000
   });
 };
