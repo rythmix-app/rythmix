@@ -89,13 +89,13 @@ export default function LoginScreen() {
                 <Text style={styles.forgotPwd}>Mot de passe oublié ?</Text>
               </TouchableOpacity>
 
-                <Button
-                    title="Se connecter"
-                    variant="primary"
-                    size="large"
-                    onPress={handleLogin}
-                    style={{ marginTop: 24, width: "100%" }}
-                />
+              <Button
+                title="Se connecter"
+                variant="primary"
+                size="large"
+                onPress={handleLogin}
+                style={{ marginTop: 24, width: "100%" }}
+              />
 
               <View style={styles.bottomRow}>
                 <Text style={styles.bottomText}>

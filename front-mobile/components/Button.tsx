@@ -68,7 +68,10 @@ const Button: React.FC<ButtonProps> = ({
   );
 
   if (variant === "primary" || variant === "validate" || variant === "cancel") {
-    let gradientColors: [string, string] = [Colors.primary.CTADark, Colors.primary.CTA];
+    let gradientColors: [string, string] = [
+      Colors.primary.CTADark,
+      Colors.primary.CTA,
+    ];
 
     if (variant === "validate") {
       gradientColors = ["#216E00", "#40D400"];
