@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
 import { UsersList } from './users-list';
 import { UserService } from '../../../../core/services/user.service';
@@ -57,6 +58,7 @@ describe('UsersList', () => {
 
     await TestBed.configureTestingModule({
       declarations: [UsersList],
+      imports: [HttpClientTestingModule],
       providers: [
         { provide: UserService, useValue: userServiceSpy },
         { provide: Router, useValue: routerSpy },
