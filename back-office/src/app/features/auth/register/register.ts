@@ -81,11 +81,8 @@ export class RegisterComponent {
         },
         error: (error) => {
           this.isLoading = false;
-          if (error.error?.errors) {
-            const errors = error.error.errors;
-            if (errors.length > 0) {
-              this.errorMessage = errors[0].message;
-            }
+          if (error.error?.errors && error.error.errors.length > 0) {
+            this.errorMessage = error.error.errors[0].message;
           } else if (error.error?.message) {
             this.errorMessage = error.error.message;
           } else {

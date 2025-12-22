@@ -66,6 +66,9 @@ describe('UserDetail', () => {
     component = fixture.componentInstance;
     userService = TestBed.inject(UserService) as jasmine.SpyObj<UserService>;
     router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+
+    // Set default mock return value to prevent errors in tests
+    userService.getUserById.and.returnValue(of(mockUser));
   });
 
   it('should create', () => {
@@ -109,12 +112,13 @@ describe('UserDetail', () => {
     it('should initialize form with validators for view mode', () => {
       component.mode = 'view';
       component.initForm();
+      expect(component.userForm.disabled).toBe(true);
 
+      component.userForm.enable();
       expect(component.userForm.get('username')?.hasError('required')).toBe(
         true,
       );
       expect(component.userForm.get('email')?.hasError('required')).toBe(true);
-      expect(component.userForm.disabled).toBe(true);
     });
 
     it('should require password in create mode', () => {
@@ -136,6 +140,7 @@ describe('UserDetail', () => {
     });
 
     it('should validate email format', () => {
+      component.mode = 'create'; // Set mode to create to ensure form is enabled
       component.initForm();
       const emailControl = component.userForm.get('email');
 
@@ -147,6 +152,7 @@ describe('UserDetail', () => {
     });
 
     it('should validate username min length', () => {
+      component.mode = 'create'; // Set mode to create to ensure form is enabled
       component.initForm();
       const usernameControl = component.userForm.get('username');
 
@@ -173,6 +179,8 @@ describe('UserDetail', () => {
   describe('loadUser', () => {
     it('should load user and populate form', () => {
       component.userId = '1';
+      component.mode = 'view';
+      component.initForm();
       userService.getUserById.and.returnValue(of(mockUser));
 
       component.loadUser();
@@ -186,6 +194,8 @@ describe('UserDetail', () => {
 
     it('should handle user without firstName and lastName', () => {
       component.userId = '1';
+      component.mode = 'view';
+      component.initForm();
       const userWithoutNames = { ...mockUser, firstName: null, lastName: null };
       userService.getUserById.and.returnValue(of(userWithoutNames));
 
@@ -237,12 +247,17 @@ describe('UserDetail', () => {
     });
 
     it('should mark all fields as touched when invalid', () => {
-      component.userForm.patchValue({ username: '', email: '' });
-      spyOn(component.userForm, 'markAllAsTouched');
+      component.mode = 'create';
+      component.initForm();
+      component.userForm.patchValue({ username: '', email: '', password: '' });
 
       component.onSubmit();
 
-      expect(component.userForm.markAllAsTouched).toHaveBeenCalled();
+      // Verify that fields are marked as touched
+      expect(component.userForm.get('username')?.touched).toBe(true);
+      expect(component.userForm.get('email')?.touched).toBe(true);
+      expect(userService.createUser).not.toHaveBeenCalled();
+      expect(userService.updateUser).not.toHaveBeenCalled();
     });
 
     describe('create mode', () => {
@@ -310,6 +325,7 @@ describe('UserDetail', () => {
           username: 'updated',
           firstName: 'Updated',
           lastName: 'User',
+          email: 'updated@example.com', // Email is required by form validators
           role: 'admin' as 'user' | 'admin',
         };
         component.userForm.patchValue(formValue);
@@ -317,7 +333,13 @@ describe('UserDetail', () => {
 
         component.onSubmit();
 
-        expect(userService.updateUser).toHaveBeenCalledWith('1', formValue);
+        const expectedDto = {
+          username: 'updated',
+          firstName: 'Updated',
+          lastName: 'User',
+          role: 'admin' as 'user' | 'admin',
+        };
+        expect(userService.updateUser).toHaveBeenCalledWith('1', expectedDto);
         expect(component['showSnackbar']).toHaveBeenCalledWith(
           'Utilisateur modifié avec succès',
           'success',
@@ -331,6 +353,7 @@ describe('UserDetail', () => {
         spyOn(component as never, 'showSnackbar');
         component.userForm.patchValue({
           username: 'updated',
+          email: 'updated@example.com', // Email is required by form validators
           role: 'admin',
         });
         const error = new Error('Username taken');
@@ -414,12 +437,14 @@ describe('UserDetail', () => {
   describe('loading state', () => {
     it('should set isLoading during user load', () => {
       component.userId = '1';
+      component.mode = 'view';
+      component.initForm();
       userService.getUserById.and.returnValue(of(mockUser));
 
       component.isLoading = false;
       component.loadUser();
 
-      // isLoading should be set to true initially, then false after completion
+      // isLoading should be set to false after completion
       expect(component.isLoading).toBe(false);
     });
 
