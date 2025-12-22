@@ -49,19 +49,19 @@ describe('AuthService', () => {
           try {
             req.flush(null, { status: 404, statusText: 'Not Found' });
           } catch (e) {
-            // Request already completed
+            console.log('Error flushing request:', e);
           }
         }
       });
     } catch (e) {
-      // No pending requests
+      console.log('Error flushing request:', e);
     }
 
     // Verify that there are no outstanding requests
     try {
       httpMock.verify();
     } catch (e) {
-      // Suppress verification errors
+      console.log('Error flushing request:', e);
     }
 
     localStorage.clear();
