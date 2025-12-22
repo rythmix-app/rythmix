@@ -30,6 +30,31 @@ services:
       retries: 3
       start_period: 5s
 
+  ngrok:
+    image: ngrok/ngrok:latest
+    command: http backend:3333
+    environment:
+      # NGROK_AUTHTOKEN is required for ngrok to authenticate your tunnel.
+      # Set this variable in your shell environment or in a .env file as:
+      # NGROK_AUTHTOKEN=your-token-here
+      # You can obtain an auth token from the ngrok dashboard:
+      # https://dashboard.ngrok.com/get-started/your-authtoken
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:-} 
+    profiles:
+      - ngrok # Enable ngrok by specifying the 'ngrok' profile when running docker-compose commands (e.g., `docker-compose --profile ngrok up`)
+    ports:
+      - "4040:4040"
+    depends_on:
+      - backend
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4040"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
   database:
     image: postgres:alpine
     restart: unless-stopped
