@@ -32,7 +32,7 @@ services:
 
   ngrok:
     image: ngrok/ngrok:latest
-    command: http backend:3333
+    command: http backend:3333 --url ${NGROK_DOMAIN:-}
     environment:
       # NGROK_AUTHTOKEN is required for ngrok to authenticate your tunnel.
       # Set this variable in your shell environment or in a .env file as:
