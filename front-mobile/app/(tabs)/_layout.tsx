@@ -1,74 +1,21 @@
 import { Tabs } from "expo-router";
-import React from "react";
-import { Platform } from "react-native";
-
-import { HapticTab } from "@/components/HapticTab";
-import { IconSymbol } from "@/components/ui/IconSymbol";
-import TabBarBackground from "@/components/ui/TabBarBackground";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { View } from "react-native";
+import { CustomTabBar } from "@/components/navigation/CustomTabBar";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: "absolute",
-          },
-          default: {},
-        }),
-      }}
-    >
-      {/* Accueil */}
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Accueil",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
-          ),
+    <View style={{ flex: 1, backgroundColor: "#121212" }}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
         }}
-      />
-
-      {/* SwipeMix */}
-      <Tabs.Screen
-        name="swipemix"
-        options={{
-          title: "SwipeMix",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="shuffle" color={color} />
-          ),
-        }}
-      />
-
-      {/* Profil (layout dédié) */}
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profil",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.fill" color={color} />
-          ),
-        }}
-      />
-
-      {/* Jeux (layout dédié) */}
-      <Tabs.Screen
-        name="games"
-        options={{
-          title: "Jeux",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="gamecontroller.fill" color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+        tabBar={(props) => <CustomTabBar {...props} />}
+      >
+        <Tabs.Screen name="index" />
+        <Tabs.Screen name="swipemix" />
+        <Tabs.Screen name="games" />
+        <Tabs.Screen name="profile" />
+      </Tabs>
+    </View>
   );
 }
