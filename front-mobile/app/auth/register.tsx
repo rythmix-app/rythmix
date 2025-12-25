@@ -12,8 +12,6 @@ import {
   View,
 } from "react-native";
 
-const API_URL = "http://YOUR_LOCAL_IP:3333";
-
 export default function RegisterScreen() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -52,13 +50,7 @@ export default function RegisterScreen() {
       Alert.alert("Erreur", "Le mot de passe est requis");
       return false;
     }
-    if (password.length < 8) {
-      Alert.alert(
-        "Erreur",
-        "Le mot de passe doit contenir au moins 8 caractères"
-      );
-      return false;
-    }
+
     if (password !== confirmPassword) {
       Alert.alert("Erreur", "Les mots de passe ne correspondent pas");
       return false;
@@ -78,19 +70,22 @@ export default function RegisterScreen() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          username,
-          email,
-          password,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            username,
+            email,
+            password,
+          }),
+        }
+      );
 
       const data = await response.json();
 
