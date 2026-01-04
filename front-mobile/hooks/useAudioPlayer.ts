@@ -1,7 +1,7 @@
-import { useAudioPlayer as useExpoAudioPlayer, AudioModule } from "expo-audio";
-import { useState, useEffect, useRef } from "react";
-import { DeezerTrack } from "../services/deezer-api";
-import { AudioPlayerError } from "../types/errors";
+import { AudioModule, useAudioPlayer as useExpoAudioPlayer } from "expo-audio";
+import { useEffect, useRef, useState } from "react";
+import { DeezerTrack } from "@/services/deezer-api";
+import { AudioPlayerError } from "@/types/errors";
 
 interface AudioPlayerState {
   isPlaying: boolean;
@@ -34,7 +34,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  const updateIntervalRef = useRef<number | null>(null);
+  const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Configurer le mode audio au montage
   useEffect(() => {
