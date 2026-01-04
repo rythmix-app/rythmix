@@ -76,6 +76,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     paddingVertical: 16,
     paddingHorizontal: 24,
+    gap: 16,
   },
   darkGreen: {
     backgroundColor: "#052E30",
@@ -97,6 +98,8 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 8,
+    marginBottom: 12,
+    alignSelf: "center",
   },
   playButton: {
     position: "absolute",
@@ -140,6 +143,7 @@ const styles = StyleSheet.create({
     gap: 4,
     maxWidth: "30%",
   },
+
   textContainer: {
     flexDirection: "column",
     maxWidth: "70%",
