@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -86,7 +87,7 @@ export default function CardStack({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onSwipeLeft?.(card);
 
-    setCurrentIndex((prev) => {
+    setCurrentIndex((prev: number) => {
       const nextIndex = prev + 1;
       if (nextIndex >= cards.length) {
         onEmpty?.();
@@ -99,7 +100,7 @@ export default function CardStack({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onSwipeRight?.(card);
 
-    setCurrentIndex((prev) => {
+    setCurrentIndex((prev: number) => {
       const nextIndex = prev + 1;
       if (nextIndex >= cards.length) {
         onEmpty?.();
