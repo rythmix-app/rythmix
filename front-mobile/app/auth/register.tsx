@@ -213,8 +213,8 @@ export default function RegisterScreen() {
           {acceptTerms && <Text style={styles.checkmark}>✓</Text>}
         </View>
         <Text style={styles.checkboxText}>
-          J'accepte les{" "}
-          <Text style={styles.link}>Conditions d'utilisation</Text> et la{" "}
+          J&apos;accepte les{" "}
+          <Text style={styles.link}>Conditions d&apos;utilisation</Text> et la{" "}
           <Text style={styles.link}>Politique de confidentialité</Text>
         </Text>
       </TouchableOpacity>
