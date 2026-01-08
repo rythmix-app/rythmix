@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, type ComponentType } from "react";
 import {
   TouchableOpacity,
   StyleSheet,
@@ -6,10 +6,10 @@ import {
   Text,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import type { IconlyIconProps } from "@/components/icons/Iconly";
 
 type Props = {
-  icon: React.ComponentProps<typeof Ionicons>["name"];
+  icon: ComponentType<IconlyIconProps>;
   label: string;
   active: boolean;
   onPress: () => void;
@@ -18,7 +18,7 @@ type Props = {
 };
 
 export function TabItem({
-  icon,
+  icon: Icon,
   label,
   active,
   onPress,
@@ -35,7 +35,7 @@ export function TabItem({
         useNativeDriver: true,
       }).start();
     } else {
-      t.stopAnimation(() => t.setValue(0)); // retour instant
+      t.stopAnimation(() => t.setValue(0));
     }
   }, [active, t]);
 
@@ -58,7 +58,7 @@ export function TabItem({
             active && { backgroundColor: activeBg },
           ]}
         >
-          <Ionicons name={icon} size={24} color={inactiveColor} />
+          <Icon size={24} color={inactiveColor} />
 
           {active && (
             <Animated.View
