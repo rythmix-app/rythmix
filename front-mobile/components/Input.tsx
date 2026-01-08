@@ -8,6 +8,7 @@ import {
   TextStyle,
   TextInputProps,
 } from "react-native";
+import { Colors } from "@/constants/Colors";
 
 type InputSize = "small" | "medium" | "large";
 
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 2,
-    borderColor: "#0D7377",
+    borderColor: Colors.primary.CTA,
     borderRadius: 12,
     backgroundColor: "#000",
     color: "#fff",
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
   },
   // States
   focused: {
-    borderColor: "#40D400",
+    borderColor: Colors.primary.survol,
   },
   error: {
     borderColor: "#D40000",
