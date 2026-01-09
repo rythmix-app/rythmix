@@ -35,7 +35,6 @@ test.group('AuthController - Register', (group) => {
 
     const response = await client.post('/api/auth/register').json({
       ...userData,
-      password_confirmation: userData.password,
       firstName: 'John',
       lastName: 'Doe',
     })
@@ -69,10 +68,7 @@ test.group('AuthController - Register', (group) => {
 
     mail.fake()
 
-    const response = await client.post('/api/auth/register').json({
-      ...userData,
-      password_confirmation: userData.password,
-    })
+    const response = await client.post('/api/auth/register').json(userData)
 
     response.assertStatus(201)
 
@@ -92,7 +88,6 @@ test.group('AuthController - Register', (group) => {
     const response = await client.post('/api/auth/register').json({
       ...makeUser('new'),
       email: existing.email,
-      password_confirmation: 'password123',
     })
 
     response.assertStatus(422)
@@ -112,25 +107,6 @@ test.group('AuthController - Register', (group) => {
     const response = await client.post('/api/auth/register').json({
       ...makeUser('new'),
       username: existing.username,
-      password_confirmation: 'password123',
-    })
-
-    response.assertStatus(422)
-    response.assertBodyContains({
-      message: 'Validation failed',
-    })
-
-    mail.restore()
-  }).timeout(10000)
-
-  test('POST /api/auth/register should fail with password mismatch', async ({ client }) => {
-    const userData = makeUser('mismatch')
-
-    mail.fake()
-
-    const response = await client.post('/api/auth/register').json({
-      ...userData,
-      password_confirmation: 'differentpassword',
     })
 
     response.assertStatus(422)
@@ -150,7 +126,6 @@ test.group('AuthController - Register', (group) => {
       email: userData.email,
       username: userData.username,
       password: 'short',
-      password_confirmation: 'short',
     })
 
     response.assertStatus(422)
@@ -170,7 +145,6 @@ test.group('AuthController - Register', (group) => {
       email: 'invalid-email',
       username: userData.username,
       password: userData.password,
-      password_confirmation: userData.password,
     })
 
     response.assertStatus(422)
@@ -190,7 +164,6 @@ test.group('AuthController - Register', (group) => {
       email: userData.email,
       username: 'ab',
       password: userData.password,
-      password_confirmation: userData.password,
     })
 
     response.assertStatus(422)
@@ -737,7 +710,6 @@ test.group('AuthController - Complete Authentication Flow', (group) => {
 
     let response = await client.post('/api/auth/register').json({
       ...userData,
-      password_confirmation: userData.password,
       firstName: 'Complete',
       lastName: 'Flow',
     })
