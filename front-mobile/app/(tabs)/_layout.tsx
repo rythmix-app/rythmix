@@ -20,7 +20,10 @@ export default function TabLayout() {
         screenOptions={({ route }) => ({
           headerShown: true,
           header: () => (
-            <Header title={TITLES[route.name] ?? route.name} variant="withMenu" />
+            <Header
+              title={TITLES[route.name] ?? route.name}
+              variant="withMenu"
+            />
           ),
         })}
         tabBar={(props) => <CustomTabBar {...props} />}
