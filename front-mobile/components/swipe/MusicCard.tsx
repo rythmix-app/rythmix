@@ -1,5 +1,6 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import MusicTag from "@/components/swipe/MusicTag";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 
 export interface MusicCardData {
   id: string;
@@ -16,18 +17,48 @@ export interface MusicCardData {
 
 interface MusicCardProps {
   data: MusicCardData;
+  isPlaying?: boolean;
+  onTogglePlay?: () => void;
 }
 
-export default function MusicCard({ data }: MusicCardProps) {
+export default function MusicCard({
+  data,
+  isPlaying = false,
+  onTogglePlay,
+}: MusicCardProps) {
   return (
     <View style={[styles.container, styles[data.color]]}>
-      <Image source={{ uri: data.coverImage }} style={styles.coverImage} />
+      <View style={styles.coverContainer}>
+        <Image source={{ uri: data.coverImage }} style={styles.coverImage} />
+        {onTogglePlay && (
+          <TouchableOpacity
+            style={styles.playButton}
+            onPress={onTogglePlay}
+            activeOpacity={0.7}
+          >
+            <View style={styles.playButtonInner}>
+              <IconSymbol
+                name={isPlaying ? "pause.fill" : "play.fill"}
+                size={32}
+                color="#FFFFFF"
+              />
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <Text numberOfLines={1} style={styles.title}>
+        {data.title}
+      </Text>
 
       <View style={styles.bottomContainer}>
         <View style={styles.textContainer}>
-          <Text style={styles.title}>{data.title}</Text>
-          <Text style={styles.artist}>{data.artist}</Text>
-          <Text style={styles.album}>{data.album}</Text>
+          <Text numberOfLines={1} style={styles.artist}>
+            {data.artist}
+          </Text>
+          <Text numberOfLines={1} style={styles.album}>
+            {data.album}
+          </Text>
         </View>
 
         <View style={styles.tagsContainer}>
@@ -56,17 +87,45 @@ const styles = StyleSheet.create({
   lightBlue: {
     backgroundColor: "#19B3BD",
   },
-  coverImage: {
+  coverContainer: {
+    position: "relative",
     width: 284,
     height: 250,
+    alignSelf: "center",
+    marginBottom: 12,
+  },
+  coverImage: {
+    width: "100%",
+    height: "100%",
     borderRadius: 8,
     marginBottom: 12,
     alignSelf: "center",
+  },
+  playButton: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -35 }, { translateY: -35 }],
+    width: 70,
+    height: 70,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  playButtonInner: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.8)",
   },
   title: {
     fontSize: 22,
     color: "#FFFFFF",
     fontFamily: "Bold",
+    marginVertical: 4,
   },
   artist: {
     fontSize: 20,
@@ -82,11 +141,12 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignSelf: "flex-end",
     gap: 4,
+    maxWidth: "30%",
   },
 
   textContainer: {
     flexDirection: "column",
-    gap: 6,
+    maxWidth: "70%",
   },
   bottomContainer: {
     width: "100%",

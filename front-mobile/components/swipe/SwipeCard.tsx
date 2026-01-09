@@ -32,6 +32,8 @@ interface SwipeCardProps {
   onSwipeRight?: (data: MusicCardData) => void;
   isTop?: boolean;
   index?: number;
+  isPlaying?: boolean;
+  onTogglePlay?: (data: MusicCardData) => void;
 }
 
 export default function SwipeCard({
@@ -40,6 +42,8 @@ export default function SwipeCard({
   onSwipeRight,
   isTop = false,
   index = 0,
+  isPlaying = false,
+  onTogglePlay,
 }: SwipeCardProps) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -173,7 +177,11 @@ export default function SwipeCard({
         { zIndex: 100 - index },
       ]}
     >
-      <MusicCard data={data} />
+      <MusicCard
+        data={data}
+        isPlaying={isPlaying}
+        onTogglePlay={() => onTogglePlay?.(data)}
+      />
 
       {isTop && (
         <>
