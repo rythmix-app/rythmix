@@ -3,6 +3,7 @@ import Input from "@/components/Input";
 import { Link, router } from "expo-router";
 import { RythmixLogo } from "@/components/RythmixLogo";
 import { useState } from "react";
+import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
 import {
   Alert,
   ScrollView,
@@ -84,7 +85,7 @@ export default function RegisterScreen() {
             email,
             password,
           }),
-        },
+        }
       );
 
       const data = await response.json();
@@ -103,7 +104,7 @@ export default function RegisterScreen() {
       console.error("Registration error:", error);
       Alert.alert(
         "Erreur",
-        "Impossible de se connecter au serveur. Veuillez réessayer.",
+        "Impossible de se connecter au serveur. Veuillez réessayer."
       );
     } finally {
       setIsLoading(false);
@@ -189,6 +190,8 @@ export default function RegisterScreen() {
         labelStyle={styles.labelStyle}
         editable={!isLoading}
       />
+
+      <PasswordStrengthIndicator password={password} />
 
       {/* Confirm Password */}
       <Input
