@@ -1,15 +1,45 @@
 import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 
-const PasswordStrengthIndicator = ({ password }) => {
+interface PasswordStrengthIndicatorProps {
+  password: string;
+}
+
+interface Criteria {
+  length: boolean;
+  lengthStrong: boolean;
+  lowercase: boolean;
+  uppercase: boolean;
+  number: boolean;
+  special: boolean;
+}
+
+interface StrengthResult {
+  strength: number;
+  criteria: Criteria;
+}
+
+const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
+  password,
+}) => {
   const progressAnim = React.useRef(new Animated.Value(0)).current;
 
-  const calculateStrength = () => {
+  const calculateStrength = (): StrengthResult => {
     if (!password || password.length === 0) {
-      return { strength: 0, criteria: {} };
+      return {
+        strength: 0,
+        criteria: {
+          length: false,
+          lengthStrong: false,
+          lowercase: false,
+          uppercase: false,
+          number: false,
+          special: false,
+        },
+      };
     }
 
-    const criteria = {
+    const criteria: Criteria = {
       length: password.length >= 8,
       lengthStrong: password.length >= 12,
       lowercase: /[a-z]/.test(password),
@@ -69,9 +99,9 @@ const PasswordStrengthIndicator = ({ password }) => {
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [strength]);
+  }, [strength, progressAnim]);
 
-  const getStrengthColor = () => {
+  const getStrengthColor = (): string => {
     if (strength === 0) return "#666";
     if (strength === 25) return "#FF4444";
     if (strength === 50) return "#FFA500";
@@ -79,7 +109,7 @@ const PasswordStrengthIndicator = ({ password }) => {
     return "#00D9D9";
   };
 
-  const getStrengthLabel = () => {
+  const getStrengthLabel = (): string => {
     if (strength === 0) return "";
     if (strength === 25) return "Faible";
     if (strength === 50) return "Moyen";
