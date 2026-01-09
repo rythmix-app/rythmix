@@ -85,7 +85,7 @@ export default function RegisterScreen() {
             email,
             password,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -104,7 +104,7 @@ export default function RegisterScreen() {
       console.error("Registration error:", error);
       Alert.alert(
         "Erreur",
-        "Impossible de se connecter au serveur. Veuillez réessayer."
+        "Impossible de se connecter au serveur. Veuillez réessayer.",
       );
     } finally {
       setIsLoading(false);
