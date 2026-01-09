@@ -1,6 +1,6 @@
 import React from "react";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { Href, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   StyleSheet,
@@ -59,7 +59,7 @@ export default function Header({
       onSettings();
       return;
     }
-    router.push("/settings");
+    router.push("/settings" as Href);
   };
 
   return (
