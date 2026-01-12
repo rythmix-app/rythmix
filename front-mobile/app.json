@@ -22,11 +22,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.frontmobile",
-      "permissions": [
-        "INTERNET",
-        "MODIFY_AUDIO_SETTINGS",
-        "WAKE_LOCK"
-      ]
+      "permissions": ["INTERNET", "MODIFY_AUDIO_SETTINGS", "WAKE_LOCK"]
     },
     "web": {
       "bundler": "metro",
