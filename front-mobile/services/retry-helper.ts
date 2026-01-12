@@ -89,10 +89,14 @@ export function fetchWithTimeout(
   options: RequestInit = {},
   timeout: number = 10000,
 ): Promise<Response> {
+  let timeoutId: ReturnType<typeof setTimeout>;
+
+  const timeoutPromise = new Promise<Response>((_, reject) => {
+    timeoutId = setTimeout(() => reject(DeezerAPIError.timeout()), timeout);
+  });
+
   return Promise.race([
-    fetch(url, options),
-    new Promise<Response>((_, reject) =>
-      setTimeout(() => reject(DeezerAPIError.timeout()), timeout),
-    ),
+    fetch(url, options).finally(() => clearTimeout(timeoutId)),
+    timeoutPromise,
   ]);
 }
