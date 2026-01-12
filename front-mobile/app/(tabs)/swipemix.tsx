@@ -33,10 +33,9 @@ export default function SwipeMixScreen() {
       <View
         style={[styles.container, { paddingTop: top, paddingBottom: bottom }]}
       >
-        <Text style={styles.title}>SwipeMix</Text>
-        {error && (
+        {(error || audioPlayer.error) && (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.errorText}>{error || audioPlayer.error}</Text>
           </View>
         )}
         <View style={styles.swipeCardContainer}>
