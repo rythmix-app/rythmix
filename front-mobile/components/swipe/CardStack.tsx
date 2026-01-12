@@ -57,7 +57,10 @@ export default function CardStack({
       lastPlayedCardIdRef.current = currentCard.id;
       onCardAppear(currentCard);
     }
-  }, [currentIndex, cards.length, onCardAppear, cards]); // Déclenche quand l'index change OU quand de nouvelles cartes sont chargées
+    // We intentionally omit 'cards' to prevent re-renders when array reference changes.
+    // We track cards.length instead, which captures when new cards are loaded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex, cards.length, onCardAppear]);
 
   // Charger automatiquement plus de musiques quand on approche de la fin
   useEffect(() => {

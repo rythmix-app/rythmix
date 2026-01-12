@@ -72,12 +72,11 @@ class AudioCache {
       if (nextIndex < tracks.length) {
         const nextTrack = tracks[nextIndex];
 
-        // Ajouter au cache même si pas encore chargé
-        this.add(nextTrack);
-
-        // Ajouter à la liste des tracks à précharger
+        // Vérifier d'abord si le track existe dans le cache
         if (!this.has(nextTrack.id)) {
           tracksToPreload.push(nextTrack);
+          // Ajouter au cache après vérification
+          this.add(nextTrack);
         }
       }
     }

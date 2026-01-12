@@ -345,7 +345,7 @@ describe("useAudioPlayer", () => {
 
       // Trigger the interval update to sync duration from player
       act(() => {
-        jest.advanceTimersByTime(100);
+        jest.advanceTimersByTime(250);
       });
 
       // Now duration should be updated, seek should work
@@ -459,7 +459,7 @@ describe("useAudioPlayer", () => {
 
       // Advance timers to trigger the interval update
       act(() => {
-        jest.advanceTimersByTime(100);
+        jest.advanceTimersByTime(250);
       });
 
       await waitFor(() => {
@@ -483,7 +483,7 @@ describe("useAudioPlayer", () => {
       const { result } = renderHook(() => useAudioPlayer());
 
       act(() => {
-        jest.advanceTimersByTime(100);
+        jest.advanceTimersByTime(250);
       });
 
       // Should not crash
@@ -499,7 +499,7 @@ describe("useAudioPlayer", () => {
 
       // Trigger initial interval
       act(() => {
-        jest.advanceTimersByTime(100);
+        jest.advanceTimersByTime(250);
       });
 
       // Force a re-render which will trigger the useEffect again
@@ -508,7 +508,7 @@ describe("useAudioPlayer", () => {
       // The previous interval should have been cleared
       // and a new one should be set
       act(() => {
-        jest.advanceTimersByTime(100);
+        jest.advanceTimersByTime(250);
       });
 
       jest.useRealTimers();

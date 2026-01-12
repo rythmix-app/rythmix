@@ -64,7 +64,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Mettre à jour la position et la durée toutes les 100ms
+  // Mettre à jour la position et la durée toutes les 250ms
   useEffect(() => {
     if (updateIntervalRef.current) {
       clearInterval(updateIntervalRef.current);
@@ -78,15 +78,14 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
       } catch {
         // Ignorer les erreurs de lecture des propriétés
       }
-    }, 100);
+    }, 250);
 
     return () => {
       if (updateIntervalRef.current) {
         clearInterval(updateIntervalRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [player]);
 
   const play = async (track: DeezerTrack): Promise<void> => {
     try {

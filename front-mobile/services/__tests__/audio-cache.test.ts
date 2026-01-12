@@ -278,9 +278,11 @@ describe("AudioCache", () => {
 
       const toPreload = audioCache.preloadNext(tracks, 0);
 
-      // Since add() is called before has() check, all tracks will be in cache
-      // so toPreload will always be empty (this appears to be a code logic issue)
-      expect(toPreload.length).toBe(0);
+      // Track 2 is already cached, so only tracks 3 and 4 should be returned for preloading
+      // (preloadNext tries to preload 3 tracks: indices 1, 2, 3 = track IDs 2, 3, 4)
+      expect(toPreload.length).toBe(2);
+      expect(toPreload[0].id).toBe(3);
+      expect(toPreload[1].id).toBe(4);
     });
 
     it("should add all next tracks to cache during preload", () => {

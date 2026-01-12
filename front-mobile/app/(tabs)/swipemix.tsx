@@ -1,12 +1,32 @@
 import { View, Text, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useRef, useEffect } from "react";
 import CardStack from "@/components/swipe/CardStack";
 import { useSwipeMix } from "@/hooks/useSwipeMix";
 
 export default function SwipeMixScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { cards, handlers, audioPlayer, error, actions } = useSwipeMix();
+
+  // Utiliser une ref pour garder une référence stable à la fonction stop
+  const audioPlayerStopRef = useRef(audioPlayer.stop);
+
+  // Mettre à jour la ref quand audioPlayer.stop change
+  useEffect(() => {
+    audioPlayerStopRef.current = audioPlayer.stop;
+  }, [audioPlayer.stop]);
+
+  // Arrêter la musique quand l'utilisateur quitte l'onglet
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Cleanup: arrêter la musique quand on perd le focus
+        audioPlayerStopRef.current();
+      };
+    }, []),
+  );
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
