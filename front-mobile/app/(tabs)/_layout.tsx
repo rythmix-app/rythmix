@@ -8,7 +8,6 @@ import { CustomTabBar } from "@/components/navigation/CustomTabBar";
 const TITLES: Record<string, string> = {
   index: "Accueil",
   swipemix: "SwipeMix",
-  explore: "Explore",
   profile: "Profil",
   games: "Jeux",
 };
@@ -32,7 +31,6 @@ export default function TabLayout() {
         <Tabs.Screen name="swipemix" />
         <Tabs.Screen name="games" />
         <Tabs.Screen name="profile" />
-        <Tabs.Screen name="explore" />
       </Tabs>
     </View>
   );

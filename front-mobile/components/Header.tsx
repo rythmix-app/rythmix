@@ -1,5 +1,4 @@
 import React from "react";
-import { LinearGradient } from "expo-linear-gradient";
 import { Href, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -11,8 +10,6 @@ import {
   ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { Colors } from "@/constants/Colors";
 
 export interface HeaderProps {
   title: string;
@@ -63,12 +60,7 @@ export default function Header({
   };
 
   return (
-    <LinearGradient
-      colors={["#00BFA5", Colors.secondary.turquoise]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[styles.container, { paddingTop: top + 12 }, style]}
-    >
+    <View style={[styles.container, { paddingTop: top + 12 }, style]}>
       <View style={[styles.content, shouldAddGap && styles.contentGapped]}>
         <View
           style={[
@@ -125,13 +117,14 @@ export default function Header({
           )}
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     width: "100%",
+    backgroundColor: "#0D7377",
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingHorizontal: 16,
@@ -160,8 +153,11 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     color: "#FFFFFF",
-    fontSize: 24,
+    fontSize: 40,
     fontFamily: "Bold",
+    textShadowColor: "rgba(255, 255, 255, 0.40)",
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
   },
   titleCentered: {
     textAlign: "center",
