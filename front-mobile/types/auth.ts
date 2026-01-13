@@ -35,9 +35,8 @@ export interface ApiError {
   statusCode?: number;
 }
 
-
 export interface GetUserInfoResponse {
   data: {
     user: User;
-  }
+  };
 }

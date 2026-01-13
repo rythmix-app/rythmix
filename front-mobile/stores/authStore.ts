@@ -19,7 +19,12 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => {
   setUnauthorizedHandler(() => {
-    set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+    set({
+      user: null,
+      token: null,
+      refreshToken: null,
+      isAuthenticated: false,
+    });
     storage.clearAll();
   });
 
