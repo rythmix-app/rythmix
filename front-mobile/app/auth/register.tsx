@@ -3,6 +3,7 @@ import Input from "@/components/Input";
 import { Link, router } from "expo-router";
 import { RythmixLogo } from "@/components/RythmixLogo";
 import { useState } from "react";
+import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
 import {
   Alert,
   ScrollView,
@@ -168,6 +169,8 @@ export default function RegisterScreen() {
         labelStyle={styles.labelStyle}
         editable={!isLoading}
       />
+
+      <PasswordStrengthIndicator password={password} />
 
       {/* Confirm Password */}
       <Input
