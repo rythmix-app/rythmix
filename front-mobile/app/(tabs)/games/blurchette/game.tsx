@@ -42,7 +42,6 @@ const normalizeString = (str: string): string => {
 export default function BlurchetteGameScreen() {
   const [gameState, setGameState] = useState<GameState>("genreSelection");
   const [genres, setGenres] = useState<DeezerGenre[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState<DeezerGenre | null>(null);
   const [loadingGenres, setLoadingGenres] = useState(true);
   const [loadingTrack, setLoadingTrack] = useState(false);
 
@@ -85,7 +84,6 @@ export default function BlurchetteGameScreen() {
   };
 
   const startGame = async (genre: DeezerGenre) => {
-    setSelectedGenre(genre);
     setLoadingTrack(true);
 
     try {
@@ -254,7 +252,6 @@ export default function BlurchetteGameScreen() {
 
   const resetGame = () => {
     setGameState("genreSelection");
-    setSelectedGenre(null);
     setCurrentTrack(null);
     setBlurLevel(1);
     setAnswer("");

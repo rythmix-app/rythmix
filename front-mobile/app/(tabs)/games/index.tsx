@@ -40,11 +40,9 @@ export default function GamesScreen() {
       const gameRoute = game.name.toLowerCase().replace(/\s+/g, "");
       router.push(`/games/${gameRoute}` as any);
     } else {
-      Alert.alert(
-        game.name,
-        "Ce jeu n'est pas encore disponible.",
-        [{ text: "OK" }]
-      );
+      Alert.alert(game.name, "Ce jeu n'est pas encore disponible.", [
+        { text: "OK" },
+      ]);
     }
   };
 
@@ -69,81 +67,86 @@ export default function GamesScreen() {
   return (
     <>
       <Header title="Jeux" variant="withMenu" />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <MaterialIcons
-            name="person"
-            size={32}
-            color={Colors.primary.survol}
-          />
-          <Text style={styles.sectionTitle}>
-            Jeux Solo
-          </Text>
-        </View>
-        <View style={styles.list}>
-          {soloGames.map((game) => (
-            <TouchableOpacity
-              key={game.id}
-              style={[
-                styles.gameItem,
-                !game.isEnabled && styles.gameItemDisabled
-              ]}
-              onPress={() => handleGamePress(game)}
-            >
-              <ThemedText style={[
-                styles.gameName,
-                !game.isEnabled && styles.gameNameDisabled
-              ]}>
-                {game.name}
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons
+              name="person"
+              size={32}
+              color={Colors.primary.survol}
+            />
+            <Text style={styles.sectionTitle}>Jeux Solo</Text>
+          </View>
+          <View style={styles.list}>
+            {soloGames.map((game) => (
+              <TouchableOpacity
+                key={game.id}
+                style={[
+                  styles.gameItem,
+                  !game.isEnabled && styles.gameItemDisabled,
+                ]}
+                onPress={() => handleGamePress(game)}
+              >
+                <ThemedText
+                  style={[
+                    styles.gameName,
+                    !game.isEnabled && styles.gameNameDisabled,
+                  ]}
+                >
+                  {game.name}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+            {soloGames.length === 0 && (
+              <ThemedText style={styles.emptyText}>
+                Aucun jeu solo disponible
               </ThemedText>
-            </TouchableOpacity>
-          ))}
-          {soloGames.length === 0 && (
-            <ThemedText style={styles.emptyText}>
-              Aucun jeu solo disponible
-            </ThemedText>
-          )}
+            )}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <MaterialIcons
-            name="groups"
-            size={32}
-            color={Colors.primary.survol}
-          />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Jeux à Plusieurs
-          </ThemedText>
-        </View>
-        <View style={styles.list}>
-          {multiplayerGames.map((game) => (
-            <TouchableOpacity
-              key={game.id}
-              style={[
-                styles.gameItem,
-                !game.isEnabled && styles.gameItemDisabled
-              ]}
-              onPress={() => handleGamePress(game)}
-            >
-              <ThemedText style={[
-                styles.gameName,
-                !game.isEnabled && styles.gameNameDisabled
-              ]}>
-                {game.name}
-              </ThemedText>
-            </TouchableOpacity>
-          ))}
-          {multiplayerGames.length === 0 && (
-            <ThemedText style={styles.emptyText}>
-              Aucun jeu multijoueur disponible
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons
+              name="groups"
+              size={32}
+              color={Colors.primary.survol}
+            />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Jeux à Plusieurs
             </ThemedText>
-          )}
+          </View>
+          <View style={styles.list}>
+            {multiplayerGames.map((game) => (
+              <TouchableOpacity
+                key={game.id}
+                style={[
+                  styles.gameItem,
+                  !game.isEnabled && styles.gameItemDisabled,
+                ]}
+                onPress={() => handleGamePress(game)}
+              >
+                <ThemedText
+                  style={[
+                    styles.gameName,
+                    !game.isEnabled && styles.gameNameDisabled,
+                  ]}
+                >
+                  {game.name}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+            {multiplayerGames.length === 0 && (
+              <ThemedText style={styles.emptyText}>
+                Aucun jeu multijoueur disponible
+              </ThemedText>
+            )}
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
     </>
   );
 }
@@ -184,7 +187,7 @@ const styles = StyleSheet.create({
     color: "white",
     textTransform: "uppercase",
     fontSize: 32,
-    fontFamily: "Bold"
+    fontFamily: "Bold",
   },
   list: {
     gap: 10,

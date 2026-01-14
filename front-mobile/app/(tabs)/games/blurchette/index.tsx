@@ -7,7 +7,6 @@ import Button from "@/components/Button";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/Colors";
 import { getAllGames } from "@/services/gameService";
-import { Game } from "@/types/games";
 
 export default function BlurchetteIndexScreen() {
   const [gameId, setGameId] = useState<number | null>(null);
@@ -22,7 +21,7 @@ export default function BlurchetteIndexScreen() {
     try {
       const games = await getAllGames();
       const blurchette = games.find(
-        (g) => g.name.toLowerCase() === "blurchette"
+        (g) => g.name.toLowerCase() === "blurchette",
       );
       if (blurchette) {
         setGameId(blurchette.id);
@@ -53,9 +52,7 @@ export default function BlurchetteIndexScreen() {
         <Header title="Blurchette" variant="withBack" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary.survol} />
-          <ThemedText style={styles.loadingText}>
-            Chargement...
-          </ThemedText>
+          <ThemedText style={styles.loadingText}>Chargement...</ThemedText>
         </View>
       </>
     );
@@ -86,159 +83,209 @@ export default function BlurchetteIndexScreen() {
   return (
     <>
       <Header title="Blurchette" variant="withBack" />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <MaterialIcons name="blur-on" size={80} color={Colors.primary.survol} />
-        <ThemedText type="title" style={styles.title}>
-          Blurchette
-        </ThemedText>
-        <ThemedText style={styles.subtitle}>
-          Devinez les pochettes d&#39;albums floues !
-        </ThemedText>
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="info" size={24} color={Colors.primary.survol} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Objectif
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.header}>
+          <MaterialIcons
+            name="blur-on"
+            size={80}
+            color={Colors.primary.survol}
+          />
+          <ThemedText type="title" style={styles.title}>
+            Blurchette
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>
+            Devinez les pochettes d&#39;albums floues !
           </ThemedText>
         </View>
-        <ThemedText style={styles.text}>
-          Devinez quelle pochette d&#39;album est affichée alors qu&#39;elle est floue.
-          Plus vous trouvez tôt (avec un flou élevé), plus vous gagnez de points !
-        </ThemedText>
-      </View>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="sports-esports" size={24} color={Colors.primary.survol} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Comment jouer
-          </ThemedText>
-        </View>
-        <View style={styles.list}>
-          <View style={styles.listItem}>
-            <ThemedText style={styles.listNumber}>1.</ThemedText>
-            <ThemedText style={styles.listText}>
-              Un joueur crée une partie et devient maître du jeu
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons
+              name="info"
+              size={24}
+              color={Colors.primary.survol}
+            />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Objectif
             </ThemedText>
           </View>
-          <View style={styles.listItem}>
-            <ThemedText style={styles.listNumber}>2.</ThemedText>
-            <ThemedText style={styles.listText}>
-              Les autres joueurs rejoignent via un code ou QR code
-            </ThemedText>
-          </View>
-          <View style={styles.listItem}>
-            <ThemedText style={styles.listNumber}>3.</ThemedText>
-            <ThemedText style={styles.listText}>
-              Une pochette d&#39;album très floue apparaît
-            </ThemedText>
-          </View>
-          <View style={styles.listItem}>
-            <ThemedText style={styles.listNumber}>4.</ThemedText>
-            <ThemedText style={styles.listText}>
-              Le flou diminue progressivement en 5 niveaux
-            </ThemedText>
-          </View>
-          <View style={styles.listItem}>
-            <ThemedText style={styles.listNumber}>5.</ThemedText>
-            <ThemedText style={styles.listText}>
-              Devinez l&#39;album et l&#39;artiste le plus tôt possible
-            </ThemedText>
-          </View>
+          <ThemedText style={styles.text}>
+            Devinez quelle pochette d&#39;album est affichée alors qu&#39;elle
+            est floue. Plus vous trouvez tôt (avec un flou élevé), plus vous
+            gagnez de points !
+          </ThemedText>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="rule" size={24} color={Colors.primary.survol} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Règles
-          </ThemedText>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons
+              name="sports-esports"
+              size={24}
+              color={Colors.primary.survol}
+            />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Comment jouer
+            </ThemedText>
+          </View>
+          <View style={styles.list}>
+            <View style={styles.listItem}>
+              <ThemedText style={styles.listNumber}>1.</ThemedText>
+              <ThemedText style={styles.listText}>
+                Un joueur crée une partie et devient maître du jeu
+              </ThemedText>
+            </View>
+            <View style={styles.listItem}>
+              <ThemedText style={styles.listNumber}>2.</ThemedText>
+              <ThemedText style={styles.listText}>
+                Les autres joueurs rejoignent via un code ou QR code
+              </ThemedText>
+            </View>
+            <View style={styles.listItem}>
+              <ThemedText style={styles.listNumber}>3.</ThemedText>
+              <ThemedText style={styles.listText}>
+                Une pochette d&#39;album très floue apparaît
+              </ThemedText>
+            </View>
+            <View style={styles.listItem}>
+              <ThemedText style={styles.listNumber}>4.</ThemedText>
+              <ThemedText style={styles.listText}>
+                Le flou diminue progressivement en 5 niveaux
+              </ThemedText>
+            </View>
+            <View style={styles.listItem}>
+              <ThemedText style={styles.listNumber}>5.</ThemedText>
+              <ThemedText style={styles.listText}>
+                Devinez l&#39;album et l&#39;artiste le plus tôt possible
+              </ThemedText>
+            </View>
+          </View>
         </View>
-        <View style={styles.ruleCard}>
-          <MaterialIcons name="blur-circular" size={20} color={Colors.primary.survol} />
-          <ThemedText style={styles.ruleText}>
-            <ThemedText style={styles.ruleBold}>5 niveaux de flou</ThemedText>
-            {"\n"}Du plus flou (niveau 1) au plus net (niveau 5)
-          </ThemedText>
-        </View>
-        <View style={styles.ruleCard}>
-          <MaterialIcons name="emoji-events" size={20} color={Colors.primary.survol} />
-          <ThemedText style={styles.ruleText}>
-            <ThemedText style={styles.ruleBold}>Plus de points en début</ThemedText>
-            {"\n"}Trouvez au niveau 1 = maximum de points
-          </ThemedText>
-        </View>
-        <View style={styles.ruleCard}>
-          <MaterialIcons name="timer" size={20} color={Colors.primary.survol} />
-          <ThemedText style={styles.ruleText}>
-            <ThemedText style={styles.ruleBold}>Temps limité</ThemedText>
-            {"\n"}Chaque niveau a un temps de réponse limité
-          </ThemedText>
-        </View>
-        <View style={styles.ruleCard}>
-          <MaterialIcons name="check-circle" size={20} color={Colors.primary.survol} />
-          <ThemedText style={styles.ruleText}>
-            <ThemedText style={styles.ruleBold}>Une réponse par niveau</ThemedText>
-            {"\n"}Réfléchissez bien avant de soumettre !
-          </ThemedText>
-        </View>
-        <View style={styles.ruleCard}>
-          <MaterialIcons name="speed" size={20} color={Colors.primary.survol} />
-          <ThemedText style={styles.ruleText}>
-            <ThemedText style={styles.ruleBold}>Départage par rapidité</ThemedText>
-            {"\n"}En cas d&#39;égalité, le plus rapide gagne
-          </ThemedText>
-        </View>
-      </View>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="bar-chart" size={24} color={Colors.primary.survol} />
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Points
-          </ThemedText>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons
+              name="rule"
+              size={24}
+              color={Colors.primary.survol}
+            />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Règles
+            </ThemedText>
+          </View>
+          <View style={styles.ruleCard}>
+            <MaterialIcons
+              name="blur-circular"
+              size={20}
+              color={Colors.primary.survol}
+            />
+            <ThemedText style={styles.ruleText}>
+              <ThemedText style={styles.ruleBold}>5 niveaux de flou</ThemedText>
+              {"\n"}Du plus flou (niveau 1) au plus net (niveau 5)
+            </ThemedText>
+          </View>
+          <View style={styles.ruleCard}>
+            <MaterialIcons
+              name="emoji-events"
+              size={20}
+              color={Colors.primary.survol}
+            />
+            <ThemedText style={styles.ruleText}>
+              <ThemedText style={styles.ruleBold}>
+                Plus de points en début
+              </ThemedText>
+              {"\n"}Trouvez au niveau 1 = maximum de points
+            </ThemedText>
+          </View>
+          <View style={styles.ruleCard}>
+            <MaterialIcons
+              name="timer"
+              size={20}
+              color={Colors.primary.survol}
+            />
+            <ThemedText style={styles.ruleText}>
+              <ThemedText style={styles.ruleBold}>Temps limité</ThemedText>
+              {"\n"}Chaque niveau a un temps de réponse limité
+            </ThemedText>
+          </View>
+          <View style={styles.ruleCard}>
+            <MaterialIcons
+              name="check-circle"
+              size={20}
+              color={Colors.primary.survol}
+            />
+            <ThemedText style={styles.ruleText}>
+              <ThemedText style={styles.ruleBold}>
+                Une réponse par niveau
+              </ThemedText>
+              {"\n"}Réfléchissez bien avant de soumettre !
+            </ThemedText>
+          </View>
+          <View style={styles.ruleCard}>
+            <MaterialIcons
+              name="speed"
+              size={20}
+              color={Colors.primary.survol}
+            />
+            <ThemedText style={styles.ruleText}>
+              <ThemedText style={styles.ruleBold}>
+                Départage par rapidité
+              </ThemedText>
+              {"\n"}En cas d&#39;égalité, le plus rapide gagne
+            </ThemedText>
+          </View>
         </View>
-        <View style={styles.pointsGrid}>
-          <View style={styles.pointCard}>
-            <ThemedText style={styles.pointLevel}>Niveau 1</ThemedText>
-            <ThemedText style={styles.pointValue}>500 pts</ThemedText>
-            <ThemedText style={styles.pointLabel}>Très flou</ThemedText>
-          </View>
-          <View style={styles.pointCard}>
-            <ThemedText style={styles.pointLevel}>Niveau 2</ThemedText>
-            <ThemedText style={styles.pointValue}>400 pts</ThemedText>
-            <ThemedText style={styles.pointLabel}>Flou</ThemedText>
-          </View>
-          <View style={styles.pointCard}>
-            <ThemedText style={styles.pointLevel}>Niveau 3</ThemedText>
-            <ThemedText style={styles.pointValue}>300 pts</ThemedText>
-            <ThemedText style={styles.pointLabel}>Moyen</ThemedText>
-          </View>
-          <View style={styles.pointCard}>
-            <ThemedText style={styles.pointLevel}>Niveau 4</ThemedText>
-            <ThemedText style={styles.pointValue}>200 pts</ThemedText>
-            <ThemedText style={styles.pointLabel}>Léger</ThemedText>
-          </View>
-          <View style={styles.pointCard}>
-            <ThemedText style={styles.pointLevel}>Niveau 5</ThemedText>
-            <ThemedText style={styles.pointValue}>100 pts</ThemedText>
-            <ThemedText style={styles.pointLabel}>Net</ThemedText>
-          </View>
-        </View>
-      </View>
 
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Commencer à jouer"
-          onPress={handleStartGame}
-          style={styles.playButton}
-        />
-      </View>
-    </ScrollView>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <MaterialIcons
+              name="bar-chart"
+              size={24}
+              color={Colors.primary.survol}
+            />
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Points
+            </ThemedText>
+          </View>
+          <View style={styles.pointsGrid}>
+            <View style={styles.pointCard}>
+              <ThemedText style={styles.pointLevel}>Niveau 1</ThemedText>
+              <ThemedText style={styles.pointValue}>500 pts</ThemedText>
+              <ThemedText style={styles.pointLabel}>Très flou</ThemedText>
+            </View>
+            <View style={styles.pointCard}>
+              <ThemedText style={styles.pointLevel}>Niveau 2</ThemedText>
+              <ThemedText style={styles.pointValue}>400 pts</ThemedText>
+              <ThemedText style={styles.pointLabel}>Flou</ThemedText>
+            </View>
+            <View style={styles.pointCard}>
+              <ThemedText style={styles.pointLevel}>Niveau 3</ThemedText>
+              <ThemedText style={styles.pointValue}>300 pts</ThemedText>
+              <ThemedText style={styles.pointLabel}>Moyen</ThemedText>
+            </View>
+            <View style={styles.pointCard}>
+              <ThemedText style={styles.pointLevel}>Niveau 4</ThemedText>
+              <ThemedText style={styles.pointValue}>200 pts</ThemedText>
+              <ThemedText style={styles.pointLabel}>Léger</ThemedText>
+            </View>
+            <View style={styles.pointCard}>
+              <ThemedText style={styles.pointLevel}>Niveau 5</ThemedText>
+              <ThemedText style={styles.pointValue}>100 pts</ThemedText>
+              <ThemedText style={styles.pointLabel}>Net</ThemedText>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Commencer à jouer"
+            onPress={handleStartGame}
+            style={styles.playButton}
+          />
+        </View>
+      </ScrollView>
     </>
   );
 }

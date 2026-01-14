@@ -7,14 +7,14 @@ export default function GamesLayout() {
         name="index"
         options={{
           headerShown: false,
-          title: "Jeux"
+          title: "Jeux",
         }}
       />
       <Stack.Screen
         name="blurchette"
         options={{
           headerShown: false,
-          presentation: "card"
+          presentation: "card",
         }}
       />
     </Stack>

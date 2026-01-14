@@ -1,4 +1,4 @@
-export type GameSessionStatus = 'pending' | 'active' | 'completed';
+export type GameSessionStatus = "pending" | "active" | "completed";
 
 export interface GameSession {
   id: string;
