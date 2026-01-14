@@ -110,3 +110,14 @@ export const del = <T>(
   endpoint: string,
   options?: RequestOptions,
 ): Promise<T> => apiClient<T>(endpoint, { ...options, method: "DELETE" });
+
+export const patch = <T>(
+  endpoint: string,
+  data?: unknown,
+  options?: RequestOptions,
+): Promise<T> =>
+  apiClient<T>(endpoint, {
+    ...options,
+    method: "PATCH",
+    body: data ? JSON.stringify(data) : undefined,
+  });
