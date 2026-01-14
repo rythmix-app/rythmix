@@ -241,6 +241,24 @@ class DeezerAPI {
     return await this.fetchWithRetry<DeezerGenresResponse>(url);
   }
 
+  async getGenreTracks(
+    genreId: number,
+    limit: number = 50,
+  ): Promise<DeezerSearchResponse> {
+    const cacheKey = `genre_tracks:${genreId}:${limit}`;
+    const url = `${this.baseUrl}/chart/${genreId}/tracks?limit=${limit}`;
+
+    if (this.enableCache) {
+      return await cacheManager.getOrSet(
+        cacheKey,
+        () => this.fetchWithRetry<DeezerSearchResponse>(url),
+        DEFAULT_TTL.TRACKS,
+      );
+    }
+
+    return await this.fetchWithRetry<DeezerSearchResponse>(url);
+  }
+
   async getRecommendations(genres?: string[]): Promise<DeezerSearchResponse> {
     const cacheKey = `recommendations:${genres?.join(",") || "default"}`;
     const url =
