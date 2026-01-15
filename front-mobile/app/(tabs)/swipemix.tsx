@@ -1,100 +1,54 @@
 import { View, Text, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useRef, useEffect } from "react";
 import CardStack from "@/components/swipe/CardStack";
-import { MusicCardData } from "@/components/swipe";
-
-const SAMPLE_CARDS: MusicCardData[] = [
-  {
-    id: "1",
-    coverImage: "https://picsum.photos/288/200?random=1",
-    title: "BAILE INOLVIDABLE",
-    artist: "Bad Bunny",
-    album: "DeBí TiRAR MáS FOToS",
-    tags: {
-      primary: "SALSA",
-      secondary: "CONTEMPORAINE",
-    },
-    color: "darkGreen",
-  },
-  {
-    id: "2",
-    coverImage: "https://picsum.photos/288/200?random=2",
-    title: "STARBOY",
-    artist: "The Weeknd",
-    album: "Starboy",
-    tags: {
-      primary: "POP",
-      secondary: "R&B",
-    },
-    color: "cyan",
-  },
-  {
-    id: "3",
-    coverImage: "https://picsum.photos/288/200?random=3",
-    title: "BLINDING LIGHTS",
-    artist: "The Weeknd",
-    album: "After Hours",
-    tags: {
-      primary: "SYNTH-POP",
-      secondary: "ELECTRO",
-    },
-    color: "lightBlue",
-  },
-  {
-    id: "4",
-    coverImage: "https://picsum.photos/288/200?random=4",
-    title: "LEVITATING",
-    artist: "Dua Lipa",
-    album: "Future Nostalgia",
-    tags: {
-      primary: "DISCO",
-      secondary: "POP",
-    },
-    color: "darkGreen",
-  },
-  {
-    id: "5",
-    coverImage: "https://picsum.photos/288/200?random=5",
-    title: "HEAT WAVES",
-    artist: "Glass Animals",
-    album: "Dreamland",
-    tags: {
-      primary: "INDIE",
-      secondary: "ALTERNATIVE",
-    },
-    color: "cyan",
-  },
-];
+import { useSwipeMix } from "@/hooks/useSwipeMix";
 
 export default function SwipeMixScreen() {
   const { top, bottom } = useSafeAreaInsets();
+  const { cards, handlers, audioPlayer, error, actions } = useSwipeMix();
 
-  const handleSwipeLeft = (card: MusicCardData) => {
-    // TODO: Implement left-swipe behavior (e.g., skip or dislike this track).
-    console.log("Swiped left:", card.title);
-  };
-  const handleSwipeRight = (card: MusicCardData) => {
-    // TODO: Implement right-swipe behavior (e.g., like or save this track).
-    console.log("Swiped right:", card.title);
-  };
-  const handleEmpty = () => {
-    // TODO: Implement behavior when there are no more cards (e.g., fetch more or show a message).
-    console.log("No more cards!");
-  };
+  // Utiliser une ref pour garder une référence stable à la fonction stop
+  const audioPlayerStopRef = useRef(audioPlayer.stop);
+
+  // Mettre à jour la ref quand audioPlayer.stop change
+  useEffect(() => {
+    audioPlayerStopRef.current = audioPlayer.stop;
+  }, [audioPlayer.stop]);
+
+  // Arrêter la musique quand l'utilisateur quitte l'onglet
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Cleanup: arrêter la musique quand on perd le focus
+        audioPlayerStopRef.current();
+      };
+    }, []),
+  );
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View
         style={[styles.container, { paddingTop: top, paddingBottom: bottom }]}
       >
-        <Text style={styles.title}>SwipeMix</Text>
+        {(error || audioPlayer.error) && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error || audioPlayer.error}</Text>
+          </View>
+        )}
         <View style={styles.swipeCardContainer}>
           <CardStack
-            cards={SAMPLE_CARDS}
-            onSwipeLeft={handleSwipeLeft}
-            onSwipeRight={handleSwipeRight}
-            onEmpty={handleEmpty}
+            cards={cards}
+            onSwipeLeft={handlers.onSwipeLeft}
+            onSwipeRight={handlers.onSwipeRight}
+            onEmpty={handlers.onEmpty}
+            onLoadMore={actions.loadMore}
+            currentTrackId={audioPlayer.currentTrack?.id.toString()}
+            isPlaying={audioPlayer.isPlaying}
+            onTogglePlay={handlers.onTogglePlay}
+            onCardAppear={handlers.onCardAppear}
           />
         </View>
       </View>
@@ -110,6 +64,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     color: "white",
+    textAlign: "center",
+    marginVertical: 16,
+  },
+  errorContainer: {
+    backgroundColor: "rgba(244, 67, 54, 0.1)",
+    borderLeftWidth: 4,
+    borderLeftColor: "#F44336",
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 4,
+  },
+  errorText: {
+    color: "#F44336",
+    fontSize: 14,
+    fontFamily: "Medium",
   },
   swipeCardContainer: {
     flex: 1,

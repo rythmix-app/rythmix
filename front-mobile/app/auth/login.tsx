@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -18,11 +19,44 @@ import { AuthSocialButton } from "@/components/auth/AuthSocialButton";
 import { AuthSeparator } from "@/components/auth/AuthSeparator";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
+import { useAuthStore } from "@/stores/authStore";
+import { ApiError } from "@/types/auth";
 
 export default function LoginScreen() {
-  const handleLogin = () => {
-    // TODO: logique d’auth
-    router.replace("/(tabs)");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { login, isLoading } = useAuthStore();
+
+  const validateForm = () => {
+    if (!email.trim()) {
+      Alert.alert("Erreur", "L'email est requis");
+      return false;
+    }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Erreur", "L'email n'est pas valide");
+      return false;
+    }
+    if (!password) {
+      Alert.alert("Erreur", "Le mot de passe est requis");
+      return false;
+    }
+    return true;
+  };
+
+  const handleLogin = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await login({ email, password });
+      router.replace("/(tabs)");
+    } catch (error) {
+      const apiError = error as ApiError;
+      Alert.alert("Erreur", apiError.message || "Une erreur est survenue");
+    }
   };
 
   return (
@@ -64,36 +98,44 @@ export default function LoginScreen() {
               <Input
                 label="Email"
                 placeholder="votre@email.fr"
+                value={email}
+                onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 size="large"
                 containerStyle={styles.inputContainer}
                 placeholderTextColor="#888"
+                editable={!isLoading}
               />
 
               <Input
                 label="Mot de passe"
                 placeholder="********"
+                value={password}
+                onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
                 size="large"
                 containerStyle={styles.inputContainer}
                 placeholderTextColor="#888"
+                editable={!isLoading}
               />
 
               <TouchableOpacity
                 onPress={() => {
                   // TODO: mot de passe oublié
                 }}
+                disabled={isLoading}
               >
                 <Text style={styles.forgotPwd}>Mot de passe oublié ?</Text>
               </TouchableOpacity>
 
               <Button
-                title="Se connecter"
+                title={isLoading ? "Connexion en cours..." : "Se connecter"}
                 variant="primary"
                 size="large"
                 onPress={handleLogin}
+                disabled={isLoading}
                 style={{ marginTop: 24, width: "100%" }}
               />
 
