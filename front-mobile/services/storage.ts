@@ -3,19 +3,16 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { User } from "@/types/auth";
 
-const TOKEN_KEY = "@rythmix_token";
-const REFRESH_TOKEN_KEY = "@rythmix_refresh_token";
-const USER_KEY = "@rythmix_user";
+const TOKEN_KEY = "rythmix_token";
+const REFRESH_TOKEN_KEY = "rythmix_refresh_token";
+const USER_KEY = "rythmix_user";
 
-// Détection de plateforme native (iOS/Android)
 const isNative = Platform.OS === "ios" || Platform.OS === "android";
 
-// Fonctions de stockage sécurisé conditionnel
 const secureSet = async (key: string, value: string): Promise<void> => {
   if (isNative) {
     await SecureStore.setItemAsync(key, value);
   } else {
-    // Fallback web: utiliser AsyncStorage
     await AsyncStorage.setItem(key, value);
   }
 };
@@ -24,7 +21,6 @@ const secureGet = async (key: string): Promise<string | null> => {
   if (isNative) {
     return await SecureStore.getItemAsync(key);
   } else {
-    // Fallback web: utiliser AsyncStorage
     return await AsyncStorage.getItem(key);
   }
 };
@@ -33,26 +29,20 @@ const secureDelete = async (key: string): Promise<void> => {
   if (isNative) {
     await SecureStore.deleteItemAsync(key);
   } else {
-    // Fallback web: utiliser AsyncStorage
     await AsyncStorage.removeItem(key);
   }
 };
 
-// Migration automatique AsyncStorage → SecureStore (natif uniquement)
 const migrateIfNeeded = async (key: string): Promise<void> => {
   if (!isNative) return;
 
   try {
-    // Vérifier si déjà dans SecureStore
     const secureValue = await SecureStore.getItemAsync(key);
-    if (secureValue) return; // Déjà migré
+    if (secureValue) return;
 
-    // Vérifier si dans AsyncStorage
     const asyncValue = await AsyncStorage.getItem(key);
     if (asyncValue) {
-      // Migrer vers SecureStore
       await SecureStore.setItemAsync(key, asyncValue);
-      // Supprimer de AsyncStorage
       await AsyncStorage.removeItem(key);
     }
   } catch (error) {
@@ -62,7 +52,6 @@ const migrateIfNeeded = async (key: string): Promise<void> => {
 
 export const getToken = async (): Promise<string | null> => {
   try {
-    // Migrer si nécessaire
     await migrateIfNeeded(TOKEN_KEY);
     return await secureGet(TOKEN_KEY);
   } catch (error) {
@@ -94,7 +83,6 @@ export const removeToken = async (): Promise<void> => {
 
 export const getRefreshToken = async (): Promise<string | null> => {
   try {
-    // Migrer si nécessaire
     await migrateIfNeeded(REFRESH_TOKEN_KEY);
     return await secureGet(REFRESH_TOKEN_KEY);
   } catch (error) {
@@ -148,10 +136,8 @@ export const setUser = async (user: User): Promise<void> => {
 
 export const clearAll = async (): Promise<void> => {
   try {
-    // Supprimer les tokens de SecureStore (ou AsyncStorage sur web)
     await secureDelete(TOKEN_KEY);
     await secureDelete(REFRESH_TOKEN_KEY);
-    // Supprimer l'utilisateur de AsyncStorage
     await AsyncStorage.removeItem(USER_KEY);
   } catch (error) {
     console.error("Error clearing storage:", error);

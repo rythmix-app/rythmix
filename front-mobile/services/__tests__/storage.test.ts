@@ -51,10 +51,10 @@ describe("storage service", () => {
         expect(token).toBe("migrated_token");
         // Vérifier que la migration a eu lieu
         expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-          "@rythmix_token",
+          "rythmix_token",
           "migrated_token"
         );
-        expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@rythmix_token");
+        expect(AsyncStorage.removeItem).toHaveBeenCalledWith("rythmix_token");
       });
 
       it("should return null on error", async () => {
@@ -73,7 +73,7 @@ describe("storage service", () => {
         await storage.setToken("new_token");
 
         expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-          "@rythmix_token",
+          "rythmix_token",
           "new_token"
         );
       });
@@ -106,7 +106,7 @@ describe("storage service", () => {
         await storage.removeToken();
 
         expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-          "@rythmix_token"
+          "rythmix_token"
         );
       });
 
@@ -155,11 +155,11 @@ describe("storage service", () => {
 
         expect(token).toBe("migrated_refresh");
         expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-          "@rythmix_refresh_token",
+          "rythmix_refresh_token",
           "migrated_refresh"
         );
         expect(AsyncStorage.removeItem).toHaveBeenCalledWith(
-          "@rythmix_refresh_token"
+          "rythmix_refresh_token"
         );
       });
 
@@ -182,7 +182,7 @@ describe("storage service", () => {
         await storage.setRefreshToken("new_refresh_token");
 
         expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-          "@rythmix_refresh_token",
+          "rythmix_refresh_token",
           "new_refresh_token"
         );
       });
@@ -212,7 +212,7 @@ describe("storage service", () => {
         await storage.removeRefreshToken();
 
         expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-          "@rythmix_refresh_token"
+          "rythmix_refresh_token"
         );
       });
     });
@@ -238,7 +238,7 @@ describe("storage service", () => {
         const user = await storage.getUser();
 
         expect(user).toEqual(mockUser);
-        expect(AsyncStorage.getItem).toHaveBeenCalledWith("@rythmix_user");
+        expect(AsyncStorage.getItem).toHaveBeenCalledWith("rythmix_user");
       });
 
       it("should return null if no user exists", async () => {
@@ -273,7 +273,7 @@ describe("storage service", () => {
         await storage.setUser(mockUser);
 
         expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-          "@rythmix_user",
+          "rythmix_user",
           JSON.stringify(mockUser)
         );
       });
@@ -313,13 +313,13 @@ describe("storage service", () => {
 
       // Vérifie que les tokens sont supprimés de SecureStore
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-        "@rythmix_token"
+        "rythmix_token"
       );
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-        "@rythmix_refresh_token"
+        "rythmix_refresh_token"
       );
       // Vérifie que l'utilisateur est supprimé de AsyncStorage
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@rythmix_user");
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith("rythmix_user");
     });
 
     it("should propagate errors", async () => {
