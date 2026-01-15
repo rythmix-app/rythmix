@@ -74,3 +74,31 @@ export interface BlurchetteGameData {
   startedAt: string;
   completedAt: string | null;
 }
+
+// Types spécifiques pour le jeu Tracklist
+export interface TrackAnswer {
+  userInput: string;
+  isCorrect: boolean;
+  matchedTrackId?: number;
+  timestamp: string;
+}
+
+export interface TracklistGameData {
+  genre: {
+    id: number;
+    name: string;
+  };
+  album: {
+    id: number;
+    title: string;
+    artistName: string;
+    coverUrl: string;
+    totalTracks: number;
+  };
+  answers: TrackAnswer[];
+  score: number;
+  maxScore: number;
+  timeElapsed: number;
+  startedAt?: string;
+  completedAt: string;
+}

@@ -2,7 +2,10 @@ import { create } from "zustand";
 import { User, LoginCredentials, RegisterData } from "@/types/auth";
 import * as authService from "@/services/authService";
 import * as storage from "@/services/storage";
-import { setUnauthorizedHandler } from "@/services/api";
+import {
+  setUnauthorizedHandler,
+  setTokenRefreshedHandler,
+} from "@/services/api";
 
 interface AuthState {
   user: User | null;
@@ -18,6 +21,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => {
+  // Handler pour déconnexion (401 sans refresh ou échec du refresh)
   setUnauthorizedHandler(() => {
     set({
       user: null,
@@ -26,6 +30,11 @@ export const useAuthStore = create<AuthState>((set) => {
       isAuthenticated: false,
     });
     storage.clearAll();
+  });
+
+  // Handler pour refresh réussi (met à jour le token dans le store)
+  setTokenRefreshedHandler((newToken: string) => {
+    set({ token: newToken });
   });
 
   return {

@@ -17,6 +17,13 @@ export default function GamesLayout() {
           presentation: "card",
         }}
       />
+      <Stack.Screen
+        name="tracklist"
+        options={{
+          headerShown: false,
+          presentation: "card",
+        }}
+      />
     </Stack>
   );
 }
