@@ -62,6 +62,45 @@ export interface DeezerGenresResponse {
   data: DeezerGenre[];
 }
 
+export interface DeezerAlbum {
+  id: number;
+  title: string;
+  link: string;
+  cover: string;
+  cover_small: string;
+  cover_medium: string;
+  cover_big: string;
+  cover_xl: string;
+  md5_image: string;
+  genre_id: number;
+  release_date: string;
+  record_type: string;
+  tracklist: string;
+  explicit_lyrics: boolean;
+  nb_tracks: number;
+  duration: number;
+  fans: number;
+  artist: {
+    id: number;
+    name: string;
+    picture: string;
+    picture_small: string;
+    picture_medium: string;
+    picture_big: string;
+    picture_xl: string;
+  };
+  tracks?: {
+    data: DeezerTrack[];
+  };
+  type: string;
+}
+
+export interface DeezerAlbumsResponse {
+  data: DeezerAlbum[];
+  total?: number;
+  next?: string;
+}
+
 export interface DeezerPlaylist {
   id: number;
   title: string;
@@ -290,6 +329,57 @@ class DeezerAPI {
     }
 
     return await this.fetchWithRetry<DeezerPlaylist>(url);
+  }
+
+  async getGenreAlbums(
+    genreId: number,
+    limit: number = 50,
+  ): Promise<DeezerAlbumsResponse> {
+    const cacheKey = `genre_albums:${genreId}:${limit}`;
+    const url = `${this.baseUrl}/chart/${genreId}/albums?limit=${limit}`;
+
+    if (this.enableCache) {
+      return await cacheManager.getOrSet(
+        cacheKey,
+        () => this.fetchWithRetry<DeezerAlbumsResponse>(url),
+        DEFAULT_TTL.TRACKS,
+      );
+    }
+
+    return await this.fetchWithRetry<DeezerAlbumsResponse>(url);
+  }
+
+  async getAlbum(albumId: number): Promise<DeezerAlbum> {
+    const cacheKey = `album:${albumId}`;
+    const url = `${this.baseUrl}/album/${albumId}`;
+
+    if (this.enableCache) {
+      return await cacheManager.getOrSet(
+        cacheKey,
+        () => this.fetchWithRetry<DeezerAlbum>(url),
+        DEFAULT_TTL.TRACKS,
+      );
+    }
+
+    return await this.fetchWithRetry<DeezerAlbum>(url);
+  }
+
+  async getAlbumTracks(
+    albumId: number,
+    limit: number = 50,
+  ): Promise<DeezerSearchResponse> {
+    const cacheKey = `album_tracks:${albumId}:${limit}`;
+    const url = `${this.baseUrl}/album/${albumId}/tracks?limit=${limit}`;
+
+    if (this.enableCache) {
+      return await cacheManager.getOrSet(
+        cacheKey,
+        () => this.fetchWithRetry<DeezerSearchResponse>(url),
+        DEFAULT_TTL.TRACKS,
+      );
+    }
+
+    return await this.fetchWithRetry<DeezerSearchResponse>(url);
   }
 
   /**

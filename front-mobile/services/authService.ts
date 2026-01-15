@@ -3,6 +3,7 @@ import {
   AuthResponse,
   GetUserInfoResponse,
   LoginCredentials,
+  RefreshTokenResponse,
   RegisterData,
   User,
 } from "@/types/auth";
@@ -61,4 +62,26 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
 
 export const logout = async (): Promise<void> => {
   await clearAll();
+};
+
+export const refreshAccessToken = async (
+  refreshToken: string
+): Promise<RefreshTokenResponse> => {
+  const response = await post<RefreshTokenResponse>(
+    "/api/auth/refresh",
+    { refreshToken },
+    { skipAuth: true }
+  );
+
+  if (!response.accessToken) {
+    throw {
+      message: "Réponse invalide du serveur: token manquant",
+      statusCode: 500,
+    };
+  }
+
+  // Sauvegarder immédiatement le nouveau token
+  await setToken(response.accessToken);
+
+  return response;
 };

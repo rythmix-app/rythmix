@@ -30,6 +30,10 @@ export interface AuthResponse {
   message?: string;
 }
 
+export interface RefreshTokenResponse {
+  accessToken: string;
+}
+
 export interface ApiError {
   message: string;
   statusCode?: number;
