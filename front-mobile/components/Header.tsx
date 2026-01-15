@@ -1,4 +1,5 @@
 import React from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import { Href, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -10,6 +11,8 @@ import {
   ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { Colors } from "@/constants/Colors";
 
 export interface HeaderProps {
   title: string;
@@ -38,6 +41,9 @@ export default function Header({
     typeof showBack === "boolean" ? showBack : variant === "withBack";
   const wantsCenteredTitle = variant === "withBack" || hasBack;
   const hasSettings =
+    typeof showSettings === "boolean"
+      ? showSettings
+      : variant === "withMenu";
     typeof showSettings === "boolean" ? showSettings : variant === "withMenu";
   const shouldAddGap = hasBack || hasSettings || wantsCenteredTitle;
 
@@ -60,12 +66,29 @@ export default function Header({
   };
 
   return (
+    <LinearGradient
+      colors={["#00BFA5", Colors.secondary.turquoise]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[
+        styles.container,
+        { paddingTop: top + 12 },
+        style,
+      ]}
+    >
+      <View
+        style={[
+          styles.content,
+          shouldAddGap && styles.contentGapped,
+        ]}
+      >
     <View style={[styles.container, { paddingTop: top + 12 }, style]}>
       <View style={[styles.content, shouldAddGap && styles.contentGapped]}>
         <View
           style={[
             styles.sideSlot,
             !hasBack &&
+              (wantsCenteredTitle ? styles.slotPlaceholder : styles.slotCollapsed),
               (wantsCenteredTitle
                 ? styles.slotPlaceholder
                 : styles.slotCollapsed),
@@ -117,6 +140,7 @@ export default function Header({
           )}
         </View>
       </View>
+    </LinearGradient>
     </View>
   );
 }
@@ -153,6 +177,8 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     color: "#FFFFFF",
+    fontSize: 24,
+    fontFamily: "Bold",
     fontSize: 40,
     fontFamily: "Bold",
     textShadowColor: "rgba(255, 255, 255, 0.40)",
