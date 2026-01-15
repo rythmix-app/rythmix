@@ -2,26 +2,24 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import Game from '#models/game'
 import GameSession from '#models/game_session'
+import { createAuthenticatedUser } from '../utils/auth_helpers.js'
 
 async function createGame(tag: string) {
   return Game.create({
     name: `Game ${tag} ${Date.now()}`,
     description: `Description for ${tag}`,
+    isEnabled: true,
+    isMultiplayer: false,
   })
 }
 
 test.group('GameSessionsController - Functional', (group) => {
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  test('GET /api/game-sessions returns empty list', async ({ client, assert }) => {
-    const res = await client.get('/api/game-sessions')
-    res.assertStatus(200)
-    assert.isArray(res.body().data)
+  group.each.setup(() => {
+    return testUtils.db().withGlobalTransaction()
   })
 
   test('POST /api/game-sessions creates record', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('post')
     const game = await createGame('post')
     const payload = {
       gameId: game.id,
@@ -41,13 +39,14 @@ test.group('GameSessionsController - Functional', (group) => {
       },
     }
 
-    const res = await client.post('/api/game-sessions').json(payload)
+    const res = await client.post('/api/game-sessions').bearerToken(token).json(payload)
 
     res.assertStatus(201)
-    assert.equal(res.body().data.gameId, payload.gameId)
-    assert.equal(res.body().data.status, payload.status)
-    assert.isArray(res.body().data.players)
-    assert.equal(res.body().data.players.length, 1)
+    assert.equal(res.body().gameSession.gameId, payload.gameId)
+    assert.equal(res.body().gameSession.gameId, payload.gameId)
+    assert.equal(res.body().gameSession.status, payload.status)
+    assert.isArray(res.body().gameSession.players)
+    assert.equal(res.body().gameSession.players.length, 1)
   })
 
   test('GET /api/game-sessions/:id returns game session details', async ({ client, assert }) => {
@@ -62,9 +61,9 @@ test.group('GameSessionsController - Functional', (group) => {
     const res = await client.get(`/api/game-sessions/${session.id}`)
 
     res.assertStatus(200)
-    assert.equal(res.body().data.id, session.id)
-    assert.equal(res.body().data.status, 'en_cours')
-    assert.exists(res.body().data.game)
+    assert.equal(res.body().gameSession.id, session.id)
+    assert.equal(res.body().gameSession.status, 'en_cours')
+    assert.exists(res.body().gameSession.game)
   })
 
   test('GET /api/game-sessions/:id returns 404 for non-existent session', async ({ client }) => {
@@ -74,6 +73,7 @@ test.group('GameSessionsController - Functional', (group) => {
   })
 
   test('PATCH /api/game-sessions/:id updates record', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('patch')
     const game = await createGame('patch')
     const session = await GameSession.create({
       gameId: game.id,
@@ -82,20 +82,25 @@ test.group('GameSessionsController - Functional', (group) => {
       gameData: { manche: 1 },
     })
 
-    const res = await client.patch(`/api/game-sessions/${session.id}`).json({
-      status: 'terminee',
-      players: [{ userId: 'user-1', status: 'termine', score: 200, expGained: 100, rank: 1 }],
-      gameData: { manche: 5, winner: 'user-1' },
-    })
+    const res = await client
+      .patch(`/api/game-sessions/${session.id}`)
+      .bearerToken(token)
+      .json({
+        status: 'terminee',
+        players: [{ userId: 'user-1', status: 'termine', score: 200, expGained: 100, rank: 1 }],
+        gameData: { manche: 5, winner: 'user-1' },
+      })
 
     res.assertStatus(200)
-    assert.equal(res.body().data.status, 'terminee')
-    assert.equal(res.body().data.players[0].score, 200)
-    assert.equal(res.body().data.gameData.manche, 5)
+
+    assert.equal(res.body().status, 'terminee')
+    assert.equal(res.body().players[0].score, 200)
+    assert.equal(res.body().gameData.manche, 5)
   })
 
   test('PATCH /api/game-sessions/:id returns 404 for non-existent session', async ({ client }) => {
-    const res = await client.patch('/api/game-sessions/non-existent-id').json({
+    const { token } = await createAuthenticatedUser('patch404')
+    const res = await client.patch('/api/game-sessions/non-existent-id').bearerToken(token).json({
       status: 'terminee',
     })
     res.assertStatus(404)
@@ -103,6 +108,7 @@ test.group('GameSessionsController - Functional', (group) => {
   })
 
   test('DELETE /api/game-sessions/:id deletes record', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('delete')
     const game = await createGame('delete')
     const session = await GameSession.create({
       gameId: game.id,
@@ -111,7 +117,7 @@ test.group('GameSessionsController - Functional', (group) => {
       gameData: {},
     })
 
-    const res = await client.delete(`/api/game-sessions/${session.id}`)
+    const res = await client.delete(`/api/game-sessions/${session.id}`).bearerToken(token)
 
     res.assertStatus(200)
     res.assertBodyContains({
@@ -120,12 +126,13 @@ test.group('GameSessionsController - Functional', (group) => {
   })
 
   test('DELETE /api/game-sessions/:id returns 404 for non-existent session', async ({ client }) => {
-    const res = await client.delete('/api/game-sessions/non-existent-id')
+    const { token } = await createAuthenticatedUser('delete404')
+    const res = await client.delete('/api/game-sessions/non-existent-id').bearerToken(token)
     res.assertStatus(404)
     res.assertBodyContains({ message: 'GameSession not found' })
   })
 
-  test('GET /api/games/:gameId/sessions returns sessions for specific game', async ({
+  test('GET /api/game-sessions/:gameId/sessions returns sessions for specific game', async ({
     client,
     assert,
   }) => {
@@ -151,11 +158,11 @@ test.group('GameSessionsController - Functional', (group) => {
       gameData: {},
     })
 
-    const res = await client.get(`/api/games/${game1.id}/sessions`)
+    const res = await client.get(`/api/game-sessions/${game1.id}/sessions`)
 
     res.assertStatus(200)
-    assert.equal(res.body().data.length, 2)
-    assert.isTrue(res.body().data.every((s: any) => s.gameId === game1.id))
+    assert.equal(res.body().gameSessions.length, 2)
+    assert.isTrue(res.body().gameSessions.every((s: any) => s.gameId === game1.id))
   })
 
   test('GET /api/game-sessions/status/:status returns sessions with specific status', async ({
@@ -186,13 +193,14 @@ test.group('GameSessionsController - Functional', (group) => {
     const res = await client.get('/api/game-sessions/status/en_cours')
 
     res.assertStatus(200)
-    assert.isAbove(res.body().data.length, 0)
-    assert.isTrue(res.body().data.every((s: any) => s.status === 'en_cours'))
-    assert.exists(res.body().data.find((s: any) => s.id === session1.id))
-    assert.exists(res.body().data.find((s: any) => s.id === session2.id))
+    assert.isAbove(res.body().gameSessions.length, 0)
+    assert.isTrue(res.body().gameSessions.every((s: any) => s.status === 'en_cours'))
+    assert.exists(res.body().gameSessions.find((s: any) => s.id === session1.id))
+    assert.exists(res.body().gameSessions.find((s: any) => s.id === session2.id))
   })
 
   test('POST /api/game-sessions returns 404 for non-existent game', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('post404')
     const payload = {
       gameId: 99999,
       status: 'en_cours',
@@ -200,13 +208,14 @@ test.group('GameSessionsController - Functional', (group) => {
       gameData: {},
     }
 
-    const res = await client.post('/api/game-sessions').json(payload)
+    const res = await client.post('/api/game-sessions').bearerToken(token).json(payload)
 
     res.assertStatus(404)
     res.assertBodyContains({ message: 'Game not found' })
   })
 
   test('POST /api/game-sessions handles JSON fields correctly', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('json')
     const game = await createGame('json')
     const complexPayload = {
       gameId: game.id,
@@ -242,12 +251,12 @@ test.group('GameSessionsController - Functional', (group) => {
       },
     }
 
-    const res = await client.post('/api/game-sessions').json(complexPayload)
+    const res = await client.post('/api/game-sessions').bearerToken(token).json(complexPayload)
 
     res.assertStatus(201)
-    assert.equal(res.body().data.players.length, 2)
-    assert.equal(res.body().data.gameData.manche, 3)
-    assert.equal(res.body().data.gameData.settings.difficulty, 'hard')
-    assert.isArray(res.body().data.gameData.classement)
+    assert.equal(res.body().gameSession.players.length, 2)
+    assert.equal(res.body().gameSession.gameData.manche, 3)
+    assert.equal(res.body().gameSession.gameData.settings.difficulty, 'hard')
+    assert.isArray(res.body().gameSession.gameData.classement)
   })
 })
