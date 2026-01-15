@@ -18,7 +18,8 @@ export default class UsersController {
   @ApiSecurity('bearerAuth')
   @ApiResponse({ status: 200, description: 'List of users retrieved successfully' })
   public async index({ request, response }: HttpContext) {
-    const includeDeleted = request.input('includeDeleted') === 'true' || request.input('includeDeleted') === true
+    const includeDeleted =
+      request.input('includeDeleted') === 'true' || request.input('includeDeleted') === true
 
     const users = includeDeleted
       ? await this.userService.getAllWithTrashed()
