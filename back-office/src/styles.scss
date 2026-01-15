@@ -1,1 +1,250 @@
-/* You can add global styles to this file, and also import other style files */
+:root[data-theme="dark"] {
+  --primary-dark-green: #0d7377;
+  --primary-dark: #121212;
+  --primary-blue-light: #14ffec;
+  --primary-white: #ffffff;
+
+  --secondary-dark: #0d0d0d;
+  --secondary-dark-green: #052e30;
+  --secondary-blue-normal: #19b3bd;
+  --secondary-gray-light: #f0f0f0;
+
+  --bg-gradient-start: #052e30;
+  --bg-gradient-end: #0d0d0d;
+  --sidebar-gradient-start: #121212;
+  --sidebar-gradient-end: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --border-color: #0d7377;
+  --hover-bg: rgba(13, 115, 119, 0.1);
+  --active-bg: rgba(13, 115, 119, 0.2);
+}
+
+:root[data-theme="light"] {
+  --primary-dark-green: #0d7377;
+  --primary-dark: #ffffff;
+  --primary-blue-light: #0d7377;
+  --primary-white: #121212;
+
+  --secondary-dark: #f5f5f5;
+  --secondary-dark-green: #e0f2f1;
+  --secondary-blue-normal: #19b3bd;
+  --secondary-gray-light: #333333;
+
+  --bg-gradient-start: #e0f2f1;
+  --bg-gradient-end: #f5f5f5;
+  --sidebar-gradient-start: #ffffff;
+  --sidebar-gradient-end: #f8f9fa;
+  --text-primary: #121212;
+  --text-secondary: rgba(18, 18, 18, 0.7);
+  --border-color: #0d7377;
+  --hover-bg: rgba(13, 115, 119, 0.08);
+  --active-bg: rgba(13, 115, 119, 0.15);
+}
+
+:root {
+  --primary-dark-green: #0d7377;
+  --primary-dark: #121212;
+  --primary-blue-light: #14ffec;
+  --primary-white: #ffffff;
+
+  --secondary-dark: #0d0d0d;
+  --secondary-dark-green: #052e30;
+  --secondary-blue-normal: #19b3bd;
+  --secondary-gray-light: #f0f0f0;
+
+  --bg-gradient-start: #052e30;
+  --bg-gradient-end: #0d0d0d;
+  --sidebar-gradient-start: #121212;
+  --sidebar-gradient-end: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --border-color: #0d7377;
+  --hover-bg: rgba(13, 115, 119, 0.1);
+  --active-bg: rgba(13, 115, 119, 0.2);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+// Snackbar custom de base (pour les éléments DOM créés manuellement)
+.custom-snackbar {
+  position: fixed;
+  bottom: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+  color: #ffffff;
+  padding: 16px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+  z-index: 10000;
+  transition: all 0.3s ease;
+  min-width: 300px;
+  text-align: center;
+  border: 1px solid #2196f3;
+
+  &.show {
+    bottom: 24px;
+  }
+
+  &.snackbar-success {
+    background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
+    border-color: #4caf50;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  }
+
+  &.snackbar-error {
+    background: linear-gradient(135deg, #c62828 0%, #d32f2f 100%);
+    border-color: #f44336;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+  }
+
+  &.snackbar-info {
+    background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+    border-color: #2196f3;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+  }
+
+  &.snackbar-warning {
+    background: linear-gradient(135deg, #ef6c00 0%, #f57c00 100%);
+    border-color: #ff9800;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+  }
+}
+
+.mat-mdc-snack-bar-container {
+  .mdc-snackbar__surface {
+    background: var(--primary-dark) !important;
+    border: 1px solid var(--primary-dark-green);
+  }
+
+  .mat-mdc-snack-bar-label {
+    color: var(--primary-white) !important;
+  }
+
+  .mat-mdc-button {
+    color: var(--primary-blue-light) !important;
+    font-weight: 600;
+
+    &:hover {
+      background: rgba(20, 255, 236, 0.1);
+    }
+  }
+}
+
+.snackbar-success {
+  .mdc-snackbar__surface {
+    background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%) !important;
+    border: 1px solid #4caf50 !important;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4) !important;
+  }
+
+  .mat-mdc-snack-bar-label {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .mat-mdc-button {
+    color: #a5d6a7 !important;
+  }
+}
+
+.snackbar-error {
+  .mdc-snackbar__surface {
+    background: linear-gradient(135deg, #c62828 0%, #d32f2f 100%) !important;
+    border: 1px solid #f44336 !important;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4) !important;
+  }
+
+  .mat-mdc-snack-bar-label {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .mat-mdc-button {
+    color: #ffcdd2 !important;
+  }
+}
+
+.snackbar-info {
+  .mdc-snackbar__surface {
+    background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%) !important;
+    border: 1px solid #2196f3 !important;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4) !important;
+  }
+
+  .mat-mdc-snack-bar-label {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .mat-mdc-button {
+    color: #90caf9 !important;
+  }
+}
+
+.snackbar-warning {
+  .mdc-snackbar__surface {
+    background: linear-gradient(135deg, #ef6c00 0%, #f57c00 100%) !important;
+    border: 1px solid #ff9800 !important;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4) !important;
+  }
+
+  .mat-mdc-snack-bar-label {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+
+  .mat-mdc-button {
+    color: #ffcc80 !important;
+  }
+}
+
+.icon {
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+.sortable i {
+  margin-left: 8px;
+  font-size: 12px;
+  opacity: 0.3;
+  transition: opacity 0.2s;
+
+  &.active {
+    opacity: 1;
+  }
+}
+
+.menu-icon,
+.section-icon {
+  width: 20px;
+  text-align: center;
+}
+
+.fa-spin {
+  animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
