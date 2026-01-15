@@ -1,80 +1,105 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Image,
+  ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 
-import { HelloWave } from "@/components/HelloWave";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
 
 export default function HomeScreen() {
+  const handleNavigate = () => {
+    router.push("/"); // adapte la route si besoin
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">
-            npm run reset-project
-          </ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <Pressable
+              style={({ pressed }) => [
+                styles.card,
+                pressed && styles.cardPressed,
+              ]}
+              onPress={handleNavigate}
+          >
+            <Image
+                source={{
+                  uri: "https://picsum.photos/600/800", // image temporaire
+                }}
+                style={styles.image}
+                resizeMode="cover"
+            />
+
+            <View style={styles.overlay}>
+              <Text style={styles.title}>Découvrez de nouveaux sons</Text>
+
+              <View style={styles.cta}>
+                <Text style={styles.ctaText}>Swiper maintenant</Text>
+              </View>
+            </View>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.primary.fondPremier,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 40,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
+
+  card: {
+    borderRadius: 24,
+    overflow: "hidden",
+    backgroundColor: "#111",
+    elevation: 4,
+  },
+  cardPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.9,
+  },
+
+  image: {
+    width: "100%",
+    height: 420,
+  },
+
+  overlay: {
+    position: "absolute",
     bottom: 0,
     left: 0,
-    position: "absolute",
+    right: 0,
+    padding: 20,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+
+  title: {
+    color: Colors.light.background,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+
+  cta: {
+    alignSelf: "flex-start",
+    backgroundColor: Colors.primary.CTA,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  ctaText: {
+    color: Colors.primary.fondPremier,
+    fontWeight: "700",
+    fontSize: 14,
   },
 });
