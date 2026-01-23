@@ -1,10 +1,10 @@
-name: Build (SonarQube)
+name: SonarQube Scan
 
 on:
   push:
-    branches: [main]
+    branches: [staging]
   pull_request:
-    branches: [main]
+    branches: [staging]
 
 permissions:
   contents: read
@@ -28,17 +28,27 @@ jobs:
             back-office/package-lock.json
             front-mobile/package-lock.json
 
-      - name: Install backend dependencies
-        run: npm ci
-        working-directory: backend
+      # - name: Install backend dependencies
+      #   run: npm ci
+      #   working-directory: backend
 
-      - name: Install back-office dependencies
-        run: npm ci
-        working-directory: back-office
+      # - name: Run backend tests with coverage
+      #   env:
+      #     NODE_ENV: test
+      #   run: npm run test -- --coverage
+      #   working-directory: backend
 
-      - name: Install front-mobile dependencies
-        run: npm ci
-        working-directory: front-mobile
+      # - name: Install back-office dependencies
+      #   run: npm ci
+      #   working-directory: back-office
+
+      # - name: Run back-office tests with coverage
+      #   env:
+      #     CI: "true"
+      #     CHROME_BIN: /usr/bin/google-chrome
+      #   run: |
+      #     npm run test -- --watch=false --code-coverage --browsers=ChromeHeadless
+      #   working-directory: back-office
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v2

@@ -1,15 +1,20 @@
+import { useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import Header from "@/components/Header";
 
-export default function SettingsScreen() {
+export default function GameDetailsScreen() {
+  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const normalizedId = Array.isArray(id) ? id[0] : id;
+  const title = (normalizedId ?? "Jeu").replace(/-/g, " ");
+
   return (
     <View style={styles.container}>
-      <Header title="Paramètres" variant="withBack" />
+      <Header title={title} variant="withBack" />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.heading}>Paramètres à venir</Text>
+        <Text style={styles.heading}>Détails à venir</Text>
         <Text style={styles.subtitle}>
-          Ajoute ici tes options de compte, notifications ou préférences.
+          Navigation OK. Ajoute ici le contenu du mini-jeu "{title}".
         </Text>
       </ScrollView>
     </View>

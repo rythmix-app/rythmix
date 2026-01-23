@@ -37,20 +37,20 @@ const styles = StyleSheet.create({
   default: {
     fontSize: 16,
     lineHeight: 24,
-    fontFamily: "Semibold",
   },
   defaultSemiBold: {
     fontSize: 16,
-    fontFamily: "Semibold",
+    lineHeight: 24,
+    fontWeight: "600",
   },
   title: {
     fontSize: 32,
-    fontFamily: "Bold",
+    fontWeight: "bold",
     lineHeight: 32,
   },
   subtitle: {
     fontSize: 20,
-    fontFamily: "Bold",
+    fontWeight: "bold",
   },
   link: {
     lineHeight: 30,
