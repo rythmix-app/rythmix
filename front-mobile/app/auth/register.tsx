@@ -3,6 +3,7 @@ import Input from "@/components/Input";
 import { Link, router } from "expo-router";
 import { RythmixLogo } from "@/components/RythmixLogo";
 import { useState } from "react";
+import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
 import {
   Alert,
   ScrollView,
@@ -11,6 +12,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useAuthStore } from "@/stores/authStore";
+import { ApiError } from "@/types/auth";
 
 export default function RegisterScreen() {
   const [firstName, setFirstName] = useState("");
@@ -21,7 +24,7 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptNewsletter, setAcceptNewsletter] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { register, isLoading } = useAuthStore();
 
   const validateForm = () => {
     if (!firstName.trim()) {
@@ -67,46 +70,23 @@ export default function RegisterScreen() {
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/auth/register`,
+      await register({
+        firstName,
+        lastName,
+        username,
+        email,
+        password,
+      });
+      Alert.alert("Succès", "Votre compte a été créé avec succès !", [
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            firstName,
-            lastName,
-            username,
-            email,
-            password,
-          }),
+          text: "OK",
+          onPress: () => router.replace("/auth/login"),
         },
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert("Succès", "Votre compte a été créé avec succès !", [
-          {
-            text: "OK",
-            onPress: () => router.replace("/auth/login"),
-          },
-        ]);
-      } else {
-        Alert.alert("Erreur", data.message || "Une erreur est survenue");
-      }
+      ]);
     } catch (error) {
-      console.error("Registration error:", error);
-      Alert.alert(
-        "Erreur",
-        "Impossible de se connecter au serveur. Veuillez réessayer.",
-      );
-    } finally {
-      setIsLoading(false);
+      const apiError = error as ApiError;
+      Alert.alert("Erreur", apiError.message || "Une erreur est survenue");
     }
   };
 
@@ -189,6 +169,8 @@ export default function RegisterScreen() {
         labelStyle={styles.labelStyle}
         editable={!isLoading}
       />
+
+      <PasswordStrengthIndicator password={password} />
 
       {/* Confirm Password */}
       <Input

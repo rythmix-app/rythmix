@@ -18,6 +18,20 @@ export default class Game extends BaseModel {
   @column()
   declare description: string
 
+  @ApiProperty({
+    description: 'Indicates if the game supports multiplayer mode',
+    example: false,
+  })
+  @column()
+  declare isMultiplayer: boolean
+
+  @ApiProperty({
+    description: 'Indicate is the game is enabled on the mobile app',
+    example: true,
+  })
+  @column()
+  declare isEnabled: boolean
+
   @ApiProperty({ description: 'Game creation timestamp' })
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

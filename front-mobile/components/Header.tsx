@@ -41,9 +41,7 @@ export default function Header({
     typeof showBack === "boolean" ? showBack : variant === "withBack";
   const wantsCenteredTitle = variant === "withBack" || hasBack;
   const hasSettings =
-    typeof showSettings === "boolean"
-      ? showSettings
-      : variant === "withMenu";
+    typeof showSettings === "boolean" ? showSettings : variant === "withMenu";
   const shouldAddGap = hasBack || hasSettings || wantsCenteredTitle;
 
   const handleBackPress = () => {
@@ -65,27 +63,15 @@ export default function Header({
   };
 
   return (
-    <LinearGradient
-      colors={["#00BFA5", Colors.secondary.turquoise]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[
-        styles.container,
-        { paddingTop: top + 12 },
-        style,
-      ]}
-    >
-      <View
-        style={[
-          styles.content,
-          shouldAddGap && styles.contentGapped,
-        ]}
-      >
+    <View style={[styles.container, { paddingTop: top + 12 }, style]}>
+      <View style={[styles.content, shouldAddGap && styles.contentGapped]}>
         <View
           style={[
             styles.sideSlot,
             !hasBack &&
-              (wantsCenteredTitle ? styles.slotPlaceholder : styles.slotCollapsed),
+              (wantsCenteredTitle
+                ? styles.slotPlaceholder
+                : styles.slotCollapsed),
           ]}
         >
           {hasBack && (
@@ -134,13 +120,14 @@ export default function Header({
           )}
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     width: "100%",
+    backgroundColor: "#0D7377",
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingHorizontal: 16,
@@ -169,8 +156,11 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     color: "#FFFFFF",
-    fontSize: 24,
+    fontSize: 40,
     fontFamily: "Bold",
+    textShadowColor: "rgba(255, 255, 255, 0.40)",
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
   },
   titleCentered: {
     textAlign: "center",
