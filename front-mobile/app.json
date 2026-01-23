@@ -10,10 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.frontmobile",
-      "infoPlist": {
-        "UIBackgroundModes": ["audio"]
-      }
+      "bundleIdentifier": "com.anonymous.frontmobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,8 +18,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.frontmobile",
-      "permissions": ["INTERNET", "MODIFY_AUDIO_SETTINGS", "WAKE_LOCK"]
+      "package": "com.anonymous.frontmobile"
     },
     "web": {
       "bundler": "metro",
@@ -41,8 +37,7 @@
         }
       ],
       "expo-web-browser",
-      "expo-font",
-      "expo-audio"
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

@@ -30,7 +30,7 @@ test.group('GameSessionsController - Unit', () => {
     await controller.index({ response } as any as HttpContext)
 
     assert.equal(response.statusCode, 200)
-    assert.deepEqual(response.body.gameSessions, [
+    assert.deepEqual(response.body.data, [
       { id: '1', status: 'en_cours' },
       { id: '2', status: 'terminee' },
     ])
@@ -59,7 +59,7 @@ test.group('GameSessionsController - Unit', () => {
     await controller.index({ response } as any as HttpContext)
 
     assert.equal(response.statusCode, 200)
-    assert.deepEqual(response.body.gameSessions, [])
+    assert.deepEqual(response.body.data, [])
   })
 
   test('create returns 201 when service returns model', async ({ assert }) => {
@@ -84,7 +84,8 @@ test.group('GameSessionsController - Unit', () => {
     await controller.create({ request, response } as any as HttpContext)
 
     assert.equal(response.statusCode, 201)
-    assert.equal(response.body.gameSession.gameId, 1)
+    assert.equal(response.body.data.gameId, 1)
+    assert.equal(response.body.message, 'Game session created')
   })
 
   test('create returns mapped status when service returns error object', async ({ assert }) => {
@@ -149,7 +150,7 @@ test.group('GameSessionsController - Unit', () => {
     await controller.show({ response, params } as any as HttpContext)
 
     assert.equal(response.statusCode, 200)
-    assert.equal(response.body.gameSession.id, 'session-77')
+    assert.equal(response.body.data.id, 'session-77')
   })
 
   test('show returns 404 when not found', async ({ assert }) => {
@@ -197,8 +198,7 @@ test.group('GameSessionsController - Unit', () => {
     await controller.update({ response, request, params } as any as HttpContext)
 
     assert.equal(response.statusCode, 200)
-    console.log(response.body)
-    assert.equal(response.body.status, 'terminee')
+    assert.equal(response.body.data.status, 'terminee')
   })
 
   test('update returns mapped status when service returns error object', async ({ assert }) => {
@@ -330,7 +330,8 @@ test.group('GameSessionsController - Unit', () => {
     await controller.getByGame({ response, params } as any as HttpContext)
 
     assert.equal(response.statusCode, 200)
-    assert.equal(response.body.gameSessions.length, 2)
+    assert.equal(response.body.data.length, 2)
+    assert.match(response.body.message, /game ID: 5/i)
   })
 
   test('getByGame returns 500 when service throws', async ({ assert }) => {
@@ -365,7 +366,8 @@ test.group('GameSessionsController - Unit', () => {
     await controller.getByStatus({ response, params } as any as HttpContext)
 
     assert.equal(response.statusCode, 200)
-    assert.equal(response.body.gameSessions.length, 2)
+    assert.equal(response.body.data.length, 2)
+    assert.match(response.body.message, /status: en_cours/i)
   })
 
   test('getByStatus returns 500 when service throws', async ({ assert }) => {

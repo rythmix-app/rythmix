@@ -4,14 +4,12 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
+import { SplashScreen, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect } from "react";
-import { useAuthStore } from "@/stores/authStore";
-
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -25,37 +23,13 @@ export default function RootLayout() {
     Extralight: require("../assets/fonts/Author-Extralight.otf"),
   });
 
-  const { isAuthenticated, isInitializing, checkAuth } = useAuthStore();
-  const segments = useSegments();
-  const router = useRouter();
-
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  useEffect(() => {
-    if (isInitializing || !loaded) return;
-
-    const inAuthGroup = segments[0] === "auth";
-
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace("/auth/login");
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace("/(tabs)");
-    }
-  }, [isAuthenticated, segments, isInitializing, loaded, router]);
-
-  useEffect(() => {
-    if ((loaded || error) && !isInitializing) {
+    if (loaded || error) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, error, isInitializing]);
+  }, [loaded, error]);
 
   if (!loaded && !error) {
-    return null;
-  }
-
-  if (isInitializing) {
     return null;
   }
 

@@ -3,10 +3,10 @@ import { GameSessionService } from '#services/game_session_service'
 import GameSession from '#models/game_session'
 import { inject } from '@adonisjs/core'
 import {
-  ApiBody,
   ApiOperation,
-  ApiParam,
   ApiResponse,
+  ApiParam,
+  ApiBody,
   ApiSecurity,
 } from '@foadonis/openapi/decorators'
 
@@ -23,7 +23,7 @@ export default class GameSessionsController {
   public async index({ response }: HttpContext) {
     try {
       const gameSessions = await this.gameSessionService.getAll()
-      return response.json({ gameSessions })
+      return response.json({ message: 'List of game sessions', data: gameSessions })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game sessions' })
     }
@@ -57,7 +57,7 @@ export default class GameSessionsController {
       if (!(result instanceof GameSession)) {
         return response.status(result.status || 500).json({ message: result.error })
       }
-      return response.status(201).json({ gameSession: result })
+      return response.status(201).json({ message: 'Game session created', data: result })
     } catch (error) {
       return response.status(500).json({ message: 'Error while creating game session' })
     }
@@ -78,7 +78,8 @@ export default class GameSessionsController {
         return response.status(404).json({ message: 'Game session not found' })
       }
       return response.json({
-        gameSession,
+        message: `Game session details for ID: ${params.id}`,
+        data: gameSession,
       })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game session' })
@@ -116,7 +117,7 @@ export default class GameSessionsController {
       if (!(result instanceof GameSession)) {
         return response.status(result.status || 500).json({ message: result.error })
       }
-      return response.json(result)
+      return response.json({ message: `Game session ${params.id} updated`, data: result })
     } catch (error) {
       return response.status(500).json({ message: 'Error while updating game session' })
     }
@@ -157,7 +158,10 @@ export default class GameSessionsController {
   public async getByGame({ params, response }: HttpContext) {
     try {
       const gameSessions = await this.gameSessionService.getByGameId(params.gameId)
-      return response.json({ gameSessions })
+      return response.json({
+        message: `Game sessions for game ID: ${params.gameId}`,
+        data: gameSessions,
+      })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game sessions' })
     }
@@ -177,7 +181,10 @@ export default class GameSessionsController {
   public async getByStatus({ params, response }: HttpContext) {
     try {
       const gameSessions = await this.gameSessionService.getByStatus(params.status)
-      return response.json({ gameSessions })
+      return response.json({
+        message: `Game sessions with status: ${params.status}`,
+        data: gameSessions,
+      })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game sessions' })
     }

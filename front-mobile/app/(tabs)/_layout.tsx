@@ -30,12 +30,7 @@ export default function TabLayout() {
       >
         <Tabs.Screen name="index" />
         <Tabs.Screen name="swipemix" />
-        <Tabs.Screen
-          name="games"
-          options={{
-            headerShown: false,
-          }}
-        />
+        <Tabs.Screen name="games" />
         <Tabs.Screen name="profile" />
         <Tabs.Screen name="explore" />
       </Tabs>
