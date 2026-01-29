@@ -1,0 +1,254 @@
+<div class="user-detail-page">
+  <div class="page-header">
+    <div class="header-left">
+      <button class="back-btn" (click)="onCancel()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h1 class="page-title">{{ title }}</h1>
+    </div>
+  </div>
+
+  <div class="page-content">
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+      </div>
+    }
+
+    @if (!isLoading) {
+      <div class="form-container">
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+          <div class="form-section">
+            <h2 class="section-title">Informations personnelles</h2>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="username" class="field-label">
+                  Username <span class="required">*</span>
+                </label>
+                <input
+                  id="username"
+                  type="text"
+                  formControlName="username"
+                  class="field-input"
+                  [class.error]="
+                    userForm.get('username')?.invalid &&
+                    userForm.get('username')?.touched
+                  "
+                />
+                @if (
+                  userForm.get("username")?.hasError("required") &&
+                  userForm.get("username")?.touched
+                ) {
+                  <span class="field-error">Le username est requis</span>
+                }
+                @if (
+                  userForm.get("username")?.hasError("minlength") &&
+                  userForm.get("username")?.touched
+                ) {
+                  <span class="field-error"
+                    >Le username doit contenir au moins 3 caractères</span
+                  >
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field half">
+                <label for="firstName" class="field-label">Prénom</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  formControlName="firstName"
+                  class="field-input"
+                />
+              </div>
+
+              <div class="form-field half">
+                <label for="lastName" class="field-label">Nom</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  formControlName="lastName"
+                  class="field-input"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="email" class="field-label">
+                  Email <span class="required">*</span>
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  formControlName="email"
+                  class="field-input"
+                  [class.error]="
+                    userForm.get('email')?.invalid &&
+                    userForm.get('email')?.touched
+                  "
+                />
+                @if (
+                  userForm.get("email")?.hasError("required") &&
+                  userForm.get("email")?.touched
+                ) {
+                  <span class="field-error">L'email est requis</span>
+                }
+                @if (
+                  userForm.get("email")?.hasError("email") &&
+                  userForm.get("email")?.touched
+                ) {
+                  <span class="field-error">L'email n'est pas valide</span>
+                }
+              </div>
+            </div>
+
+            @if (mode === "create") {
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="password" class="field-label">
+                    Mot de passe <span class="required">*</span>
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    formControlName="password"
+                    class="field-input"
+                    [class.error]="
+                      userForm.get('password')?.invalid &&
+                      userForm.get('password')?.touched
+                    "
+                  />
+                  @if (
+                    userForm.get("password")?.hasError("required") &&
+                    userForm.get("password")?.touched
+                  ) {
+                    <span class="field-error">Le mot de passe est requis</span>
+                  }
+                  @if (
+                    userForm.get("password")?.hasError("minlength") &&
+                    userForm.get("password")?.touched
+                  ) {
+                    <span class="field-error"
+                      >Le mot de passe doit contenir au moins 6 caractères</span
+                    >
+                  }
+                </div>
+              </div>
+            }
+
+            <div class="form-row">
+              <div class="form-field half">
+                <label for="role" class="field-label">
+                  Rôle <span class="required">*</span>
+                </label>
+                <div class="select-wrapper">
+                  <select
+                    id="role"
+                    formControlName="role"
+                    class="field-select"
+                    [class.error]="
+                      userForm.get('role')?.invalid &&
+                      userForm.get('role')?.touched
+                    "
+                  >
+                    <option value="user">Utilisateur</option>
+                    <option value="admin">Administrateur</option>
+                  </select>
+                  <span class="select-arrow">▼</span>
+                </div>
+                @if (
+                  userForm.get("role")?.hasError("required") &&
+                  userForm.get("role")?.touched
+                ) {
+                  <span class="field-error">Le rôle est requis</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          @if (mode === "view" && user) {
+            <div class="info-section">
+              <h2 class="section-title">Informations système</h2>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">ID</span>
+                  <span class="info-value">{{ user.id }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Dates</span>
+                  <div class="info-dates">
+                    <div class="date-row">
+                      <span class="date-label">Création:</span>
+                      <span class="info-value">{{
+                        user.createdAt | date: "dd/MM/yyyy HH:mm"
+                      }}</span>
+                    </div>
+                    @if (user.updatedAt) {
+                      <div class="date-row">
+                        <span class="date-label">Modification:</span>
+                        <span class="info-value">{{
+                          user.updatedAt | date: "dd/MM/yyyy HH:mm"
+                        }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Statut</span>
+                  <span
+                    class="badge"
+                    [class.badge-active]="!user.deletedAt"
+                    [class.badge-deleted]="user.deletedAt"
+                  >
+                    {{ user.deletedAt ? "Supprimé" : "Actif" }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (mode !== "view") {
+            <div class="form-actions">
+              <button
+                type="button"
+                (click)="onCancel()"
+                [disabled]="isSubmitting"
+                class="btn-cancel"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                [disabled]="isSubmitting || userForm.invalid"
+                class="btn-submit"
+              >
+                @if (isSubmitting) {
+                  <i class="fas fa-spinner fa-spin"></i>
+                }
+                @if (!isSubmitting) {
+                  <i class="fas fa-check"></i>
+                }
+                <span>{{ mode === "create" ? "Créer" : "Enregistrer" }}</span>
+              </button>
+            </div>
+          }
+
+          @if (mode === "view") {
+            <div class="form-actions">
+              <button
+                type="button"
+                (click)="router.navigate(['/users', userId, 'edit'])"
+                class="btn-edit"
+              >
+                Modifier
+              </button>
+            </div>
+          }
+        </form>
+      </div>
+    }
+  </div>
+</div>
