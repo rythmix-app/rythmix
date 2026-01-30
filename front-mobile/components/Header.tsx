@@ -1,18 +1,15 @@
 import React from "react";
-import { LinearGradient } from "expo-linear-gradient";
 import { Href, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   StyleSheet,
   Text,
+  TextStyle,
   TouchableOpacity,
   View,
-  TextStyle,
   ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { Colors } from "@/constants/Colors";
 
 export interface HeaderProps {
   title: string;

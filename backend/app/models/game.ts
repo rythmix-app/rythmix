@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
+import type { HasMany } from '@adonisjs/lucid/types/relations'
+import FavoriteGame from '#models/favorite_game'
 import { ApiProperty } from '@foadonis/openapi/decorators'
 
 export default class Game extends BaseModel {
@@ -39,4 +41,15 @@ export default class Game extends BaseModel {
   @ApiProperty({ description: 'Last update timestamp' })
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  @hasMany(() => FavoriteGame)
+  declare favoriteGames: HasMany<typeof FavoriteGame>
+
+  public serializeExtras() {
+    if (this.$extras.isFavorite !== undefined) {
+      return {
+        isFavorite: Boolean(this.$extras.isFavorite),
+      }
+    }
+  }
 }

@@ -10,6 +10,7 @@ const GamesController = () => import('#controllers/games_controller')
 const AchievementsController = () => import('#controllers/achievements_controller')
 const GameSessionsController = () => import('#controllers/game_sessions_controller')
 const LikedTracksController = () => import('#controllers/liked_tracks_controller')
+const FavoriteGamesController = () => import('#controllers/favorite_games_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -25,6 +26,7 @@ router.get('/', async ({ response }) => {
       achievements: '/api/achievements',
       games: '/api/games',
       likedTracks: '/api/liked-tracks',
+      favoriteGames: '/api/favorite-games',
       gameSessions: '/api/game-sessions',
       docs: '/docs',
     },
@@ -76,9 +78,9 @@ router
       .prefix('/achievements')
     router
       .group(() => {
-        router.get('/', [GamesController, 'index'])
+        router.get('/', [GamesController, 'index']).use(middleware.silentAuth())
         router.post('/', [GamesController, 'create']).use(middleware.role({ roles: ['admin'] }))
-        router.get('/:id', [GamesController, 'show'])
+        router.get('/:id', [GamesController, 'show']).use(middleware.silentAuth())
         router.patch('/:id', [GamesController, 'update']).use(middleware.role({ roles: ['admin'] }))
         router
           .delete('/:id', [GamesController, 'destroy'])
@@ -105,5 +107,18 @@ router
         router.delete('/:id', [LikedTracksController, 'delete']).use(middleware.auth())
       })
       .prefix('/liked-tracks')
+    router
+      .group(() => {
+        router
+          .get('/', [FavoriteGamesController, 'index'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router.get('/me', [FavoriteGamesController, 'myFavorites']).use(middleware.auth())
+        router.post('/', [FavoriteGamesController, 'create']).use(middleware.auth())
+        router.delete('/:id', [FavoriteGamesController, 'delete']).use(middleware.auth())
+        router
+          .delete('/game/:gameId', [FavoriteGamesController, 'deleteByGameId'])
+          .use(middleware.auth())
+      })
+      .prefix('/favorite-games')
   })
   .prefix('/api')

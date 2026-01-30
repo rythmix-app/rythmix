@@ -6,6 +6,7 @@ export interface Game {
   updatedAt: string;
   isMultiplayer: boolean;
   isEnabled: boolean;
+  isFavorite: boolean;
 }
 
 export interface getAllGamesResponse {

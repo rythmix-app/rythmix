@@ -244,10 +244,7 @@ export default function TracklistGameScreen() {
     }
   };
 
-  const checkAnswer = (
-    userInput: string,
-    targetText: string,
-  ): boolean => {
+  const checkAnswer = (userInput: string, targetText: string): boolean => {
     const normalizedAnswer = normalizeString(userInput);
     const normalizedTarget = normalizeString(targetText);
 
@@ -469,9 +466,7 @@ export default function TracklistGameScreen() {
               <MaterialIcons
                 name="timer"
                 size={24}
-                color={
-                  timeRemaining < 60 ? "#ff6b6b" : Colors.primary.survol
-                }
+                color={timeRemaining < 60 ? "#ff6b6b" : Colors.primary.survol}
               />
               <ThemedText
                 style={[
@@ -568,7 +563,11 @@ export default function TracklistGameScreen() {
         >
           <View style={styles.resultHeader}>
             <ThemedText type="title" style={styles.resultTitle}>
-              {percentage >= 75 ? "Excellent ! 🎉" : percentage >= 50 ? "Bien joué ! 👍" : "Continuez à vous entraîner ! 💪"}
+              {percentage >= 75
+                ? "Excellent ! 🎉"
+                : percentage >= 50
+                  ? "Bien joué ! 👍"
+                  : "Continuez à vous entraîner ! 💪"}
             </ThemedText>
 
             <View style={styles.scoreCard}>
@@ -601,9 +600,7 @@ export default function TracklistGameScreen() {
 
             <View style={styles.comparisonContainer}>
               <View style={styles.column}>
-                <ThemedText style={styles.columnTitle}>
-                  Vos réponses
-                </ThemedText>
+                <ThemedText style={styles.columnTitle}>Vos réponses</ThemedText>
                 {validatedAnswers
                   .filter((a) => a.userInput)
                   .map((answer, index) => (

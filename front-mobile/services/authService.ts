@@ -65,12 +65,12 @@ export const logout = async (): Promise<void> => {
 };
 
 export const refreshAccessToken = async (
-  refreshToken: string
+  refreshToken: string,
 ): Promise<RefreshTokenResponse> => {
   const response = await post<RefreshTokenResponse>(
     "/api/auth/refresh",
     { refreshToken },
-    { skipAuth: true }
+    { skipAuth: true },
   );
 
   if (!response.accessToken) {

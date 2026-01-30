@@ -38,7 +38,7 @@ interface RequestOptions extends RequestInit {
 // Fonction pour gérer le refresh du token
 const handleTokenRefresh = async (
   endpoint: string,
-  options: RequestOptions
+  options: RequestOptions,
 ): Promise<any> => {
   // Si déjà en cours, attendre le refresh en cours
   if (isRefreshing && refreshPromise) {
@@ -121,7 +121,7 @@ const handleTokenRefresh = async (
 const handleResponse = async <T>(
   response: Response,
   endpoint: string,
-  options: RequestOptions
+  options: RequestOptions,
 ): Promise<T> => {
   if (response.status === 401) {
     // Si c'est un retry, ne pas réessayer le refresh (éviter boucles infinies)

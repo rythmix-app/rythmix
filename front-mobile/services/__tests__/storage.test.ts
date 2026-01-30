@@ -19,9 +19,7 @@ describe("storage service", () => {
   describe("Token management", () => {
     describe("getToken", () => {
       it("should return token from secure storage", async () => {
-        (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(
-          "test_token"
-        );
+        (SecureStore.getItemAsync as jest.Mock).mockResolvedValue("test_token");
 
         const token = await storage.getToken();
 
@@ -42,9 +40,7 @@ describe("storage service", () => {
         (SecureStore.getItemAsync as jest.Mock)
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce("migrated_token");
-        (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
-          "migrated_token"
-        );
+        (AsyncStorage.getItem as jest.Mock).mockResolvedValue("migrated_token");
 
         const token = await storage.getToken();
 
@@ -52,14 +48,14 @@ describe("storage service", () => {
         // Vérifier que la migration a eu lieu
         expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
           "rythmix_token",
-          "migrated_token"
+          "migrated_token",
         );
         expect(AsyncStorage.removeItem).toHaveBeenCalledWith("rythmix_token");
       });
 
       it("should return null on error", async () => {
         (SecureStore.getItemAsync as jest.Mock).mockRejectedValue(
-          new Error("Storage error")
+          new Error("Storage error"),
         );
 
         const token = await storage.getToken();
@@ -74,30 +70,28 @@ describe("storage service", () => {
 
         expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
           "rythmix_token",
-          "new_token"
+          "new_token",
         );
       });
 
       it("should throw error if token is empty", async () => {
         await expect(storage.setToken("")).rejects.toThrow(
-          "Token cannot be empty"
+          "Token cannot be empty",
         );
       });
 
       it("should throw error if token is only whitespace", async () => {
         await expect(storage.setToken("   ")).rejects.toThrow(
-          "Token cannot be empty"
+          "Token cannot be empty",
         );
       });
 
       it("should propagate storage errors", async () => {
         (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(
-          new Error("Storage full")
+          new Error("Storage full"),
         );
 
-        await expect(storage.setToken("token")).rejects.toThrow(
-          "Storage full"
-        );
+        await expect(storage.setToken("token")).rejects.toThrow("Storage full");
       });
     });
 
@@ -106,13 +100,13 @@ describe("storage service", () => {
         await storage.removeToken();
 
         expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-          "rythmix_token"
+          "rythmix_token",
         );
       });
 
       it("should propagate storage errors", async () => {
         (SecureStore.deleteItemAsync as jest.Mock).mockRejectedValue(
-          new Error("Delete failed")
+          new Error("Delete failed"),
         );
 
         await expect(storage.removeToken()).rejects.toThrow("Delete failed");
@@ -124,7 +118,7 @@ describe("storage service", () => {
     describe("getRefreshToken", () => {
       it("should return refresh token from secure storage", async () => {
         (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(
-          "refresh_token"
+          "refresh_token",
         );
 
         const token = await storage.getRefreshToken();
@@ -147,7 +141,7 @@ describe("storage service", () => {
           .mockResolvedValueOnce("migrated_refresh");
         (SecureStore.setItemAsync as jest.Mock).mockResolvedValue(undefined);
         (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
-          "migrated_refresh"
+          "migrated_refresh",
         );
         (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
 
@@ -156,16 +150,16 @@ describe("storage service", () => {
         expect(token).toBe("migrated_refresh");
         expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
           "rythmix_refresh_token",
-          "migrated_refresh"
+          "migrated_refresh",
         );
         expect(AsyncStorage.removeItem).toHaveBeenCalledWith(
-          "rythmix_refresh_token"
+          "rythmix_refresh_token",
         );
       });
 
       it("should return null on error", async () => {
         (SecureStore.getItemAsync as jest.Mock).mockRejectedValue(
-          new Error("Storage error")
+          new Error("Storage error"),
         );
 
         const token = await storage.getRefreshToken();
@@ -183,23 +177,23 @@ describe("storage service", () => {
 
         expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
           "rythmix_refresh_token",
-          "new_refresh_token"
+          "new_refresh_token",
         );
       });
 
       it("should throw error if refresh token is empty", async () => {
         await expect(storage.setRefreshToken("")).rejects.toThrow(
-          "Refresh token cannot be empty"
+          "Refresh token cannot be empty",
         );
       });
 
       it("should propagate storage errors", async () => {
         (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(
-          new Error("Storage full")
+          new Error("Storage full"),
         );
 
         await expect(storage.setRefreshToken("token")).rejects.toThrow(
-          "Storage full"
+          "Storage full",
         );
       });
     });
@@ -212,7 +206,7 @@ describe("storage service", () => {
         await storage.removeRefreshToken();
 
         expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-          "rythmix_refresh_token"
+          "rythmix_refresh_token",
         );
       });
     });
@@ -232,7 +226,7 @@ describe("storage service", () => {
     describe("getUser", () => {
       it("should return user from AsyncStorage", async () => {
         (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
-          JSON.stringify(mockUser)
+          JSON.stringify(mockUser),
         );
 
         const user = await storage.getUser();
@@ -259,7 +253,7 @@ describe("storage service", () => {
 
       it("should return null on storage error", async () => {
         (AsyncStorage.getItem as jest.Mock).mockRejectedValue(
-          new Error("Storage error")
+          new Error("Storage error"),
         );
 
         const user = await storage.getUser();
@@ -274,31 +268,29 @@ describe("storage service", () => {
 
         expect(AsyncStorage.setItem).toHaveBeenCalledWith(
           "rythmix_user",
-          JSON.stringify(mockUser)
+          JSON.stringify(mockUser),
         );
       });
 
       it("should throw error if user is invalid (no id)", async () => {
         await expect(storage.setUser({} as User)).rejects.toThrow(
-          "User object is invalid"
+          "User object is invalid",
         );
         expect(AsyncStorage.setItem).not.toHaveBeenCalled();
       });
 
       it("should throw error if user is null", async () => {
         await expect(storage.setUser(null as any)).rejects.toThrow(
-          "User object is invalid"
+          "User object is invalid",
         );
       });
 
       it("should propagate storage errors", async () => {
         (AsyncStorage.setItem as jest.Mock).mockRejectedValue(
-          new Error("Storage full")
+          new Error("Storage full"),
         );
 
-        await expect(storage.setUser(mockUser)).rejects.toThrow(
-          "Storage full"
-        );
+        await expect(storage.setUser(mockUser)).rejects.toThrow("Storage full");
       });
     });
   });
@@ -312,11 +304,9 @@ describe("storage service", () => {
       await storage.clearAll();
 
       // Vérifie que les tokens sont supprimés de SecureStore
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("rythmix_token");
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-        "rythmix_token"
-      );
-      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-        "rythmix_refresh_token"
+        "rythmix_refresh_token",
       );
       // Vérifie que l'utilisateur est supprimé de AsyncStorage
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith("rythmix_user");
@@ -324,7 +314,7 @@ describe("storage service", () => {
 
     it("should propagate errors", async () => {
       (SecureStore.deleteItemAsync as jest.Mock).mockRejectedValue(
-        new Error("Delete failed")
+        new Error("Delete failed"),
       );
 
       await expect(storage.clearAll()).rejects.toThrow("Delete failed");

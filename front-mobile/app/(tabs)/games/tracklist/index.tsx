@@ -20,9 +20,7 @@ export default function TracklistIndexScreen() {
   const loadGameId = async () => {
     try {
       const games = await getAllGames();
-      const tracklist = games.find(
-        (g) => g.name.toLowerCase() === "tracklist",
-      );
+      const tracklist = games.find((g) => g.name.toLowerCase() === "tracklist");
       if (tracklist) {
         setGameId(tracklist.id);
       } else {

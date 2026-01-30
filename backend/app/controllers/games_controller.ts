@@ -3,23 +3,29 @@ import { GameService } from '#services/game_service'
 import Game from '#models/game'
 import { inject } from '@adonisjs/core'
 import {
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiSecurity,
   ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiSecurity,
 } from '@foadonis/openapi/decorators'
 
 @inject()
 export default class GamesController {
   constructor(private readonly gameService: GameService) {}
 
-  @ApiOperation({ summary: 'List all games', description: 'Get a list of all available games' })
+  @ApiOperation({
+    summary: 'List all games',
+    description:
+      'Get a list of all available games. If authenticated, includes isFavorite flag for each game.',
+  })
   @ApiResponse({ status: 200, description: 'List of games retrieved successfully' })
   @ApiResponse({ status: 500, description: 'Failed to fetch games' })
-  public async index({ response }: HttpContext) {
+  public async index({ response, auth }: HttpContext) {
     try {
-      const games = await this.gameService.getAll()
+      // Get current user ID if authenticated (optional auth)
+      const userId = auth.user?.id
+      const games = await this.gameService.getAll(userId)
       return response.json({ games })
     } catch (error) {
       return response
@@ -60,15 +66,19 @@ export default class GamesController {
     }
   }
 
-  @ApiOperation({ summary: 'Get game by ID', description: 'Retrieve a specific game by its ID' })
+  @ApiOperation({
+    summary: 'Get game by ID',
+    description: 'Retrieve a specific game by its ID. If authenticated, includes isFavorite flag.',
+  })
   @ApiParam({ name: 'id', description: 'Game ID', required: true })
   @ApiResponse({ status: 200, description: 'Game found' })
   @ApiResponse({ status: 404, description: 'Game not found' })
   @ApiResponse({ status: 500, description: 'Error retrieving game' })
-  public async show({ params, response }: HttpContext) {
+  public async show({ params, response, auth }: HttpContext) {
     try {
       const gameId = params.id
-      const game = await this.gameService.getById(gameId)
+      const userId = auth.user?.id
+      const game = await this.gameService.getById(gameId, userId)
       if (!game) {
         return response.status(404).json({ message: 'Game not found' })
       }

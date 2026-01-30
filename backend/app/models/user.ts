@@ -7,6 +7,7 @@ import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { randomUUID } from 'node:crypto'
 import { hasMany } from '@adonisjs/lucid/orm'
 import LikedTrack from '#models/liked_track'
+import FavoriteGame from '#models/favorite_game'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import { ApiProperty } from '@foadonis/openapi/decorators'
 
@@ -71,6 +72,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @hasMany(() => LikedTrack)
   declare likedTracks: HasMany<typeof LikedTrack>
+
+  @hasMany(() => FavoriteGame)
+  declare favoriteGames: HasMany<typeof FavoriteGame>
 
   @column({ serializeAs: null })
   declare verificationToken: string | null

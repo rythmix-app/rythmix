@@ -88,10 +88,16 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
         assert.equal(data.games, mockGames)
         return data
       },
+      status: (code: number) => {
+        return {
+          json: (data: any) => data,
+        }
+      },
     } as any
 
     const mockContext = {
       response: mockResponse,
+      auth: {},
     } as any
 
     await controller.index(mockContext)
@@ -115,11 +121,17 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
         assert.equal(data.game, mockGame)
         return data
       },
+      status: (code: number) => {
+        return {
+          json: (data: any) => data,
+        }
+      },
     } as any
 
     const mockContext = {
       response: mockResponse,
       params: { id: 1 },
+      auth: {},
     } as any
 
     await controller.show(mockContext)
@@ -147,6 +159,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
     const mockContext = {
       response: mockResponse,
       params: { id: 999 },
+      auth: {},
     } as any
 
     await controller.show(mockContext)
@@ -260,6 +273,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
     const mockContext = {
       response: mockResponse,
       params: { id: 1 },
+      auth: {},
     } as any
 
     await controller.show(mockContext)
@@ -354,6 +368,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
 
     const mockContext = {
       response: mockResponse,
+      auth: {},
     } as any
 
     await controller.index(mockContext)
@@ -385,6 +400,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
 
     const mockContext = {
       response: mockResponse,
+      auth: {},
     } as any
 
     await controller.index(mockContext)
