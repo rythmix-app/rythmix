@@ -88,7 +88,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
         assert.equal(data.games, mockGames)
         return data
       },
-      status: (code: number) => {
+      status: () => {
         return {
           json: (data: any) => data,
         }
@@ -121,7 +121,7 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
         assert.equal(data.game, mockGame)
         return data
       },
-      status: (code: number) => {
+      status: () => {
         return {
           json: (data: any) => data,
         }
