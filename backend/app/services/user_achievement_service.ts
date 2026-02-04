@@ -1,5 +1,7 @@
 import UserAchievement from '#models/user_achievement'
 import Achievement from '#models/achievement'
+import { DateTime } from 'luxon'
+import db from '@adonisjs/lucid/services/db'
 
 export class UserAchievementService {
   async getUserAchievements(userId: string): Promise<UserAchievement[]> {
@@ -52,24 +54,44 @@ export class UserAchievementService {
       return { error: 'Amount must be positive', status: 400 }
     }
 
-    const userAchievement = await UserAchievement.query()
-      .where('id', userAchievementId)
-      .where('user_id', userId)
-      .first()
+    const trx = await db.connection().transaction()
 
-    if (!userAchievement) {
-      return { error: 'User achievement not found', status: 404 }
+    try {
+      const userAchievement = await UserAchievement.query({ client: trx })
+        .where('id', userAchievementId)
+        .where('user_id', userId)
+        .first()
+
+      if (!userAchievement) {
+        await trx.rollback()
+        return { error: 'User achievement not found', status: 404 }
+      }
+
+      if (userAchievement.unlockedAt) {
+        await trx.rollback()
+        return { error: 'Achievement already unlocked', status: 400 }
+      }
+
+      userAchievement.currentProgress += amount
+
+      // Auto-unlock if progress requirement is met
+      if (
+        userAchievement.currentProgress >= userAchievement.requiredProgress &&
+        !userAchievement.unlockedAt
+      ) {
+        userAchievement.unlockedAt = DateTime.now()
+      }
+
+      await userAchievement.save()
+      await trx.commit()
+
+      await userAchievement.load('achievement')
+
+      return userAchievement
+    } catch (error) {
+      await trx.rollback()
+      throw error
     }
-
-    if (userAchievement.unlockedAt) {
-      return { error: 'Achievement already unlocked', status: 400 }
-    }
-
-    userAchievement.currentProgress += amount
-    await userAchievement.save()
-    await userAchievement.load('achievement')
-
-    return userAchievement
   }
 
   async removeTracking(
@@ -113,19 +135,32 @@ export class UserAchievementService {
   async resetProgress(
     userAchievementId: string
   ): Promise<UserAchievement | { error: string; status: number }> {
-    const userAchievement = await UserAchievement.find(userAchievementId)
+    const trx = await db.connection().transaction()
 
-    if (!userAchievement) {
-      return { error: 'User achievement not found', status: 404 }
+    try {
+      const userAchievement = await UserAchievement.query({ client: trx }).where(
+        'id',
+        userAchievementId
+      ).first()
+
+      if (!userAchievement) {
+        await trx.rollback()
+        return { error: 'User achievement not found', status: 404 }
+      }
+
+      userAchievement.currentProgress = 0
+      userAchievement.unlockedAt = null
+      userAchievement.currentTier = 1
+
+      await userAchievement.save()
+      await trx.commit()
+
+      await userAchievement.load('achievement')
+
+      return userAchievement
+    } catch (error) {
+      await trx.rollback()
+      throw error
     }
-
-    userAchievement.currentProgress = 0
-    userAchievement.unlockedAt = null
-    userAchievement.currentTier = 1
-
-    await userAchievement.save()
-    await userAchievement.load('achievement')
-
-    return userAchievement
   }
 }

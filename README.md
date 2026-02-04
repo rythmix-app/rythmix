@@ -45,16 +45,17 @@ All services are accessible via HTTPS through Traefik reverse proxy:
 
 #### 🔥 Development Environment
 ```bash
-just up-dev          # 🚀 Start development containers
-just down-dev         # 🛑 Stop development containers
-just logs-dev         # 📋 View development logs
+just up dev          # 🚀 Start development containers
+just down dev        # 🛑 Stop development containers
+just logs dev        # 📋 View development logs
+just up ngrok        # 🌐 Start ngrok tunnel (requires ngrok profile)
 ```
 
 #### 🏭 Production Environment
 ```bash
-just up-prod          # 🚀 Start production containers
-just down-prod        # 🛑 Stop production containers
-just logs-prod        # 📋 View production logs
+just up prod         # 🚀 Start production containers
+just down prod       # 🛑 Stop production containers
+just logs prod       # 📋 View production logs
 ```
 
 #### 🐚 Container Shell Access
@@ -151,14 +152,10 @@ Traefik will automatically obtain and renew SSL certificates from Let's Encrypt.
 | **⚡ Installation** | |
 | `just install-dev` | 🚀 Complete development environment setup |
 | `just install-prod` | 🏭 Complete production environment setup |
-| **🔥 Development** | |
-| `just up-dev` | 🚀 Start development containers |
-| `just down-dev` | 🛑 Stop development containers |
-| `just logs-dev` | 📋 View development logs |
-| **🏭 Production** | |
-| `just up-prod` | 🚀 Start production containers |
-| `just down-prod` | 🛑 Stop production containers |
-| `just logs-prod` | 📋 View production logs |
+| **🔧 Environment** | |
+| `just up SERVICE` | 🚀 Start environment (dev\|prod\|ngrok) |
+| `just down SERVICE` | 🛑 Stop environment (dev\|prod) |
+| `just logs SERVICE` | 📋 View logs (dev\|prod) |
 | **🐚 Service Access** | |
 | `just sh-backend` | 🖥️ Enter backend service shell |
 | `just sh-backoffice` | 🖥️ Enter back-office service shell |

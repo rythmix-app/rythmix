@@ -3,6 +3,7 @@ import { UserAchievementService } from '#services/user_achievement_service'
 import UserAchievement from '#models/user_achievement'
 import { inject } from '@adonisjs/core'
 import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@foadonis/openapi/decorators'
+import logger from '@adonisjs/core/services/logger'
 
 @inject()
 export default class UserAchievementsController {
@@ -18,6 +19,7 @@ export default class UserAchievementsController {
       const userAchievements = await this.userAchievementService.getUserAchievements(userId)
       return response.json({ userAchievements })
     } catch (error) {
+      logger.error('Failed to retrieve user achievements:', error)
       return response.status(500).json({ message: 'Failed to retrieve user achievements' })
     }
   }
@@ -31,6 +33,7 @@ export default class UserAchievementsController {
       const userAchievements = await this.userAchievementService.getAll()
       return response.json({ userAchievements })
     } catch (error) {
+      logger.error('Failed to retrieve user achievements:', error)
       return response.status(500).json({ message: 'Failed to retrieve user achievements' })
     }
   }
@@ -75,6 +78,7 @@ export default class UserAchievementsController {
 
       return response.status(201).json({ userAchievement: result })
     } catch (error) {
+      logger.error('Failed to start tracking achievement:', error)
       return response.status(500).json({ message: 'Failed to start tracking achievement' })
     }
   }
@@ -98,7 +102,12 @@ export default class UserAchievementsController {
     try {
       const { amount } = request.only(['amount'])
 
-      if (!amount || amount <= 0) {
+      if (
+        amount === undefined ||
+        amount === null ||
+        typeof amount !== 'number' ||
+        amount <= 0
+      ) {
         return response.status(400).json({ message: 'Amount must be positive' })
       }
 
@@ -111,6 +120,7 @@ export default class UserAchievementsController {
 
       return response.json({ userAchievement: result })
     } catch (error) {
+      logger.error('Failed to update progress:', error)
       return response.status(500).json({ message: 'Failed to update progress' })
     }
   }
@@ -131,6 +141,7 @@ export default class UserAchievementsController {
 
       return response.json(result)
     } catch (error) {
+      logger.error('Failed to remove achievement tracking:', error)
       return response.status(500).json({ message: 'Failed to remove achievement tracking' })
     }
   }
@@ -157,6 +168,7 @@ export default class UserAchievementsController {
       const stats = await this.userAchievementService.getUserStats(userId)
       return response.json(stats)
     } catch (error) {
+      logger.error('Failed to retrieve statistics:', error)
       return response.status(500).json({ message: 'Failed to retrieve statistics' })
     }
   }
@@ -177,6 +189,7 @@ export default class UserAchievementsController {
 
       return response.json({ userAchievement: result })
     } catch (error) {
+      logger.error('Failed to reset progress:', error)
       return response.status(500).json({ message: 'Failed to reset progress' })
     }
   }

@@ -15,15 +15,10 @@ help:
     @echo "  setup-env         - Copy environment file templates"
     @echo "  setup-dev-certs   - Generate development SSL certificates"
     @echo ""
-    @echo "🔧 Development:"
-    @echo "  up-dev            - Start development environment"
-    @echo "  down-dev          - Stop development environment"
-    @echo "  logs-dev          - Show real-time logs (dev)"
-    @echo ""
-    @echo "🚀 Production:"
-    @echo "  up-prod           - Start production environment"
-    @echo "  down-prod         - Stop production environment"
-    @echo "  logs-prod         - Show real-time logs (prod)"
+    @echo "🔧 Environment Management:"
+    @echo "  up SERVICE        - Start environment (dev|prod|ngrok)"
+    @echo "  down SERVICE      - Stop environment (dev|prod)"
+    @echo "  logs SERVICE      - Show real-time logs (dev|prod)"
     @echo ""
     @echo "🐚 Container shells:"
     @echo "  sh-backend        - Enter backend container shell"
@@ -103,25 +98,54 @@ install-prod:
     @echo "✅ Production installation complete!"
     @echo ""
 
-# Docker commands for development
-up-dev:
-    {{_docker_cmd}} up --build --wait && docker compose --profile ngrok up -d
+# Environment management commands
+up SERVICE:
+    #!/usr/bin/env bash
+    case "{{SERVICE}}" in
+        dev)
+            {{_docker_cmd}} up --build --wait
+            ;;
+        prod)
+            {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+            ;;
+        ngrok)
+            {{_docker_cmd}} --profile ngrok up -d
+            ;;
+        *)
+            echo "❌ Invalid service. Use: dev, prod, or ngrok"
+            exit 1
+            ;;
+    esac
 
-down-dev:
-    {{_docker_cmd}} down
+down SERVICE:
+    #!/usr/bin/env bash
+    case "{{SERVICE}}" in
+        dev)
+            {{_docker_cmd}} down
+            ;;
+        prod)
+            {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml down
+            ;;
+        *)
+            echo "❌ Invalid service. Use: dev or prod"
+            exit 1
+            ;;
+    esac
 
-logs-dev:
-    {{_docker_cmd}} logs -f
-
-# Docker commands for production
-up-prod:
-    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-
-down-prod:
-    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml down
-
-logs-prod:
-    {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml logs -f
+logs SERVICE:
+    #!/usr/bin/env bash
+    case "{{SERVICE}}" in
+        dev)
+            {{_docker_cmd}} logs -f
+            ;;
+        prod)
+            {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml logs -f
+            ;;
+        *)
+            echo "❌ Invalid service. Use: dev or prod"
+            exit 1
+            ;;
+    esac
 
 # Container shell/bash commands
 sh-backend:
