@@ -138,10 +138,9 @@ export class UserAchievementService {
     const trx = await db.connection().transaction()
 
     try {
-      const userAchievement = await UserAchievement.query({ client: trx }).where(
-        'id',
-        userAchievementId
-      ).first()
+      const userAchievement = await UserAchievement.query({ client: trx })
+        .where('id', userAchievementId)
+        .first()
 
       if (!userAchievement) {
         await trx.rollback()

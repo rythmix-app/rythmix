@@ -102,12 +102,7 @@ export default class UserAchievementsController {
     try {
       const { amount } = request.only(['amount'])
 
-      if (
-        amount === undefined ||
-        amount === null ||
-        typeof amount !== 'number' ||
-        amount <= 0
-      ) {
+      if (amount === undefined || amount === null || typeof amount !== 'number' || amount <= 0) {
         return response.status(400).json({ message: 'Amount must be positive' })
       }
 
