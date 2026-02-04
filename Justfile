@@ -105,7 +105,7 @@ install-prod:
 
 # Docker commands for development
 up-dev:
-    {{_docker_cmd}} up --build --wait
+    {{_docker_cmd}} up --build --wait && docker compose --profile ngrok up -d
 
 down-dev:
     {{_docker_cmd}} down
