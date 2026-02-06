@@ -80,7 +80,7 @@ test.group('UserAchievementService', (group) => {
       assert.equal(result.currentTier, 1)
       assert.equal(result.requiredProgress, 100)
       assert.deepEqual(result.progressData, {})
-      assert.isUndefined(result.unlockedAt)
+      assert.isNull(result.unlockedAt)
       assert.exists(result.achievement)
     }
   })

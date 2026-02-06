@@ -64,12 +64,23 @@ export default class UserAchievementsController {
       if (!achievementId) {
         return response.status(400).json({ message: 'achievementId is required' })
       }
+      let validatedRequiredProgress: number | undefined
+
+      if (requiredProgress !== undefined && requiredProgress !== null) {
+        const parsed = Number(requiredProgress)
+        if (!Number.isFinite(parsed) || parsed <= 0) {
+          return response
+            .status(400)
+            .json({ message: 'requiredProgress must be a positive number' })
+        }
+        validatedRequiredProgress = parsed
+      }
 
       const userId = auth.user!.id
       const result = await this.userAchievementService.startTracking(
         userId,
         achievementId,
-        requiredProgress
+        validatedRequiredProgress
       )
 
       if (!(result instanceof UserAchievement)) {

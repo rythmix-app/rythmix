@@ -1,6 +1,5 @@
 import UserAchievement from '#models/user_achievement'
 import Achievement from '#models/achievement'
-import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 
 export class UserAchievementService {
@@ -23,6 +22,10 @@ export class UserAchievementService {
         return { error: 'Achievement not found', status: 404 }
       }
 
+      if (requiredProgress !== undefined && requiredProgress <= 0) {
+        return { error: 'requiredProgress must be a positive number', status: 400 }
+      }
+
       const userAchievement = await UserAchievement.create({
         userId,
         achievementId,
@@ -32,6 +35,7 @@ export class UserAchievementService {
         progressData: {},
       })
 
+      await userAchievement.refresh()
       await userAchievement.load('achievement')
       return userAchievement
     } catch (error: any) {
@@ -73,14 +77,6 @@ export class UserAchievementService {
       }
 
       userAchievement.currentProgress += amount
-
-      // Auto-unlock if progress requirement is met
-      if (
-        userAchievement.currentProgress >= userAchievement.requiredProgress &&
-        !userAchievement.unlockedAt
-      ) {
-        userAchievement.unlockedAt = DateTime.now()
-      }
 
       await userAchievement.save()
       await trx.commit()

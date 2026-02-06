@@ -2,10 +2,10 @@ import { test } from '@japa/runner'
 import testUtils from '@adonisjs/core/services/test_utils'
 import User from '#models/user'
 import Achievement from '#models/achievement'
-import UserAchievement from '#models/user_achievement'
 import { DateTime } from 'luxon'
 import { createAuthenticatedUser } from '../utils/auth_helpers.js'
 import { deleteUserAchievement } from '#tests/utils/user_achievement_helpers'
+import UserAchievement from '#models/user_achievement'
 
 test.group('UserAchievementsController', (group) => {
   let user: User

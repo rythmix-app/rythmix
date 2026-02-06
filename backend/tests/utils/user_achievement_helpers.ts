@@ -9,7 +9,6 @@ export function deleteUserAchievement(group: Group) {
   })
 
   group.teardown(async () => {
-    await UserAchievement.query().delete()
     await Achievement.query().delete()
     await User.query().delete()
   })
