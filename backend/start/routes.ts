@@ -11,6 +11,7 @@ const AchievementsController = () => import('#controllers/achievements_controlle
 const GameSessionsController = () => import('#controllers/game_sessions_controller')
 const LikedTracksController = () => import('#controllers/liked_tracks_controller')
 const FavoriteGamesController = () => import('#controllers/favorite_games_controller')
+const UserAchievementsController = () => import('#controllers/user_achievements_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -27,6 +28,7 @@ router.get('/', async ({ response }) => {
       games: '/api/games',
       likedTracks: '/api/liked-tracks',
       favoriteGames: '/api/favorite-games',
+      userAchievements: '/api/user-achievements',
       gameSessions: '/api/game-sessions',
       docs: '/docs',
     },
@@ -120,5 +122,22 @@ router
           .use(middleware.auth())
       })
       .prefix('/favorite-games')
+    router
+      .group(() => {
+        router
+          .get('/', [UserAchievementsController, 'index'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router.get('/me', [UserAchievementsController, 'myAchievements']).use(middleware.auth())
+        router.get('/stats', [UserAchievementsController, 'stats']).use(middleware.auth())
+        router.post('/', [UserAchievementsController, 'create']).use(middleware.auth())
+        router
+          .patch('/:id/progress', [UserAchievementsController, 'updateProgress'])
+          .use(middleware.auth())
+        router
+          .patch('/:id/reset', [UserAchievementsController, 'reset'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router.delete('/:id', [UserAchievementsController, 'delete']).use(middleware.auth())
+      })
+      .prefix('/user-achievements')
   })
   .prefix('/api')

@@ -37,24 +37,24 @@ NGROK_DOMAIN=<votre_domaine_ngrok>
 Lancez la commande suivante (si ce n'est pas déjà fait) :
 
 ```bash
-just up-dev
+just up dev
 ```
 
 **En cas d'erreur liée à une bibliothèque manquante dans le backend** :
 
 ```bash
 docker system prune -a
-just up-dev
+just up dev
 ```
 
 ⚠️ **Attention** : La commande `docker system prune -a` supprime tous les conteneurs, images et volumes non utilisés. Assurez-vous de ne pas avoir de données importantes avant de l'exécuter.
 
 ### 5. Activation de Ngrok
 
-Démarrez le service Ngrok avec le profil dédié :
+Démarrez le service Ngrok avec la commande suivante :
 
 ```bash
-docker compose --profile ngrok up -d
+just up ngrok
 ```
 
 ## Vérification
