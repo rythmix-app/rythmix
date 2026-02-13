@@ -1,0 +1,241 @@
+<div class="register-container">
+  <div class="register-card">
+    <div class="register-header">
+      <h1 class="logo">RYTHMIX</h1>
+      <p class="subtitle">Créer un compte administrateur</p>
+    </div>
+
+    <form
+      [formGroup]="registerForm"
+      (ngSubmit)="onSubmit()"
+      class="register-form"
+    >
+      @if (errorMessage) {
+        <div class="error-message">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ errorMessage }}
+        </div>
+      }
+
+      @if (successMessage) {
+        <div class="success-message">
+          <i class="fas fa-check-circle"></i>
+          {{ successMessage }}
+        </div>
+      }
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">
+            <i class="fas fa-user"></i>
+            Prénom
+          </label>
+          <input
+            type="text"
+            id="firstName"
+            formControlName="firstName"
+            placeholder="John"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">
+            <i class="fas fa-user"></i>
+            Nom
+          </label>
+          <input
+            type="text"
+            id="lastName"
+            formControlName="lastName"
+            placeholder="Doe"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="username">
+          <i class="fas fa-at"></i>
+          Nom d'utilisateur
+        </label>
+        <input
+          type="text"
+          id="username"
+          formControlName="username"
+          placeholder="johndoe"
+          [class.error]="
+            registerForm.get('username')?.invalid &&
+            registerForm.get('username')?.touched
+          "
+        />
+        @if (
+          registerForm.get("username")?.invalid &&
+          registerForm.get("username")?.touched
+        ) {
+          <span class="field-error">
+            @if (registerForm.get("username")?.errors?.["required"]) {
+              Le nom d'utilisateur est requis
+            }
+            @if (registerForm.get("username")?.errors?.["minlength"]) {
+              Le nom d'utilisateur doit contenir au moins 3 caractères
+            }
+            @if (registerForm.get("username")?.errors?.["maxlength"]) {
+              Le nom d'utilisateur ne peut pas dépasser 50 caractères
+            }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="email">
+          <i class="fas fa-envelope"></i>
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="votreemail@exemple.com"
+          [class.error]="
+            registerForm.get('email')?.invalid &&
+            registerForm.get('email')?.touched
+          "
+        />
+        @if (
+          registerForm.get("email")?.invalid &&
+          registerForm.get("email")?.touched
+        ) {
+          <span class="field-error">
+            @if (registerForm.get("email")?.errors?.["required"]) {
+              L'email est requis
+            }
+            @if (registerForm.get("email")?.errors?.["email"]) {
+              L'email n'est pas valide
+            }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">
+          <i class="fas fa-lock"></i>
+          Mot de passe
+        </label>
+        <div class="password-input">
+          <input
+            [type]="hidePassword ? 'password' : 'text'"
+            id="password"
+            formControlName="password"
+            placeholder="••••••••"
+            [class.error]="
+              registerForm.get('password')?.invalid &&
+              registerForm.get('password')?.touched
+            "
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="
+              hidePassword
+                ? 'Afficher le mot de passe'
+                : 'Masquer le mot de passe'
+            "
+          >
+            <i
+              class="fas"
+              [class.fa-eye]="hidePassword"
+              [class.fa-eye-slash]="!hidePassword"
+            ></i>
+          </button>
+        </div>
+        @if (
+          registerForm.get("password")?.invalid &&
+          registerForm.get("password")?.touched
+        ) {
+          <span class="field-error">
+            @if (registerForm.get("password")?.errors?.["required"]) {
+              Le mot de passe est requis
+            }
+            @if (registerForm.get("password")?.errors?.["minlength"]) {
+              Le mot de passe doit contenir au moins 8 caractères
+            }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password_confirmation">
+          <i class="fas fa-lock"></i>
+          Confirmer le mot de passe
+        </label>
+        <div class="password-input">
+          <input
+            [type]="hidePasswordConfirmation ? 'password' : 'text'"
+            id="password_confirmation"
+            formControlName="password_confirmation"
+            placeholder="••••••••"
+            [class.error]="
+              (registerForm.get('password_confirmation')?.invalid &&
+                registerForm.get('password_confirmation')?.touched) ||
+              (registerForm.errors?.['passwordMismatch'] &&
+                registerForm.get('password_confirmation')?.touched)
+            "
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordConfirmationVisibility()"
+            [attr.aria-label]="
+              hidePasswordConfirmation
+                ? 'Afficher le mot de passe'
+                : 'Masquer le mot de passe'
+            "
+          >
+            <i
+              class="fas"
+              [class.fa-eye]="hidePasswordConfirmation"
+              [class.fa-eye-slash]="!hidePasswordConfirmation"
+            ></i>
+          </button>
+        </div>
+        @if (
+          registerForm.errors?.["passwordMismatch"] &&
+          registerForm.get("password_confirmation")?.touched
+        ) {
+          <span class="field-error">
+            Les mots de passe ne correspondent pas
+          </span>
+        }
+        @if (
+          registerForm.get("password_confirmation")?.invalid &&
+          registerForm.get("password_confirmation")?.touched &&
+          !registerForm.errors?.["passwordMismatch"]
+        ) {
+          <span class="field-error">
+            La confirmation du mot de passe est requise
+          </span>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="register-button"
+        [disabled]="registerForm.invalid || isLoading"
+      >
+        @if (isLoading) {
+          <i class="fas fa-spinner fa-spin"></i>
+          Création du compte...
+        } @else {
+          <i class="fas fa-user-plus"></i>
+          Créer mon compte
+        }
+      </button>
+
+      <div class="login-link">
+        <p>
+          Vous avez déjà un compte ? <a routerLink="/login">Se connecter</a>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
