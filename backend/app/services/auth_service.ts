@@ -21,10 +21,10 @@ export class AuthService {
       password: data.password,
       firstName: data.firstName,
       lastName: data.lastName,
-      role: 'user',
+      //TODO : remove admin role assignment and remoove emailVerifiedAt
+      role: 'admin',
+      emailVerifiedAt: DateTime.now(),
     })
-
-    await this.sendVerificationEmail(user)
 
     return user
   }
