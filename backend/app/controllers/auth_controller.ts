@@ -7,7 +7,7 @@ import {
   resendVerificationValidator,
 } from '#validators/auth_validator'
 import { errors } from '@vinejs/vine'
-import { ApiOperation, ApiResponse, ApiSecurity, ApiBody } from '@foadonis/openapi/decorators'
+import { ApiBody, ApiOperation, ApiResponse, ApiSecurity } from '@foadonis/openapi/decorators'
 
 export default class AuthController {
   private authService: AuthService
@@ -26,7 +26,7 @@ export default class AuthController {
     required: true,
     schema: {
       type: 'object',
-      required: ['email', 'username', 'password', 'password_confirmation'],
+      required: ['email', 'username', 'password', 'password_confirmation', 'role'],
       properties: {
         email: { type: 'string', format: 'email', example: 'john@example.com' },
         username: { type: 'string', minLength: 3, example: 'johndoe' },
@@ -39,6 +39,7 @@ export default class AuthController {
         },
         firstName: { type: 'string', example: 'John' },
         lastName: { type: 'string', example: 'Doe' },
+        role: { type: 'string', enum: ['user', 'admin'], example: 'user' },
       },
     },
   })
@@ -59,6 +60,7 @@ export default class AuthController {
             username: user.username,
             firstName: user.firstName,
             lastName: user.lastName,
+            role: user.role,
           },
         },
       })

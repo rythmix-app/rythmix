@@ -32,6 +32,7 @@ test.group('AuthService - Register', (group) => {
       password: 'password123',
       firstName: 'John',
       lastName: 'Doe',
+      role: 'user',
     }
 
     mail.fake()
