@@ -3,25 +3,18 @@ import User from '#models/user'
 import RefreshToken from '#models/refresh_token'
 import EmailVerificationToken from '#models/email_verification_token'
 import { AuthService } from '#services/auth_service'
-import testUtils from '@adonisjs/core/services/test_utils'
 import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import { DateTime } from 'luxon'
+import { deleteAuthData } from '#tests/utils/auth_cleanup_helpers'
 
 test.group('AuthService - Register', (group) => {
   let authService: AuthService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   group.each.setup(async () => {
     authService = new AuthService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('register should create a new user successfully', async ({ assert }) => {
@@ -115,17 +108,10 @@ test.group('AuthService - Register', (group) => {
 test.group('AuthService - Login', (group) => {
   let authService: AuthService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   group.each.setup(async () => {
     authService = new AuthService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('login should succeed with valid credentials', async ({ assert }) => {
@@ -205,17 +191,10 @@ test.group('AuthService - Login', (group) => {
 test.group('AuthService - Refresh Token', (group) => {
   let authService: AuthService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   group.each.setup(async () => {
     authService = new AuthService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('refresh should generate new access token with valid refresh token', async ({ assert }) => {
@@ -303,17 +282,10 @@ test.group('AuthService - Refresh Token', (group) => {
 test.group('AuthService - Logout', (group) => {
   let authService: AuthService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   group.each.setup(async () => {
     authService = new AuthService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('logout should revoke access token', async ({ assert }) => {
@@ -389,17 +361,10 @@ test.group('AuthService - Logout', (group) => {
 test.group('AuthService - Email Verification', (group) => {
   let authService: AuthService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   group.each.setup(async () => {
     authService = new AuthService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('verifyEmail should verify user email with valid token', async ({ assert }) => {
@@ -529,17 +494,10 @@ test.group('AuthService - Email Verification', (group) => {
 test.group('AuthService - Resend Verification Email', (group) => {
   let authService: AuthService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   group.each.setup(async () => {
     authService = new AuthService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('resendVerificationEmail should send email for unverified user', async ({ assert }) => {
@@ -588,17 +546,10 @@ test.group('AuthService - Resend Verification Email', (group) => {
 test.group('AuthService - Token Management', (group) => {
   let authService: AuthService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   group.each.setup(async () => {
     authService = new AuthService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('revokeAllRefreshTokens should delete all user refresh tokens', async ({ assert }) => {

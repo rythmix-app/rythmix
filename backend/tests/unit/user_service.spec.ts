@@ -1,22 +1,15 @@
 import { test } from '@japa/runner'
 import User from '#models/user'
 import { UserService } from '#services/user_service'
-import testUtils from '@adonisjs/core/services/test_utils'
+import { deleteUser } from '#tests/utils/user_helpers'
 
 test.group('UserService - CRUD Operations', (group) => {
   let userService: UserService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteUser(group)
 
   group.each.setup(async () => {
     userService = new UserService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('createUser should create a new user successfully', async ({ assert }) => {
@@ -157,17 +150,10 @@ test.group('UserService - CRUD Operations', (group) => {
 test.group('UserService - Soft Delete Operations', (group) => {
   let userService: UserService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteUser(group)
 
   group.each.setup(async () => {
     userService = new UserService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('deleteUser should soft delete the user', async ({ assert }) => {
@@ -370,17 +356,10 @@ test.group('UserService - Soft Delete Operations', (group) => {
 test.group('UserService - Edge Cases', (group) => {
   let userService: UserService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteUser(group)
 
   group.each.setup(async () => {
     userService = new UserService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('createUser should respect database unique constraint for soft-deleted user email', async ({

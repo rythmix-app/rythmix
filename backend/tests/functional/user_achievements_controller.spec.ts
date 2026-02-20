@@ -1,5 +1,4 @@
 import { test } from '@japa/runner'
-import testUtils from '@adonisjs/core/services/test_utils'
 import User from '#models/user'
 import Achievement from '#models/achievement'
 import { DateTime } from 'luxon'
@@ -12,10 +11,6 @@ test.group('UserAchievementsController', (group) => {
   let achievement: Achievement
   let userToken: string
   let adminToken: string
-
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
 
   group.each.setup(async () => {
     const userAuth = await createAuthenticatedUser('testuser', 'user')
@@ -399,9 +394,5 @@ test.group('UserAchievementsController', (group) => {
     assert.equal(response.status(), 404)
     assert.property(response.body(), 'message')
     assert.equal(response.body().message, 'User achievement not found')
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 })

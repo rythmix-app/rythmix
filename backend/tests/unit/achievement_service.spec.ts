@@ -1,18 +1,15 @@
 import { test } from '@japa/runner'
 import Achievement from '#models/achievement'
 import { AchievementService } from '#services/achievement_service'
-import testUtils from '@adonisjs/core/services/test_utils'
+import { deleteAchievement } from '#tests/utils/achievement_helpers'
 
 test.group('AchievementService - CRUD Operations', (group) => {
   let achievementService: AchievementService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAchievement(group)
 
   group.each.setup(async () => {
     achievementService = new AchievementService()
-    await testUtils.db().truncate()
   })
 
   test('createAchievement should create a new achievement', async ({ assert }) => {

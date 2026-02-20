@@ -2,7 +2,7 @@ import { test } from '@japa/runner'
 import GameSession from '#models/game_session'
 import { GameSessionService } from '#services/game_session_service'
 import Game from '#models/game'
-import testUtils from '@adonisjs/core/services/test_utils'
+import { deleteGameSession } from '#tests/utils/game_session_helpers'
 
 type ServiceError = { error: string; status: number }
 const isServiceError = (v: any): v is ServiceError =>
@@ -18,17 +18,10 @@ async function createTestGame(tag: string) {
 test.group('GameSessionService - Unit CRUD', (group) => {
   let service: GameSessionService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteGameSession(group)
 
   group.each.setup(async () => {
     service = new GameSessionService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('createGameSession should create a record successfully', async ({ assert }) => {

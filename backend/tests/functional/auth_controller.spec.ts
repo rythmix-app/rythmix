@@ -2,10 +2,10 @@ import { test } from '@japa/runner'
 import User from '#models/user'
 import RefreshToken from '#models/refresh_token'
 import EmailVerificationToken from '#models/email_verification_token'
-import testUtils from '@adonisjs/core/services/test_utils'
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
+import { deleteAuthData } from '#tests/utils/auth_cleanup_helpers'
 
 const makeUser = (prefix: string) => {
   const timestamp = Date.now() + Math.random()
@@ -17,17 +17,7 @@ const makeUser = (prefix: string) => {
 }
 
 test.group('AuthController - Register', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   test('POST /api/auth/register should create a new user', async ({ client, assert }) => {
     const userData = makeUser('register')
@@ -176,17 +166,7 @@ test.group('AuthController - Register', (group) => {
 })
 
 test.group('AuthController - Login', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   test('POST /api/auth/login should succeed with valid credentials', async ({ client, assert }) => {
     const userData = makeUser('login')
@@ -286,17 +266,7 @@ test.group('AuthController - Login', (group) => {
 })
 
 test.group('AuthController - Refresh Token', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   test('POST /api/auth/refresh should generate new access token', async ({ client, assert }) => {
     const userData = makeUser('refresh')
@@ -385,17 +355,7 @@ test.group('AuthController - Refresh Token', (group) => {
 })
 
 test.group('AuthController - Logout', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   test('POST /api/auth/logout should logout user successfully', async ({ client, assert }) => {
     const userData = makeUser('logout')
@@ -455,17 +415,7 @@ test.group('AuthController - Logout', (group) => {
 })
 
 test.group('AuthController - Email Verification', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   test('POST /api/auth/verify-email should verify user email', async ({ client, assert }) => {
     const userData = makeUser('verify')
@@ -555,17 +505,7 @@ test.group('AuthController - Email Verification', (group) => {
 })
 
 test.group('AuthController - Resend Verification Email', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   test('POST /api/auth/resend-verification should send email', async ({ client }) => {
     const userData = makeUser('resend')
@@ -635,17 +575,7 @@ test.group('AuthController - Resend Verification Email', (group) => {
 })
 
 test.group('AuthController - Me Endpoint', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   test('GET /api/auth/me should return authenticated user details', async ({ client, assert }) => {
     const userData = makeUser('me')
@@ -688,17 +618,7 @@ test.group('AuthController - Me Endpoint', (group) => {
 })
 
 test.group('AuthController - Complete Authentication Flow', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAuthData(group)
 
   test('Complete flow: register -> verify -> login -> me -> refresh -> logout', async ({
     client,

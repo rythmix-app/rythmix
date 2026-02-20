@@ -2,7 +2,7 @@ import { test } from '@japa/runner'
 import LikedTrack from '#models/liked_track'
 import { LikedTrackService } from '#services/liked_track_service'
 import User from '#models/user'
-import testUtils from '@adonisjs/core/services/test_utils'
+import { deleteLikedTrack } from '#tests/utils/liked_track_helpers'
 
 type ServiceError = { error: string; status: number }
 const isServiceError = (v: any): v is ServiceError =>
@@ -19,13 +19,10 @@ async function createTestUser(tag: string) {
 test.group('LikedTrackService - Unit CRUD', (group) => {
   let service: LikedTrackService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteLikedTrack(group)
 
   group.each.setup(async () => {
     service = new LikedTrackService()
-    await testUtils.db().truncate()
   })
 
   test('createLikedTrack should create a record successfully', async ({ assert }) => {

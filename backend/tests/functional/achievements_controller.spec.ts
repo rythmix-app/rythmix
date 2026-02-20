@@ -1,16 +1,10 @@
 import { test } from '@japa/runner'
 import Achievement from '#models/achievement'
-import testUtils from '@adonisjs/core/services/test_utils'
 import { createAuthenticatedUser } from '../utils/auth_helpers.js'
+import { deleteAchievement } from '#tests/utils/achievement_helpers'
 
 test.group('AchievementsController - CRUD Functional', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAchievement(group)
 
   test('GET /api/achievements should return list', async ({ client, assert }) => {
     await Achievement.create({ type: 't1', description: 'd1' })
