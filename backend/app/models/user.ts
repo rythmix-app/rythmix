@@ -56,7 +56,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @ApiProperty({ description: 'User role', enum: ['user', 'admin'], example: 'user' })
   @column()
-  declare role: 'user' | 'admin'
+  declare role: string
 
   @ApiProperty({ description: 'Account creation timestamp' })
   @column.dateTime({ autoCreate: true })
@@ -110,5 +110,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   async restore() {
     this.deletedAt = null
     await this.save()
+  }
+
+  get isAdmin() {
+    return this.role === 'admin'
   }
 }

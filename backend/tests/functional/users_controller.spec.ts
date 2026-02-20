@@ -1,7 +1,7 @@
 import { test } from '@japa/runner'
 import User from '#models/user'
-import testUtils from '@adonisjs/core/services/test_utils'
 import { createAuthenticatedUser } from '../utils/auth_helpers.js'
+import { deleteUser } from '#tests/utils/user_helpers'
 
 const makeUser = (prefix: string) => {
   const timestamp = Date.now() + Math.random()
@@ -13,17 +13,7 @@ const makeUser = (prefix: string) => {
 }
 
 test.group('UsersController - CRUD Operations', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteUser(group)
 
   test('GET /api/users should return list of users', async ({ client, assert }) => {
     const { token } = await createAuthenticatedUser('admin1', 'admin')
@@ -204,17 +194,7 @@ test.group('UsersController - CRUD Operations', (group) => {
 })
 
 test.group('UsersController - Soft Delete Features', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteUser(group)
 
   test('GET /api/users should not return soft-deleted users', async ({ client, assert }) => {
     const { token } = await createAuthenticatedUser('admin13', 'admin')
@@ -352,17 +332,7 @@ test.group('UsersController - Soft Delete Features', (group) => {
 })
 
 test.group('UsersController - Integration Scenarios', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteUser(group)
 
   test('Complete user lifecycle (create -> update -> delete -> restore)', async ({
     client,
@@ -432,17 +402,7 @@ test.group('UsersController - Integration Scenarios', (group) => {
 })
 
 test.group('UsersController - Edge Cases Coverage', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteUser(group)
 
   test('POST /api/users should handle service errors without status gracefully', async ({
     client,

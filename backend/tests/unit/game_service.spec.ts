@@ -1,18 +1,15 @@
 import { test } from '@japa/runner'
 import Game from '#models/game'
 import { GameService } from '#services/game_service'
-import testUtils from '@adonisjs/core/services/test_utils'
+import { deleteGame } from '#tests/utils/game_helpers'
 
 test.group('GameService - CRUD Operations', (group) => {
   let gameService: GameService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteGame(group)
 
   group.each.setup(async () => {
     gameService = new GameService()
-    await testUtils.db().truncate()
   })
 
   test('createGame should create a new game successfully', async ({ assert }) => {

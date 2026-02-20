@@ -1,10 +1,10 @@
-import UserAchievement from '#models/user_achievement'
-import Achievement from '#models/achievement'
 import User from '#models/user'
+import RefreshToken from '#models/refresh_token'
+import EmailVerificationToken from '#models/email_verification_token'
 import { Group } from '@japa/runner/core'
 import { DateTime } from 'luxon'
 
-export function deleteUserAchievement(group: Group) {
+export function deleteAuthData(group: Group) {
   let testStartTime: DateTime
 
   group.setup(() => {
@@ -12,11 +12,11 @@ export function deleteUserAchievement(group: Group) {
   })
 
   group.each.teardown(async () => {
-    await UserAchievement.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await RefreshToken.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await EmailVerificationToken.query().where('created_at', '>=', testStartTime.toSQL()).delete()
   })
 
   group.teardown(async () => {
-    await Achievement.query().where('created_at', '>=', testStartTime.toSQL()).delete()
     await User.query().where('created_at', '>=', testStartTime.toSQL()).delete()
   })
 }

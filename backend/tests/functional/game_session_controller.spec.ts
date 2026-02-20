@@ -1,8 +1,8 @@
 import { test } from '@japa/runner'
-import testUtils from '@adonisjs/core/services/test_utils'
 import Game from '#models/game'
 import GameSession from '#models/game_session'
 import { createAuthenticatedUser } from '../utils/auth_helpers.js'
+import { deleteGameSession } from '#tests/utils/game_session_helpers'
 
 async function createGame(tag: string) {
   return Game.create({
@@ -14,9 +14,7 @@ async function createGame(tag: string) {
 }
 
 test.group('GameSessionsController - Functional', (group) => {
-  group.each.setup(() => {
-    return testUtils.db().withGlobalTransaction()
-  })
+  deleteGameSession(group)
 
   test('POST /api/game-sessions creates record', async ({ client, assert }) => {
     const { token } = await createAuthenticatedUser('post')

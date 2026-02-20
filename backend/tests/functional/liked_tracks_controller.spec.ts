@@ -1,7 +1,7 @@
 import { test } from '@japa/runner'
-import testUtils from '@adonisjs/core/services/test_utils'
 import User from '#models/user'
 import { createAuthenticatedUser } from '../utils/auth_helpers.js'
+import { deleteLikedTrack } from '#tests/utils/liked_track_helpers'
 
 async function createUser(tag: string) {
   return User.create({
@@ -12,9 +12,7 @@ async function createUser(tag: string) {
 }
 
 test.group('LikedTracksController - Functional', (group) => {
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteLikedTrack(group)
 
   test('GET /api/liked-tracks returns empty list', async ({ client, assert }) => {
     const res = await client.get('/api/liked-tracks')

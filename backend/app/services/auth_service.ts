@@ -14,6 +14,7 @@ export class AuthService {
     password: string
     firstName?: string
     lastName?: string
+    role?: string
   }) {
     const user = await User.create({
       email: data.email,
@@ -21,10 +22,14 @@ export class AuthService {
       password: data.password,
       firstName: data.firstName,
       lastName: data.lastName,
-      role: 'user',
+      role: data.role,
     })
 
-    await this.sendVerificationEmail(user)
+    if (user.isAdmin) {
+      user.emailVerifiedAt = DateTime.now()
+    } else {
+      await this.sendVerificationEmail(user)
+    }
 
     return user
   }
@@ -56,24 +61,6 @@ export class AuthService {
       user,
       accessToken: accessToken.value!.release(),
       refreshToken: refreshToken.token,
-    }
-  }
-
-  private async generateRefreshToken(user: User) {
-    const selector = randomBytes(32).toString('hex')
-    const verifier = randomBytes(32).toString('hex')
-    const tokenHash = await hash.make(verifier)
-
-    const refreshToken = await RefreshToken.create({
-      userId: user.id,
-      selector: selector,
-      tokenHash: tokenHash,
-      expiresAt: DateTime.now().plus({ days: 7 }),
-    })
-
-    return {
-      ...refreshToken,
-      token: `${selector}.${verifier}`,
     }
   }
 
@@ -209,5 +196,23 @@ export class AuthService {
 
   async cleanExpiredTokens() {
     await RefreshToken.query().where('expiresAt', '<', DateTime.now().toSQL()).delete()
+  }
+
+  private async generateRefreshToken(user: User) {
+    const selector = randomBytes(32).toString('hex')
+    const verifier = randomBytes(32).toString('hex')
+    const tokenHash = await hash.make(verifier)
+
+    const refreshToken = await RefreshToken.create({
+      userId: user.id,
+      selector: selector,
+      tokenHash: tokenHash,
+      expiresAt: DateTime.now().plus({ days: 7 }),
+    })
+
+    return {
+      ...refreshToken,
+      token: `${selector}.${verifier}`,
+    }
   }
 }
