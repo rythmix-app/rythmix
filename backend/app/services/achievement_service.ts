@@ -1,5 +1,5 @@
-// TypeScript
 import Achievement from '#models/achievement'
+import { AchievementType } from '#enums/achievement_type'
 
 export class AchievementService {
   public async getAll() {
@@ -10,7 +10,7 @@ export class AchievementService {
     return Achievement.query().where('id', achievementId).first()
   }
 
-  public async createAchievement(payload: { description?: string | null; type: string }) {
+  public async createAchievement(payload: { description?: string | null; type: AchievementType }) {
     try {
       const achievement = await Achievement.create(payload)
       return achievement
@@ -33,7 +33,7 @@ export class AchievementService {
 
   public async updateAchievement(
     achievementId: number | string,
-    payload: Partial<{ description?: string | null; type?: string }>
+    payload: Partial<{ description?: string | null; type?: AchievementType }>
   ) {
     const achievement = await Achievement.query().where('id', achievementId).first()
     if (!achievement) {
