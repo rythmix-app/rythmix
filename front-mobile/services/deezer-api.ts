@@ -80,7 +80,7 @@ export interface DeezerAlbum {
   nb_tracks: number;
   duration: number;
   fans: number;
-  artist: {
+  artist?: {
     id: number;
     name: string;
     picture: string;
@@ -99,6 +99,25 @@ export interface DeezerAlbumsResponse {
   data: DeezerAlbum[];
   total?: number;
   next?: string;
+}
+
+export interface DeezerArtist {
+  id: number;
+  name: string;
+  link: string;
+  picture: string;
+  picture_small: string;
+  picture_medium: string;
+  picture_big: string;
+  picture_xl: string;
+  nb_album: number;
+  nb_fan: number;
+  type: string;
+}
+
+export interface DeezerArtistsResponse {
+  data: DeezerArtist[];
+  total?: number;
 }
 
 export interface DeezerPlaylist {
@@ -380,6 +399,52 @@ class DeezerAPI {
     }
 
     return await this.fetchWithRetry<DeezerSearchResponse>(url);
+  }
+
+  async getGenreTopArtists(
+    genreId: number,
+    limit: number = 25,
+  ): Promise<DeezerArtistsResponse> {
+    const cacheKey = `genre_artists:${genreId}:${limit}`;
+    const url = `${this.baseUrl}/chart/${genreId}/artists?limit=${limit}`;
+
+    if (this.enableCache) {
+      return await cacheManager.getOrSet(
+        cacheKey,
+        () => this.fetchWithRetry<DeezerArtistsResponse>(url),
+        DEFAULT_TTL.TRACKS,
+      );
+    }
+
+    return await this.fetchWithRetry<DeezerArtistsResponse>(url);
+  }
+
+  async getArtistAlbums(
+    artistId: number,
+    limit: number = 25,
+  ): Promise<DeezerAlbumsResponse> {
+    const cacheKey = `artist_albums:${artistId}:${limit}`;
+    const url = `${this.baseUrl}/artist/${artistId}/albums?limit=${limit}`;
+
+    if (this.enableCache) {
+      return await cacheManager.getOrSet(
+        cacheKey,
+        () => this.fetchWithRetry<DeezerAlbumsResponse>(url),
+        DEFAULT_TTL.TRACKS,
+      );
+    }
+
+    return await this.fetchWithRetry<DeezerAlbumsResponse>(url);
+  }
+
+  async searchAlbums(
+    query: string,
+    limit: number = 25,
+    index: number = 0,
+  ): Promise<DeezerAlbumsResponse> {
+    const url = `${this.baseUrl}/search/album?q=${encodeURIComponent(query)}&limit=${limit}&index=${index}`;
+    // Pas de cache : l'offset aléatoire garantit la variété à chaque appel
+    return await this.fetchWithRetry<DeezerAlbumsResponse>(url);
   }
 
   /**

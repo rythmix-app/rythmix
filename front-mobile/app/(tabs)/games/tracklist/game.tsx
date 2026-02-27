@@ -21,6 +21,7 @@ import {
   deezerAPI,
   DeezerGenre,
   DeezerAlbum,
+  DeezerArtist,
   DeezerTrack,
 } from "@/services/deezer-api";
 import { useAuthStore } from "@/stores/authStore";
@@ -33,6 +34,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 type GameState =
   | "genreSelection"
+  | "artistSelection"
   | "albumSelection"
   | "playing"
   | "result";
@@ -105,8 +107,12 @@ export default function TracklistGameScreen() {
   const [loadingGenres, setLoadingGenres] = useState(true);
   const [loadingAlbum, setLoadingAlbum] = useState(false);
 
+  const [candidateArtists, setCandidateArtists] = useState<DeezerArtist[]>([]);
   const [candidateAlbums, setCandidateAlbums] = useState<DeezerAlbum[]>([]);
   const [selectedGenre, setSelectedGenre] = useState<DeezerGenre | null>(null);
+  const [selectedArtist, setSelectedArtist] = useState<DeezerArtist | null>(
+    null,
+  );
 
   const [currentAlbum, setCurrentAlbum] = useState<GameAlbum | null>(null);
   const [currentInput, setCurrentInput] = useState("");
@@ -181,17 +187,41 @@ export default function TracklistGameScreen() {
     setSelectedGenre(genre);
 
     try {
-      const albumsResponse = await deezerAPI.getGenreAlbums(genre.id, 50);
+      const artistsResponse = await deezerAPI.getGenreTopArtists(genre.id, 25);
 
-      if (!albumsResponse.data || albumsResponse.data.length === 0) {
-        Alert.alert("Erreur", "Aucun album trouvé pour ce genre");
+      if (!artistsResponse.data || artistsResponse.data.length === 0) {
+        Alert.alert("Erreur", "Aucun artiste trouvé pour ce genre");
         return;
       }
 
-      // Shuffle and pick a selection
-      const shuffled = [...albumsResponse.data].sort(
-        () => Math.random() - 0.5,
+      setCandidateArtists(artistsResponse.data);
+      setGameState("artistSelection");
+    } catch (error) {
+      console.error("Failed to load artists:", error);
+      Alert.alert("Erreur", "Impossible de charger les artistes");
+    } finally {
+      setLoadingAlbum(false);
+    }
+  };
+
+  const handleSelectArtist = async (artist: DeezerArtist) => {
+    setLoadingAlbum(true);
+    setSelectedArtist(artist);
+
+    try {
+      const albumsResponse = await deezerAPI.getArtistAlbums(artist.id, 25);
+
+      if (!albumsResponse.data || albumsResponse.data.length === 0) {
+        Alert.alert("Erreur", "Aucun album trouvé pour cet artiste");
+        return;
+      }
+
+      // Garder uniquement les vrais albums (pas les singles/compilations)
+      const albums = albumsResponse.data.filter(
+        (a) => a.record_type === "album",
       );
+      const pool = albums.length > 0 ? albums : albumsResponse.data;
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
       setCandidateAlbums(shuffled.slice(0, ALBUM_CHOICES));
       setGameState("albumSelection");
     } catch (error) {
@@ -233,7 +263,7 @@ export default function TracklistGameScreen() {
         album: {
           id: album.id,
           title: album.title,
-          artistName: album.artist.name,
+          artistName: album.artist?.name ?? selectedArtist?.name ?? "",
           coverUrl: album.cover_xl,
           totalTracks: tracksResponse.data.length,
         },
@@ -373,8 +403,10 @@ export default function TracklistGameScreen() {
   const resetGame = () => {
     setGameState("genreSelection");
     setCurrentAlbum(null);
+    setCandidateArtists([]);
     setCandidateAlbums([]);
     setSelectedGenre(null);
+    setSelectedArtist(null);
     setCurrentInput("");
     setFoundTrackIds(new Set());
     setTimeRemaining(GAME_DURATION);
@@ -427,6 +459,7 @@ export default function TracklistGameScreen() {
               </View>
             ) : (
               <FlatList
+                key="genres"
                 data={genres}
                 numColumns={2}
                 keyExtractor={(item) => item.id.toString()}
@@ -465,6 +498,58 @@ export default function TracklistGameScreen() {
     );
   }
 
+  // ─── Artist selection ──────────────────────────────────────────────────────
+
+  if (gameState === "artistSelection") {
+    return (
+      <>
+        <Header title="Tracklist" variant="withBack" />
+        <View style={styles.container}>
+          <View style={styles.setupContainer}>
+            <ThemedText type="title" style={styles.title}>
+              Choisissez un artiste
+            </ThemedText>
+            <ThemedText style={styles.subtitle}>
+              {selectedGenre?.name} — Sur quel artiste veux-tu jouer ?
+            </ThemedText>
+
+            <FlatList
+              key="artists"
+              data={candidateArtists}
+              numColumns={3}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.genreGrid}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.artistCard}
+                  onPress={() => handleSelectArtist(item)}
+                  disabled={loadingAlbum}
+                >
+                  <Image
+                    source={{ uri: item.picture_medium }}
+                    style={styles.artistPicture}
+                  />
+                  <ThemedText style={styles.artistCardName} numberOfLines={2}>
+                    {item.name}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            />
+
+            {loadingAlbum && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color={Colors.primary.survol} />
+                <ThemedText style={styles.loadingText}>
+                  Chargement des albums...
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        </View>
+      </>
+    );
+  }
+
   // ─── Album selection ───────────────────────────────────────────────────────
 
   if (gameState === "albumSelection") {
@@ -481,6 +566,7 @@ export default function TracklistGameScreen() {
             </ThemedText>
 
             <FlatList
+              key="albums"
               data={candidateAlbums}
               numColumns={2}
               keyExtractor={(item) => item.id.toString()}
@@ -500,7 +586,7 @@ export default function TracklistGameScreen() {
                       {item.title}
                     </ThemedText>
                     <ThemedText style={styles.albumChoiceArtist} numberOfLines={1}>
-                      {item.artist.name}
+                      {item.artist?.name ?? selectedArtist?.name}
                     </ThemedText>
                   </View>
                 </TouchableOpacity>
@@ -571,7 +657,7 @@ export default function TracklistGameScreen() {
               {currentAlbum.album.title}
             </ThemedText>
             <ThemedText style={styles.artistName}>
-              {currentAlbum.album.artist.name}
+              {currentAlbum.album.artist?.name ?? selectedArtist?.name}
             </ThemedText>
             <TouchableOpacity
               style={styles.abandonButtonSmall}
@@ -703,7 +789,7 @@ export default function TracklistGameScreen() {
                 {currentAlbum.album.title}
               </ThemedText>
               <ThemedText style={styles.revealArtistName}>
-                {currentAlbum.album.artist.name}
+                {currentAlbum.album.artist?.name ?? selectedArtist?.name}
               </ThemedText>
             </View>
           </View>
@@ -819,6 +905,24 @@ const styles = StyleSheet.create({
     color: "white",
     marginTop: 15,
     fontSize: 16,
+  },
+  // Artist cards
+  artistCard: {
+    flex: 1,
+    margin: 6,
+    alignItems: "center",
+  },
+  artistPicture: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: 60,
+    marginBottom: 6,
+  },
+  artistCardName: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
   // Album choice cards
   albumChoiceCard: {
