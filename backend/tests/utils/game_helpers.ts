@@ -13,12 +13,12 @@ export function deleteGame(group: Group) {
   })
 
   group.each.teardown(async () => {
-    await FavoriteGame.query().where('created_at', '>=', testStartTime.toSQL()).delete()
-    await GameSession.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await FavoriteGame.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
+    await GameSession.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 
   group.teardown(async () => {
-    await Game.query().where('created_at', '>=', testStartTime.toSQL()).delete()
-    await User.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await Game.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
+    await User.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 }

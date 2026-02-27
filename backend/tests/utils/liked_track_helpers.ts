@@ -11,10 +11,10 @@ export function deleteLikedTrack(group: Group) {
   })
 
   group.each.teardown(async () => {
-    await LikedTrack.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await LikedTrack.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 
   group.teardown(async () => {
-    await User.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await User.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 }

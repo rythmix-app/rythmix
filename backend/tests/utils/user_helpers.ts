@@ -14,6 +14,6 @@ export function deleteUser(group: Group) {
   })
 
   group.teardown(async () => {
-    await User.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await User.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 }

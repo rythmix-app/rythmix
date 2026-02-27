@@ -12,11 +12,11 @@ export function deleteUserAchievement(group: Group) {
   })
 
   group.each.teardown(async () => {
-    await UserAchievement.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await UserAchievement.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 
   group.teardown(async () => {
-    await Achievement.query().where('created_at', '>=', testStartTime.toSQL()).delete()
-    await User.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await Achievement.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
+    await User.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 }

@@ -12,11 +12,11 @@ export function deleteAuthData(group: Group) {
   })
 
   group.each.teardown(async () => {
-    await RefreshToken.query().where('created_at', '>=', testStartTime.toSQL()).delete()
-    await EmailVerificationToken.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await RefreshToken.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
+    await EmailVerificationToken.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 
   group.teardown(async () => {
-    await User.query().where('created_at', '>=', testStartTime.toSQL()).delete()
+    await User.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 }

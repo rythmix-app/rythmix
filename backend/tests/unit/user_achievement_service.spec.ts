@@ -2,6 +2,7 @@ import { test } from '@japa/runner'
 import { UserAchievementService } from '#services/user_achievement_service'
 import UserAchievement from '#models/user_achievement'
 import Achievement from '#models/achievement'
+import { AchievementType } from '#enums/achievement_type'
 import User from '#models/user'
 import { DateTime } from 'luxon'
 import { deleteUserAchievement } from '#tests/utils/user_achievement_helpers'
@@ -20,7 +21,7 @@ test.group('UserAchievementService', (group) => {
     })
 
     achievement = await Achievement.create({
-      type: 'test_achievement',
+      type: 'test_achievement' as AchievementType,
       description: 'Test description',
     })
   })
@@ -289,7 +290,7 @@ test.group('UserAchievementService', (group) => {
     })
 
     const achievement2 = await Achievement.create({
-      type: 'test_achievement_2',
+      type: 'test_achievement_2' as AchievementType,
       description: 'Test description 2',
     })
 

@@ -1,6 +1,7 @@
 import { test } from '@japa/runner'
 import User from '#models/user'
 import Achievement from '#models/achievement'
+import { AchievementType } from '#enums/achievement_type'
 import { DateTime } from 'luxon'
 import { createAuthenticatedUser } from '../utils/auth_helpers.js'
 import { deleteUserAchievement } from '#tests/utils/user_achievement_helpers'
@@ -21,7 +22,7 @@ test.group('UserAchievementsController', (group) => {
     adminToken = adminAuth.token
 
     achievement = await Achievement.create({
-      type: 'test_achievement',
+      type: 'test_achievement' as AchievementType,
       description: 'Test description',
     })
   })
@@ -321,7 +322,7 @@ test.group('UserAchievementsController', (group) => {
     })
 
     const achievement2 = await Achievement.create({
-      type: 'test_achievement_2',
+      type: 'test_achievement_2' as AchievementType,
       description: 'Test description 2',
     })
 
