@@ -25,6 +25,13 @@ export const Colors = {
   secondary: {
     turquoise: "#19B3BD",
   },
+  game: {
+    success: "#4CAF50",
+    error: "#f44336",
+    warning: "#ff6b6b",
+    textMuted: "#999",
+    textSubtle: "#666",
+  },
   dark: {
     text: "#ECEDEE",
     background: "#151718",

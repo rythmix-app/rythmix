@@ -25,7 +25,6 @@ export default function GamesScreen() {
       try {
         const g = await gameService.getAllGames();
         setGames(g);
-        console.log(g);
       } catch (error) {
         console.error("Failed to fetch games:", error);
       } finally {

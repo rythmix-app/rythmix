@@ -90,28 +90,30 @@ export function GameCard({ game, onPress, onToggleFavorite }: GameCardProps) {
           )}
         </View>
 
-        <Pressable
-          onPress={handleToggleFavorite}
-          hitSlop={10}
-          style={[styles.favoriteButton]}
-        >
-          <MaskedView
-            style={{ flex: 1, flexDirection: "row", top: 7, left: 7 }}
-            maskElement={
-              <Animated.View style={favoriteAnimatedStyle}>
-                <FontAwesome
-                  name={game.isFavorite ? "heart" : "heart-o"}
-                  size={22}
-                />
-              </Animated.View>
-            }
+        {game.isEnabled && (
+          <Pressable
+            onPress={handleToggleFavorite}
+            hitSlop={10}
+            style={[styles.favoriteButton]}
           >
-            <LinearGradient
-              colors={["#40D400", "#216E00", "#216E00"]}
-              style={{ flex: 1 }}
-            />
-          </MaskedView>
-        </Pressable>
+            <MaskedView
+              style={{ flex: 1, flexDirection: "row", top: 7, left: 7 }}
+              maskElement={
+                <Animated.View style={favoriteAnimatedStyle}>
+                  <FontAwesome
+                    name={game.isFavorite ? "heart" : "heart-o"}
+                    size={22}
+                  />
+                </Animated.View>
+              }
+            >
+              <LinearGradient
+                colors={["#40D400", "#216E00", "#216E00"]}
+                style={{ flex: 1 }}
+              />
+            </MaskedView>
+          </Pressable>
+        )}
 
         <Text numberOfLines={2} style={styles.title}>
           {game.name}
