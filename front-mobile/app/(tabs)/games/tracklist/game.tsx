@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -29,14 +31,25 @@ import {
 import { TracklistGameData, TrackAnswer } from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
 
-type GameState = "genreSelection" | "playing" | "result";
+type GameState =
+  | "genreSelection"
+  | "albumSelection"
+  | "playing"
+  | "result";
 
 interface GameAlbum {
   album: DeezerAlbum;
   tracks: DeezerTrack[];
 }
 
+interface AnswerFeedback {
+  type: "correct" | "wrong";
+  message: string;
+}
+
 const GAME_DURATION = 300; // 5 minutes in seconds
+const FUZZY_THRESHOLD = 0.75; // Similarity threshold for fuzzy matching (0–1), adjustable
+const ALBUM_CHOICES = 6; // Number of albums proposed in the selection screen
 
 const normalizeString = (str: string): string => {
   return str
@@ -46,20 +59,70 @@ const normalizeString = (str: string): string => {
     .replace(/[^a-z0-9]/g, "");
 };
 
+const levenshteinDistance = (a: string, b: string): number => {
+  const matrix: number[][] = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b[i - 1] === a[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1,
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+};
+
+const fuzzyMatch = (input: string, target: string): boolean => {
+  const normalizedInput = normalizeString(input);
+  const normalizedTarget = normalizeString(target);
+
+  if (normalizedInput.length < 3) return false;
+
+  // Exact substring match first
+  if (
+    normalizedTarget.includes(normalizedInput) ||
+    normalizedInput.includes(normalizedTarget)
+  ) {
+    return true;
+  }
+
+  // Fuzzy match with Levenshtein similarity
+  const maxLength = Math.max(normalizedInput.length, normalizedTarget.length);
+  const distance = levenshteinDistance(normalizedInput, normalizedTarget);
+  return 1 - distance / maxLength >= FUZZY_THRESHOLD;
+};
+
 export default function TracklistGameScreen() {
   const [gameState, setGameState] = useState<GameState>("genreSelection");
   const [genres, setGenres] = useState<DeezerGenre[]>([]);
   const [loadingGenres, setLoadingGenres] = useState(true);
   const [loadingAlbum, setLoadingAlbum] = useState(false);
 
+  const [candidateAlbums, setCandidateAlbums] = useState<DeezerAlbum[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<DeezerGenre | null>(null);
+
   const [currentAlbum, setCurrentAlbum] = useState<GameAlbum | null>(null);
-  const [userAnswers, setUserAnswers] = useState<string[]>(["", "", "", ""]);
+  const [currentInput, setCurrentInput] = useState("");
+  const [foundTrackIds, setFoundTrackIds] = useState<Set<number>>(new Set());
+  const [answerFeedback, setAnswerFeedback] = useState<AnswerFeedback | null>(
+    null,
+  );
   const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState(false);
   const [validatedAnswers, setValidatedAnswers] = useState<TrackAnswer[]>([]);
+
+  const inputRef = useRef<TextInput>(null);
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const user = useAuthStore((state) => state.user);
@@ -93,6 +156,13 @@ export default function TracklistGameScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRemaining, isTimerRunning, gameState]);
 
+  // Cleanup feedback timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+    };
+  }, []);
+
   const loadGenres = async () => {
     try {
       const response = await deezerAPI.getGenres();
@@ -106,121 +176,93 @@ export default function TracklistGameScreen() {
     }
   };
 
-  const startGame = async (genre: DeezerGenre) => {
+  const handleSelectGenre = async (genre: DeezerGenre) => {
     setLoadingAlbum(true);
+    setSelectedGenre(genre);
 
     try {
-      // Récupérer les albums du genre
       const albumsResponse = await deezerAPI.getGenreAlbums(genre.id, 50);
 
       if (!albumsResponse.data || albumsResponse.data.length === 0) {
         Alert.alert("Erreur", "Aucun album trouvé pour ce genre");
-        setLoadingAlbum(false);
         return;
       }
 
-      // Essayer de trouver un album avec au moins 5 titres
-      // On essaie plusieurs fois car nb_tracks n'est pas fiable
-      let albumDetails: DeezerAlbum | null = null;
-      let tracksResponse: { data: DeezerTrack[] } | null = null;
-      const maxAttempts = 10;
-      const availableAlbums = [...albumsResponse.data];
+      // Shuffle and pick a selection
+      const shuffled = [...albumsResponse.data].sort(
+        () => Math.random() - 0.5,
+      );
+      setCandidateAlbums(shuffled.slice(0, ALBUM_CHOICES));
+      setGameState("albumSelection");
+    } catch (error) {
+      console.error("Failed to load albums:", error);
+      Alert.alert("Erreur", "Impossible de charger les albums");
+    } finally {
+      setLoadingAlbum(false);
+    }
+  };
 
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        if (availableAlbums.length === 0) {
-          break;
-        }
+  const startGameWithAlbum = async (album: DeezerAlbum) => {
+    if (!gameId || !user) {
+      setSessionError(true);
+      return;
+    }
 
-        // Sélectionner un album aléatoire
-        const randomIndex = Math.floor(Math.random() * availableAlbums.length);
-        const randomAlbum = availableAlbums[randomIndex];
-        availableAlbums.splice(randomIndex, 1); // Retirer de la liste pour ne pas réessayer
+    setLoadingAlbum(true);
 
-        try {
-          // Récupérer les détails et tracks de l'album
-          const details = await deezerAPI.getAlbum(randomAlbum.id);
-          const tracks = await deezerAPI.getAlbumTracks(randomAlbum.id);
+    try {
+      const tracksResponse = await deezerAPI.getAlbumTracks(album.id);
 
-          // Vérifier qu'il y a au moins 5 titres
-          if (tracks.data && tracks.data.length >= 5) {
-            albumDetails = details;
-            tracksResponse = tracks;
-            break;
-          }
-        } catch (err) {
-          console.error(`Failed to load album ${randomAlbum.id}:`, err);
-          // Continuer avec le prochain album
-        }
-      }
-
-      // Si aucun album valide trouvé après toutes les tentatives
-      if (!albumDetails || !tracksResponse) {
+      if (!tracksResponse.data || tracksResponse.data.length < 5) {
         Alert.alert(
-          "Erreur",
-          "Aucun album avec suffisamment de titres trouvé. Essayez un autre genre.",
+          "Album insuffisant",
+          "Cet album n'a pas assez de titres. Choisissez-en un autre.",
         );
-        setLoadingAlbum(false);
         return;
       }
 
       const gameAlbum: GameAlbum = {
-        album: albumDetails,
+        album,
         tracks: tracksResponse.data,
       };
 
-      if (!gameId || !user) {
-        setSessionError(true);
-        setLoadingAlbum(false);
-        return;
-      }
+      const gameData: TracklistGameData = {
+        genre: selectedGenre
+          ? { id: selectedGenre.id, name: selectedGenre.name }
+          : { id: 0, name: "" },
+        album: {
+          id: album.id,
+          title: album.title,
+          artistName: album.artist.name,
+          coverUrl: album.cover_xl,
+          totalTracks: tracksResponse.data.length,
+        },
+        answers: [],
+        score: 0,
+        maxScore: tracksResponse.data.length,
+        timeElapsed: 0,
+        startedAt: new Date().toISOString(),
+        completedAt: "",
+      };
 
-      try {
-        const gameData: TracklistGameData = {
-          genre: {
-            id: genre.id,
-            name: genre.name,
-          },
-          album: {
-            id: albumDetails.id,
-            title: albumDetails.title,
-            artistName: albumDetails.artist.name,
-            coverUrl: albumDetails.cover_xl,
-            totalTracks: tracksResponse.data.length,
-          },
-          answers: [],
-          score: 0,
-          maxScore: tracksResponse.data.length,
-          timeElapsed: 0,
-          startedAt: new Date().toISOString(),
-          completedAt: "",
-        };
+      const session = await createGameSession({
+        gameId: parseInt(gameId, 10),
+        status: "active",
+        players: { [user.id]: user.username },
+        gameData: gameData as unknown as Record<string, unknown>,
+      });
 
-        const session = await createGameSession({
-          gameId: parseInt(gameId, 10),
-          status: "active",
-          players: {
-            [user.id]: user.username,
-          },
-          gameData: gameData as unknown as Record<string, unknown>,
-        });
-
-        setSessionId(session.id);
-        setValidatedAnswers([]);
-      } catch (sessionErr) {
-        console.error("Failed to create game session:", sessionErr);
-        setSessionError(true);
-        setLoadingAlbum(false);
-        return;
-      }
-
+      setSessionId(session.id);
+      setValidatedAnswers([]);
+      setFoundTrackIds(new Set());
+      setCurrentInput("");
       setCurrentAlbum(gameAlbum);
-      setUserAnswers(new Array(tracksResponse.data.length).fill(""));
       setTimeRemaining(GAME_DURATION);
       setIsTimerRunning(true);
       setGameState("playing");
     } catch (error) {
-      console.error("Failed to load album:", error);
-      Alert.alert("Erreur", "Impossible de charger l'album");
+      console.error("Failed to start game:", error);
+      Alert.alert("Erreur", "Impossible de démarrer la partie");
     } finally {
       setLoadingAlbum(false);
     }
@@ -229,109 +271,70 @@ export default function TracklistGameScreen() {
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleAnswerChange = (index: number, text: string) => {
-    const newAnswers = [...userAnswers];
-    newAnswers[index] = text;
-    setUserAnswers(newAnswers);
-  };
-
-  const handleAddField = () => {
-    if (currentAlbum && userAnswers.length < currentAlbum.tracks.length + 5) {
-      setUserAnswers([...userAnswers, ""]);
-    }
-  };
-
-  const checkAnswer = (userInput: string, targetText: string): boolean => {
-    const normalizedAnswer = normalizeString(userInput);
-    const normalizedTarget = normalizeString(targetText);
-
-    if (normalizedAnswer.length < 3) return false;
-
-    return (
-      normalizedTarget.includes(normalizedAnswer) ||
-      normalizedAnswer.includes(normalizedTarget)
+  const showFeedback = (type: "correct" | "wrong", message: string) => {
+    if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+    setAnswerFeedback({ type, message });
+    feedbackTimeoutRef.current = setTimeout(
+      () => setAnswerFeedback(null),
+      1500,
     );
   };
 
-  const checkAllAnswers = (): TrackAnswer[] => {
-    if (!currentAlbum) return [];
+  const handleSubmitAnswer = () => {
+    const trimmed = currentInput.trim();
+    if (!trimmed || !currentAlbum) return;
 
-    const correctTracks = currentAlbum.tracks;
-    const results: TrackAnswer[] = [];
-    const usedTrackIds = new Set<number>();
+    const matchedTrack = currentAlbum.tracks.find(
+      (track) =>
+        !foundTrackIds.has(track.id) &&
+        (fuzzyMatch(trimmed, track.title) ||
+          fuzzyMatch(trimmed, track.title_short)),
+    );
 
-    userAnswers.forEach((userInput) => {
-      const trimmedInput = userInput.trim();
+    if (matchedTrack) {
+      const newFoundIds = new Set(foundTrackIds);
+      newFoundIds.add(matchedTrack.id);
+      setFoundTrackIds(newFoundIds);
 
-      if (!trimmedInput) {
-        results.push({
-          userInput: trimmedInput,
-          isCorrect: false,
-          timestamp: new Date().toISOString(),
-        });
-        return;
+      const newAnswer: TrackAnswer = {
+        userInput: trimmed,
+        isCorrect: true,
+        matchedTrackId: matchedTrack.id,
+        timestamp: new Date().toISOString(),
+      };
+      const newAnswers = [...validatedAnswers, newAnswer];
+      setValidatedAnswers(newAnswers);
+      setCurrentInput("");
+      showFeedback("correct", `✓ ${matchedTrack.title}`);
+
+      // Auto-submit if all tracks found
+      if (newFoundIds.size === currentAlbum.tracks.length) {
+        void submitAnswers(newFoundIds, newAnswers);
       }
-
-      // Vérifier si c'est un doublon côté utilisateur
-      const isDuplicate = results.some(
-        (r) =>
-          r.isCorrect &&
-          normalizeString(r.userInput) === normalizeString(trimmedInput),
-      );
-
-      if (isDuplicate) {
-        results.push({
-          userInput: trimmedInput,
-          isCorrect: false,
-          timestamp: new Date().toISOString(),
-        });
-        return;
-      }
-
-      // Chercher une correspondance
-      const matchedTrack = correctTracks.find(
-        (track) =>
-          !usedTrackIds.has(track.id) &&
-          (checkAnswer(trimmedInput, track.title) ||
-            checkAnswer(trimmedInput, track.title_short)),
-      );
-
-      if (matchedTrack) {
-        usedTrackIds.add(matchedTrack.id);
-        results.push({
-          userInput: trimmedInput,
-          isCorrect: true,
-          matchedTrackId: matchedTrack.id,
-          timestamp: new Date().toISOString(),
-        });
-      } else {
-        results.push({
-          userInput: trimmedInput,
-          isCorrect: false,
-          timestamp: new Date().toISOString(),
-        });
-      }
-    });
-
-    return results;
+    } else {
+      setCurrentInput("");
+      showFeedback("wrong", "Essaie encore !");
+    }
   };
 
-  const submitAnswers = async () => {
+  const submitAnswers = async (
+    finalFoundIds?: Set<number>,
+    finalAnswers?: TrackAnswer[],
+  ) => {
     if (!currentAlbum) return;
 
     setIsTimerRunning(false);
-    const results = checkAllAnswers();
-    setValidatedAnswers(results);
-
-    const score = results.filter((r) => r.isCorrect).length;
+    const usedFoundIds = finalFoundIds ?? foundTrackIds;
+    const usedAnswers = finalAnswers ?? validatedAnswers;
+    const score = usedFoundIds.size;
 
     if (sessionId) {
       try {
         const finalData: Partial<TracklistGameData> = {
-          answers: results,
+          answers: usedAnswers,
           score,
           timeElapsed: GAME_DURATION - timeRemaining,
           completedAt: new Date().toISOString(),
@@ -360,7 +363,7 @@ export default function TracklistGameScreen() {
           style: "destructive",
           onPress: () => {
             setIsTimerRunning(false);
-            submitAnswers();
+            void submitAnswers();
           },
         },
       ],
@@ -370,11 +373,15 @@ export default function TracklistGameScreen() {
   const resetGame = () => {
     setGameState("genreSelection");
     setCurrentAlbum(null);
-    setUserAnswers(["", "", "", ""]);
+    setCandidateAlbums([]);
+    setSelectedGenre(null);
+    setCurrentInput("");
+    setFoundTrackIds(new Set());
     setTimeRemaining(GAME_DURATION);
     setIsTimerRunning(false);
     setValidatedAnswers([]);
     setSessionId(null);
+    setAnswerFeedback(null);
   };
 
   if (sessionError) {
@@ -398,6 +405,8 @@ export default function TracklistGameScreen() {
       </>
     );
   }
+
+  // ─── Genre selection ───────────────────────────────────────────────────────
 
   if (gameState === "genreSelection") {
     return (
@@ -425,7 +434,7 @@ export default function TracklistGameScreen() {
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={styles.genreCard}
-                    onPress={() => startGame(item)}
+                    onPress={() => handleSelectGenre(item)}
                     disabled={loadingAlbum}
                   >
                     <Image
@@ -446,6 +455,62 @@ export default function TracklistGameScreen() {
               <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="large" color={Colors.primary.survol} />
                 <ThemedText style={styles.loadingText}>
+                  Chargement des albums...
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        </View>
+      </>
+    );
+  }
+
+  // ─── Album selection ───────────────────────────────────────────────────────
+
+  if (gameState === "albumSelection") {
+    return (
+      <>
+        <Header title="Tracklist" variant="withBack" />
+        <View style={styles.container}>
+          <View style={styles.setupContainer}>
+            <ThemedText type="title" style={styles.title}>
+              Choisissez un album
+            </ThemedText>
+            <ThemedText style={styles.subtitle}>
+              {selectedGenre?.name} — Quel album veux-tu trouver ?
+            </ThemedText>
+
+            <FlatList
+              data={candidateAlbums}
+              numColumns={2}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.genreGrid}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.albumChoiceCard}
+                  onPress={() => startGameWithAlbum(item)}
+                  disabled={loadingAlbum}
+                >
+                  <Image
+                    source={{ uri: item.cover_medium }}
+                    style={styles.albumChoiceCover}
+                  />
+                  <View style={styles.albumChoiceInfo}>
+                    <ThemedText style={styles.albumChoiceTitle} numberOfLines={2}>
+                      {item.title}
+                    </ThemedText>
+                    <ThemedText style={styles.albumChoiceArtist} numberOfLines={1}>
+                      {item.artist.name}
+                    </ThemedText>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+
+            {loadingAlbum && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color={Colors.primary.survol} />
+                <ThemedText style={styles.loadingText}>
                   Chargement de l&apos;album...
                 </ThemedText>
               </View>
@@ -456,35 +521,48 @@ export default function TracklistGameScreen() {
     );
   }
 
+  // ─── Playing ───────────────────────────────────────────────────────────────
+
   if (gameState === "playing" && currentAlbum) {
+    const foundCount = foundTrackIds.size;
+    const totalCount = currentAlbum.tracks.length;
+
     return (
       <>
-        <Header title="Tracklist" variant="withBack" />
-        <View style={styles.container}>
-          <View style={styles.gameHeader}>
-            <View style={styles.timerContainer}>
+        <Header title="Trackliste" variant="withBack" />
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          {/* Badges compteur + chrono */}
+          <View style={styles.badgeRow}>
+            <View style={styles.badge}>
+              <ThemedText style={styles.badgeText}>
+                {foundCount}/{totalCount} TROUVÉ
+              </ThemedText>
+            </View>
+            <View
+              style={[styles.badge, timeRemaining < 60 && styles.badgeWarning]}
+            >
               <MaterialIcons
                 name="timer"
-                size={24}
+                size={14}
                 color={timeRemaining < 60 ? "#ff6b6b" : Colors.primary.survol}
               />
               <ThemedText
                 style={[
-                  styles.timerText,
-                  timeRemaining < 60 && styles.timerWarning,
+                  styles.badgeText,
+                  timeRemaining < 60 && styles.badgeTextWarning,
                 ]}
               >
                 {formatTime(timeRemaining)}
               </ThemedText>
             </View>
-            <Button
-              title="Abandonner"
-              onPress={handleAbandon}
-              style={styles.abandonButton}
-            />
           </View>
 
-          <View style={styles.albumInfo}>
+          {/* Carte album */}
+          <View style={styles.albumCard}>
             <Image
               source={{ uri: currentAlbum.album.cover_xl }}
               style={styles.coverImage}
@@ -495,62 +573,99 @@ export default function TracklistGameScreen() {
             <ThemedText style={styles.artistName}>
               {currentAlbum.album.artist.name}
             </ThemedText>
-            <ThemedText style={styles.trackCount}>
-              {currentAlbum.tracks.length} titres à trouver
-            </ThemedText>
+            <TouchableOpacity
+              style={styles.abandonButtonSmall}
+              onPress={handleAbandon}
+            >
+              <ThemedText style={styles.abandonText}>Abandonner</ThemedText>
+            </TouchableOpacity>
           </View>
 
+          {/* Liste des titres (scrollable) */}
           <ScrollView
-            style={styles.answersContainer}
-            contentContainerStyle={styles.answersContent}
+            style={styles.trackList}
+            contentContainerStyle={styles.trackListContent}
+            keyboardShouldPersistTaps="handled"
           >
-            <ThemedText style={styles.instructionText}>
-              Listez les titres de l&apos;album :
-            </ThemedText>
-            {userAnswers.map((answer, index) => (
-              <TextInput
-                key={index}
-                style={styles.answerInput}
-                placeholder={`Titre ${index + 1}`}
-                placeholderTextColor="#666"
-                value={answer}
-                onChangeText={(text) => handleAnswerChange(index, text)}
-                autoCorrect={false}
-                autoCapitalize="words"
-                returnKeyType="next"
-              />
-            ))}
-            {userAnswers.length < currentAlbum.tracks.length + 5 && (
-              <TouchableOpacity
-                style={styles.addFieldButton}
-                onPress={handleAddField}
-              >
-                <MaterialIcons
-                  name="add-circle"
-                  size={24}
-                  color={Colors.primary.survol}
-                />
-                <ThemedText style={styles.addFieldText}>
-                  Ajouter un champ
-                </ThemedText>
-              </TouchableOpacity>
-            )}
+            {currentAlbum.tracks.map((track, index) => {
+              const isFound = foundTrackIds.has(track.id);
+              return (
+                <View key={track.id} style={styles.trackItem}>
+                  <ThemedText style={styles.trackNumber}>
+                    {index + 1}.
+                  </ThemedText>
+                  {isFound ? (
+                    <>
+                      <ThemedText style={styles.trackFound}>
+                        {track.title}
+                      </ThemedText>
+                      <MaterialIcons
+                        name="check-circle"
+                        size={16}
+                        color="#4CAF50"
+                      />
+                    </>
+                  ) : (
+                    <ThemedText style={styles.trackHidden}>
+                      {track.title.charAt(0).toUpperCase()}_ _ _
+                    </ThemedText>
+                  )}
+                </View>
+              );
+            })}
           </ScrollView>
 
-          <View style={styles.submitContainer}>
-            <Button
-              title="Valider mes réponses"
-              onPress={submitAnswers}
-              style={styles.submitButton}
-            />
+          {/* Feedback réponse + champ de saisie épinglé en bas */}
+          <View style={styles.inputWrapper}>
+            {answerFeedback && (
+              <View
+                style={[
+                  styles.feedbackBanner,
+                  answerFeedback.type === "correct"
+                    ? styles.feedbackCorrect
+                    : styles.feedbackWrong,
+                ]}
+              >
+                <ThemedText style={styles.feedbackText}>
+                  {answerFeedback.message}
+                </ThemedText>
+              </View>
+            )}
+            <View style={styles.inputContainer}>
+              <TextInput
+                ref={inputRef}
+                style={styles.singleInput}
+                placeholder="Tape un son..."
+                placeholderTextColor="#666"
+                value={currentInput}
+                onChangeText={setCurrentInput}
+                onSubmitEditing={handleSubmitAnswer}
+                autoCorrect={false}
+                autoCapitalize="words"
+                returnKeyType="send"
+                blurOnSubmit={false}
+              />
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={handleSubmitAnswer}
+              >
+                <MaterialIcons
+                  name="send"
+                  size={22}
+                  color={Colors.primary.survol}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </>
     );
   }
 
+  // ─── Result ────────────────────────────────────────────────────────────────
+
   if (gameState === "result" && currentAlbum) {
-    const score = validatedAnswers.filter((r) => r.isCorrect).length;
+    const score = foundTrackIds.size;
     const maxScore = currentAlbum.tracks.length;
     const percentage = Math.round((score / maxScore) * 100);
 
@@ -595,77 +710,42 @@ export default function TracklistGameScreen() {
 
           <View style={styles.comparisonSection}>
             <ThemedText style={styles.comparisonTitle}>
-              Comparaison des résultats
+              Titres de l&apos;album
             </ThemedText>
-
-            <View style={styles.comparisonContainer}>
-              <View style={styles.column}>
-                <ThemedText style={styles.columnTitle}>Vos réponses</ThemedText>
-                {validatedAnswers
-                  .filter((a) => a.userInput)
-                  .map((answer, index) => (
-                    <View key={index} style={styles.answerItem}>
-                      <MaterialIcons
-                        name={answer.isCorrect ? "check-circle" : "cancel"}
-                        size={20}
-                        color={answer.isCorrect ? "#4CAF50" : "#f44336"}
-                      />
-                      <ThemedText
-                        style={[
-                          styles.answerText,
-                          answer.isCorrect && styles.answerCorrect,
-                          !answer.isCorrect && styles.answerIncorrect,
-                        ]}
-                      >
-                        {answer.userInput}
-                      </ThemedText>
-                    </View>
-                  ))}
-                {validatedAnswers.filter((a) => a.userInput).length === 0 && (
-                  <ThemedText style={styles.emptyText}>
-                    Aucune réponse
-                  </ThemedText>
-                )}
-              </View>
-
-              <View style={styles.column}>
-                <ThemedText style={styles.columnTitle}>
-                  Titres de l&apos;album
-                </ThemedText>
-                {currentAlbum.tracks.map((track, index) => {
-                  const isFound = validatedAnswers.some(
-                    (a) => a.matchedTrackId === track.id,
-                  );
-                  return (
-                    <View key={track.id} style={styles.answerItem}>
-                      <ThemedText style={styles.trackNumber}>
-                        {index + 1}.
-                      </ThemedText>
-                      <ThemedText
-                        style={[
-                          styles.answerText,
-                          isFound && styles.answerCorrect,
-                        ]}
-                      >
-                        {track.title}
-                      </ThemedText>
-                    </View>
-                  );
-                })}
-              </View>
+            <View style={styles.trackResultList}>
+              {currentAlbum.tracks.map((track, index) => {
+                const isFound = foundTrackIds.has(track.id);
+                return (
+                  <View key={track.id} style={styles.trackResultItem}>
+                    <MaterialIcons
+                      name={isFound ? "check-circle" : "cancel"}
+                      size={20}
+                      color={isFound ? "#4CAF50" : "#f44336"}
+                    />
+                    <ThemedText style={styles.trackResultNumber}>
+                      {index + 1}.
+                    </ThemedText>
+                    <ThemedText
+                      style={[
+                        styles.trackResultText,
+                        isFound && styles.answerCorrect,
+                        !isFound && styles.answerIncorrect,
+                      ]}
+                    >
+                      {track.title}
+                    </ThemedText>
+                  </View>
+                );
+              })}
             </View>
           </View>
 
           <View style={styles.resultActions}>
-            <Button
-              title="Rejouer"
-              onPress={resetGame}
-              style={styles.replayButton}
-            />
+            <Button title="Rejouer" onPress={resetGame} />
             <Button
               title="Retour aux jeux"
+              variant="outline"
               onPress={() => router.push("/games")}
-              style={styles.backButton}
             />
           </View>
         </ScrollView>
@@ -740,111 +820,181 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 16,
   },
-  gameHeader: {
+  // Album choice cards
+  albumChoiceCard: {
+    flex: 1,
+    margin: 8,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+  },
+  albumChoiceCover: {
+    width: "100%",
+    aspectRatio: 1,
+  },
+  albumChoiceInfo: {
+    padding: 8,
+  },
+  albumChoiceTitle: {
+    color: "white",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  albumChoiceArtist: {
+    color: "#999",
+    fontSize: 12,
+  },
+  // Playing screen
+  badgeRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
+    justifyContent: "center",
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-  timerContainer: {
+  badge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary.survol,
   },
-  timerText: {
-    color: "white",
-    fontSize: 24,
+  badgeWarning: {
+    borderColor: "#ff6b6b",
+  },
+  badgeText: {
+    color: Colors.primary.survol,
+    fontSize: 13,
     fontWeight: "bold",
   },
-  timerWarning: {
+  badgeTextWarning: {
     color: "#ff6b6b",
   },
-  abandonButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: "rgba(255, 107, 107, 0.2)",
-  },
-  albumInfo: {
+  albumCard: {
     alignItems: "center",
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     backgroundColor: "rgba(0, 0, 0, 0.3)",
   },
   coverImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 12,
-    marginBottom: 15,
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   albumTitle: {
     color: "white",
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 5,
+    marginBottom: 2,
   },
   artistName: {
     color: "#999",
-    fontSize: 16,
+    fontSize: 14,
     textAlign: "center",
     marginBottom: 10,
   },
-  trackCount: {
-    color: Colors.primary.survol,
-    fontSize: 14,
-    fontWeight: "bold",
+  abandonButtonSmall: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 107, 107, 0.5)",
   },
-  answersContainer: {
+  abandonText: {
+    color: "#ff6b6b",
+    fontSize: 13,
+  },
+  trackList: {
     flex: 1,
   },
-  answersContent: {
-    padding: 20,
-    paddingBottom: 100,
+  trackListContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingBottom: 20,
   },
-  instructionText: {
-    color: "white",
-    fontSize: 16,
-    marginBottom: 15,
-    fontWeight: "bold",
+  trackItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.06)",
   },
-  answerInput: {
+  trackNumber: {
+    color: "#666",
+    fontSize: 14,
+    minWidth: 28,
+  },
+  trackFound: {
+    color: "#4CAF50",
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+  },
+  trackHidden: {
+    color: "#555",
+    fontSize: 15,
+    flex: 1,
+    letterSpacing: 2,
+  },
+  // Input + feedback zone
+  inputWrapper: {
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
+  },
+  feedbackBanner: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  feedbackCorrect: {
+    backgroundColor: "rgba(76, 175, 80, 0.15)",
+  },
+  feedbackWrong: {
+    backgroundColor: "rgba(244, 67, 54, 0.15)",
+  },
+  feedbackText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  singleInput: {
+    flex: 1,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
     color: "white",
     fontSize: 16,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
-    marginBottom: 10,
   },
-  addFieldButton: {
-    flexDirection: "row",
-    alignItems: "center",
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     justifyContent: "center",
-    gap: 8,
-    padding: 12,
-    marginTop: 10,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: Colors.primary.survol,
-    borderStyle: "dashed",
+    alignItems: "center",
   },
-  addFieldText: {
-    color: Colors.primary.survol,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  submitContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.9)",
-  },
-  submitButton: {
-    paddingVertical: 16,
-  },
+  // Result screen
   resultContent: {
     padding: 20,
     paddingBottom: 40,
@@ -870,6 +1020,7 @@ const styles = StyleSheet.create({
     color: Colors.primary.survol,
     fontSize: 48,
     fontWeight: "bold",
+    lineHeight: 58,
   },
   scoreLabel: {
     color: "white",
@@ -907,36 +1058,23 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: "center",
   },
-  comparisonContainer: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  column: {
-    flex: 1,
+  trackResultList: {
     backgroundColor: "rgba(255, 255, 255, 0.05)",
-    padding: 15,
     borderRadius: 12,
+    padding: 15,
   },
-  columnTitle: {
-    color: Colors.primary.survol,
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  answerItem: {
+  trackResultItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  trackNumber: {
+  trackResultNumber: {
     color: "#999",
     fontSize: 14,
     minWidth: 25,
   },
-  answerText: {
-    color: "#CCC",
+  trackResultText: {
     fontSize: 14,
     flex: 1,
   },
@@ -947,21 +1085,8 @@ const styles = StyleSheet.create({
   answerIncorrect: {
     color: "#f44336",
   },
-  emptyText: {
-    color: "#666",
-    fontSize: 14,
-    fontStyle: "italic",
-    textAlign: "center",
-  },
   resultActions: {
     gap: 12,
-  },
-  replayButton: {
-    paddingVertical: 16,
-  },
-  backButton: {
-    paddingVertical: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
   errorContainer: {
     flex: 1,
