@@ -50,7 +50,7 @@ interface AnswerFeedback {
 }
 
 const GAME_DURATION = 300; // 5 minutes in seconds
-const FUZZY_THRESHOLD = 0.75; // Similarity threshold for fuzzy matching (0–1), adjustable
+const MIN_SIMILARITY_THRESHOLD = 0.75; // Seuil de similarité pour le fuzzy matching (0–1) : plus proche de 1 = plus strict
 const ALBUM_CHOICES = 6; // Number of albums proposed in the selection screen
 
 const normalizeString = (str: string): string => {
@@ -58,27 +58,45 @@ const normalizeString = (str: string): string => {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 };
 
 const levenshteinDistance = (a: string, b: string): number => {
-  const matrix: number[][] = [];
-  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b[i - 1] === a[j - 1]) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1,
-        );
-      }
-    }
+  const lenA = a.length;
+  const lenB = b.length;
+
+  if (lenA === 0) return lenB;
+  if (lenB === 0) return lenA;
+
+  // Optimisation mémoire : conserver uniquement deux lignes au lieu de la matrice complète
+  let previousRow: number[] = new Array(lenA + 1);
+  let currentRow: number[] = new Array(lenA + 1);
+
+  for (let j = 0; j <= lenA; j++) {
+    previousRow[j] = j;
   }
-  return matrix[b.length][a.length];
+
+  for (let i = 1; i <= lenB; i++) {
+    currentRow[0] = i;
+    const charB = b.charCodeAt(i - 1);
+
+    for (let j = 1; j <= lenA; j++) {
+      const cost = a.charCodeAt(j - 1) === charB ? 0 : 1;
+      currentRow[j] = Math.min(
+        previousRow[j] + 1,
+        currentRow[j - 1] + 1,
+        previousRow[j - 1] + cost,
+      );
+    }
+
+    const temp = previousRow;
+    previousRow = currentRow;
+    currentRow = temp;
+  }
+
+  return previousRow[lenA];
 };
 
 const fuzzyMatch = (input: string, target: string): boolean => {
@@ -95,10 +113,22 @@ const fuzzyMatch = (input: string, target: string): boolean => {
     return true;
   }
 
-  // Fuzzy match with Levenshtein similarity
+  // Garde : rejeter les paires de longueurs trop différentes avant le calcul coûteux
+  const minLength = Math.min(normalizedInput.length, normalizedTarget.length);
   const maxLength = Math.max(normalizedInput.length, normalizedTarget.length);
+
+  if (minLength === 0) {
+    return false;
+  }
+
+  const lengthRatio = minLength / maxLength;
+  if (lengthRatio < 0.5) {
+    return false;
+  }
+
+  // Fuzzy match with Levenshtein similarity
   const distance = levenshteinDistance(normalizedInput, normalizedTarget);
-  return 1 - distance / maxLength >= FUZZY_THRESHOLD;
+  return 1 - distance / maxLength >= MIN_SIMILARITY_THRESHOLD;
 };
 
 export default function TracklistGameScreen() {
@@ -129,6 +159,8 @@ export default function TracklistGameScreen() {
 
   const inputRef = useRef<TextInput>(null);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isProcessingAnswerRef = useRef(false);
+  const isSubmittingRef = useRef(false);
 
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const user = useAuthStore((state) => state.user);
@@ -168,6 +200,15 @@ export default function TracklistGameScreen() {
       if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
     };
   }, []);
+
+  // Nettoyer le feedback quand on quitte l'état "playing" (ex: transition vers "result")
+  useEffect(() => {
+    if (gameState !== "playing" && feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = null;
+      setAnswerFeedback(null);
+    }
+  }, [gameState]);
 
   const loadGenres = async () => {
     try {
@@ -216,9 +257,9 @@ export default function TracklistGameScreen() {
         return;
       }
 
-      // Garder uniquement les vrais albums (pas les singles/compilations)
+      // Garder uniquement les vrais albums et EPs (pas les singles/compilations)
       const albums = albumsResponse.data.filter(
-        (a) => a.record_type === "album",
+        (a) => a.record_type === "album" || a.record_type === "ep",
       );
       const pool = albums.length > 0 ? albums : albumsResponse.data;
       const shuffled = [...pool].sort(() => Math.random() - 0.5);
@@ -314,8 +355,11 @@ export default function TracklistGameScreen() {
   };
 
   const handleSubmitAnswer = () => {
+    if (isProcessingAnswerRef.current) return;
     const trimmed = currentInput.trim();
     if (!trimmed || !currentAlbum) return;
+
+    isProcessingAnswerRef.current = true;
 
     const matchedTrack = currentAlbum.tracks.find(
       (track) =>
@@ -348,13 +392,16 @@ export default function TracklistGameScreen() {
       setCurrentInput("");
       showFeedback("wrong", "Essaie encore !");
     }
+
+    isProcessingAnswerRef.current = false;
   };
 
   const submitAnswers = async (
     finalFoundIds?: Set<number>,
     finalAnswers?: TrackAnswer[],
   ) => {
-    if (!currentAlbum) return;
+    if (!currentAlbum || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
     setIsTimerRunning(false);
     const usedFoundIds = finalFoundIds ?? foundTrackIds;
@@ -421,7 +468,11 @@ export default function TracklistGameScreen() {
       <>
         <Header title="Tracklist" variant="withBack" />
         <View style={styles.errorContainer}>
-          <MaterialIcons name="error-outline" size={80} color="#ff6b6b" />
+          <MaterialIcons
+            name="error-outline"
+            size={80}
+            color={Colors.game.warning}
+          />
           <ThemedText type="title" style={styles.errorTitle}>
             Jeu indisponible
           </ThemedText>
@@ -524,6 +575,8 @@ export default function TracklistGameScreen() {
                   style={styles.artistCard}
                   onPress={() => handleSelectArtist(item)}
                   disabled={loadingAlbum}
+                  accessibilityLabel={`Sélectionner l'artiste ${item.name}`}
+                  accessibilityRole="button"
                 >
                   <Image
                     source={{ uri: item.picture_medium }}
@@ -576,6 +629,8 @@ export default function TracklistGameScreen() {
                   style={styles.albumChoiceCard}
                   onPress={() => startGameWithAlbum(item)}
                   disabled={loadingAlbum}
+                  accessibilityLabel={`Album ${item.title} de ${item.artist?.name ?? selectedArtist?.name}`}
+                  accessibilityRole="button"
                 >
                   <Image
                     source={{ uri: item.cover_medium }}
@@ -631,7 +686,8 @@ export default function TracklistGameScreen() {
           <View style={styles.badgeRow}>
             <View style={styles.badge}>
               <ThemedText style={styles.badgeText}>
-                {foundCount}/{totalCount} TROUVÉ
+                {foundCount}/{totalCount}{" "}
+                {foundCount > 1 ? "TROUVÉS" : "TROUVÉ"}
               </ThemedText>
             </View>
             <View
@@ -640,7 +696,11 @@ export default function TracklistGameScreen() {
               <MaterialIcons
                 name="timer"
                 size={14}
-                color={timeRemaining < 60 ? "#ff6b6b" : Colors.primary.survol}
+                color={
+                  timeRemaining < 60
+                    ? Colors.game.warning
+                    : Colors.primary.survol
+                }
               />
               <ThemedText
                 style={[
@@ -694,12 +754,19 @@ export default function TracklistGameScreen() {
                       <MaterialIcons
                         name="check-circle"
                         size={16}
-                        color="#4CAF50"
+                        color={Colors.game.success}
                       />
                     </>
                   ) : (
                     <ThemedText style={styles.trackHidden}>
-                      {track.title.charAt(0).toUpperCase()}_ _ _
+                      {track.title
+                        .split(" ")
+                        .map(
+                          (word) =>
+                            word.charAt(0).toUpperCase() +
+                            "_".repeat(Math.max(0, word.length - 1)),
+                        )
+                        .join(" ")}
                     </ThemedText>
                   )}
                 </View>
@@ -728,7 +795,7 @@ export default function TracklistGameScreen() {
                 ref={inputRef}
                 style={styles.singleInput}
                 placeholder="Tape un son..."
-                placeholderTextColor="#666"
+                placeholderTextColor={Colors.game.textSubtle}
                 value={currentInput}
                 onChangeText={setCurrentInput}
                 onSubmitEditing={handleSubmitAnswer}
@@ -736,10 +803,14 @@ export default function TracklistGameScreen() {
                 autoCapitalize="words"
                 returnKeyType="send"
                 blurOnSubmit={false}
+                accessibilityLabel="Saisir un titre de l'album"
+                accessibilityHint="Entrez un titre de chanson de l'album pour valider votre réponse"
               />
               <TouchableOpacity
                 style={styles.sendButton}
                 onPress={handleSubmitAnswer}
+                accessibilityLabel="Valider la réponse"
+                accessibilityRole="button"
               >
                 <MaterialIcons
                   name="send"
@@ -812,7 +883,7 @@ export default function TracklistGameScreen() {
                     <MaterialIcons
                       name={isFound ? "check-circle" : "cancel"}
                       size={20}
-                      color={isFound ? "#4CAF50" : "#f44336"}
+                      color={isFound ? Colors.game.success : Colors.game.error}
                     />
                     <ThemedText style={styles.trackResultNumber}>
                       {index + 1}.
@@ -864,7 +935,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: "center",
-    color: "#999",
+    color: Colors.game.textMuted,
     fontSize: 16,
     marginBottom: 20,
   },
@@ -954,7 +1025,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   albumChoiceArtist: {
-    color: "#999",
+    color: Colors.game.textMuted,
     fontSize: 12,
   },
   // Playing screen
@@ -978,7 +1049,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary.survol,
   },
   badgeWarning: {
-    borderColor: "#ff6b6b",
+    borderColor: Colors.game.warning,
   },
   badgeText: {
     color: Colors.primary.survol,
@@ -986,7 +1057,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   badgeTextWarning: {
-    color: "#ff6b6b",
+    color: Colors.game.warning,
   },
   albumCard: {
     alignItems: "center",
@@ -1008,7 +1079,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   artistName: {
-    color: "#999",
+    color: Colors.game.textMuted,
     fontSize: 14,
     textAlign: "center",
     marginBottom: 10,
@@ -1018,10 +1089,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 107, 0.5)",
+    borderColor: "rgba(255, 107, 107, 0.5)", // teinte warning semi-transparente
   },
   abandonText: {
-    color: "#ff6b6b",
+    color: Colors.game.warning,
     fontSize: 13,
   },
   trackList: {
@@ -1041,18 +1112,18 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(255, 255, 255, 0.06)",
   },
   trackNumber: {
-    color: "#666",
+    color: Colors.game.textSubtle,
     fontSize: 14,
     minWidth: 28,
   },
   trackFound: {
-    color: "#4CAF50",
+    color: Colors.game.success,
     fontSize: 15,
     fontWeight: "600",
     flex: 1,
   },
   trackHidden: {
-    color: "#555",
+    color: Colors.game.textSubtle,
     fontSize: 15,
     flex: 1,
     letterSpacing: 2,
@@ -1154,7 +1225,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   revealArtistName: {
-    color: "#999",
+    color: Colors.game.textMuted,
     fontSize: 16,
     textAlign: "center",
   },
@@ -1180,7 +1251,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   trackResultNumber: {
-    color: "#999",
+    color: Colors.game.textMuted,
     fontSize: 14,
     minWidth: 25,
   },
@@ -1189,11 +1260,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   answerCorrect: {
-    color: "#4CAF50",
+    color: Colors.game.success,
     fontWeight: "bold",
   },
   answerIncorrect: {
-    color: "#f44336",
+    color: Colors.game.error,
   },
   resultActions: {
     gap: 12,
@@ -1209,10 +1280,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
     textAlign: "center",
-    color: "#ff6b6b",
+    color: Colors.game.warning,
   },
   errorText: {
-    color: "#999",
+    color: Colors.game.textMuted,
     textAlign: "center",
     fontSize: 16,
     marginBottom: 30,

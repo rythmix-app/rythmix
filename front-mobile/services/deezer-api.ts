@@ -412,7 +412,7 @@ class DeezerAPI {
       return await cacheManager.getOrSet(
         cacheKey,
         () => this.fetchWithRetry<DeezerArtistsResponse>(url),
-        DEFAULT_TTL.TRACKS,
+        DEFAULT_TTL.PLAYLISTS,
       );
     }
 
@@ -430,20 +430,10 @@ class DeezerAPI {
       return await cacheManager.getOrSet(
         cacheKey,
         () => this.fetchWithRetry<DeezerAlbumsResponse>(url),
-        DEFAULT_TTL.TRACKS,
+        DEFAULT_TTL.PLAYLISTS,
       );
     }
 
-    return await this.fetchWithRetry<DeezerAlbumsResponse>(url);
-  }
-
-  async searchAlbums(
-    query: string,
-    limit: number = 25,
-    index: number = 0,
-  ): Promise<DeezerAlbumsResponse> {
-    const url = `${this.baseUrl}/search/album?q=${encodeURIComponent(query)}&limit=${limit}&index=${index}`;
-    // Pas de cache : l'offset aléatoire garantit la variété à chaque appel
     return await this.fetchWithRetry<DeezerAlbumsResponse>(url);
   }
 
