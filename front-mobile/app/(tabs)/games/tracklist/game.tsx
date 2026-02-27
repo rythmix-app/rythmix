@@ -582,10 +582,16 @@ export default function TracklistGameScreen() {
                     style={styles.albumChoiceCover}
                   />
                   <View style={styles.albumChoiceInfo}>
-                    <ThemedText style={styles.albumChoiceTitle} numberOfLines={2}>
+                    <ThemedText
+                      style={styles.albumChoiceTitle}
+                      numberOfLines={2}
+                    >
                       {item.title}
                     </ThemedText>
-                    <ThemedText style={styles.albumChoiceArtist} numberOfLines={1}>
+                    <ThemedText
+                      style={styles.albumChoiceArtist}
+                      numberOfLines={1}
+                    >
                       {item.artist?.name ?? selectedArtist?.name}
                     </ThemedText>
                   </View>
