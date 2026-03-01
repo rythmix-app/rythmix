@@ -1,16 +1,38 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-
+import { ScrollView, StyleSheet, Switch, View } from "react-native";
 import Header from "@/components/Header";
+import { ThemedText } from "@/components/ThemedText";
+import { Colors } from "@/constants/Colors";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 export default function SettingsScreen() {
+  const { errorAnimationsEnabled, setErrorAnimationsEnabled } =
+    useSettingsStore();
+
   return (
     <View style={styles.container}>
       <Header title="Paramètres" variant="withBack" />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.heading}>Paramètres à venir</Text>
-        <Text style={styles.subtitle}>
-          Ajoute ici tes options de compte, notifications ou préférences.
-        </Text>
+        <ThemedText style={styles.sectionTitle}>Jeux</ThemedText>
+
+        <View style={styles.row}>
+          <View style={styles.rowText}>
+            <ThemedText style={styles.rowLabel}>
+              Animations d&apos;erreur
+            </ThemedText>
+            <ThemedText style={styles.rowDescription}>
+              Secousse et bords rouges lors d&apos;une mauvaise réponse
+            </ThemedText>
+          </View>
+          <Switch
+            value={errorAnimationsEnabled}
+            onValueChange={setErrorAnimationsEnabled}
+            trackColor={{
+              false: "rgba(255,255,255,0.1)",
+              true: Colors.primary.CTA,
+            }}
+            thumbColor={errorAnimationsEnabled ? Colors.primary.survol : "#888"}
+          />
+        </View>
       </ScrollView>
     </View>
   );
@@ -19,19 +41,45 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0D0D0D",
+    backgroundColor: Colors.primary.fondPremier,
   },
   content: {
-    padding: 16,
-    gap: 12,
+    padding: 20,
+    gap: 8,
   },
-  heading: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontFamily: "Bold",
+  sectionTitle: {
+    color: Colors.primary.survol,
+    fontSize: 12,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    marginTop: 8,
   },
-  subtitle: {
-    color: "#D8E7E7",
-    fontSize: 14,
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  rowText: {
+    flex: 1,
+    marginRight: 16,
+  },
+  rowLabel: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  rowDescription: {
+    color: Colors.game.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

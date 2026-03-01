@@ -13,15 +13,18 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
 import Header from "@/components/Header";
+import { GameErrorFeedback } from "@/components/GameErrorFeedback";
 import { Colors } from "@/constants/Colors";
 import { deezerAPI, DeezerGenre, DeezerTrack } from "@/services/deezer-api";
 import { useAuthStore } from "@/stores/authStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import {
   createGameSession,
   updateGameSession,
 } from "@/services/gameSessionService";
 import { BlurchetteGameData } from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useErrorFeedback } from "@/hooks/useErrorFeedback";
 
 type GameState = "genreSelection" | "playing" | "result";
 type BlurLevel = 1 | 2 | 3 | 4 | 5;
@@ -65,6 +68,9 @@ export default function BlurchetteGameScreen() {
 
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const user = useAuthStore((state) => state.user);
+  const { errorAnimationsEnabled } = useSettingsStore();
+  const { shakeAnimation, borderOpacity, errorMessage, triggerError } =
+    useErrorFeedback(errorAnimationsEnabled);
 
   useEffect(() => {
     loadGenres();
@@ -240,7 +246,7 @@ export default function BlurchetteGameScreen() {
     } else {
       if (blurLevel < 5) {
         setBlurLevel((level) => (level + 1) as BlurLevel);
-        Alert.alert("Incorrect", "Ce n'est pas la bonne réponse, continuez !");
+        triggerError("Ce n'est pas la bonne réponse, continuez !");
         setAnswer("");
       } else {
         setFoundCorrect(false);
@@ -345,56 +351,63 @@ export default function BlurchetteGameScreen() {
 
   if (gameState === "playing" && currentTrack) {
     return (
-      <>
-        <Header title="Blurchette" variant="withBack" />
-        <View style={styles.container}>
-          <View style={styles.gameHeader}>
-            <View style={styles.levelInfo}>
-              <View style={styles.levelBadge}>
-                <ThemedText style={styles.levelText}>
-                  Niveau {blurLevel}/5
+      <GameErrorFeedback
+        shakeAnimation={shakeAnimation}
+        borderOpacity={borderOpacity}
+        errorMessage={errorMessage}
+        animationsEnabled={errorAnimationsEnabled}
+      >
+        <>
+          <Header title="Blurchette" variant="withBack" />
+          <View style={styles.container}>
+            <View style={styles.gameHeader}>
+              <View style={styles.levelInfo}>
+                <View style={styles.levelBadge}>
+                  <ThemedText style={styles.levelText}>
+                    Niveau {blurLevel}/5
+                  </ThemedText>
+                </View>
+                <ThemedText style={styles.hintText}>
+                  {currentTrack.isAlbum
+                    ? "🎵 Trouvez l'album"
+                    : "🎤 Trouvez le single"}
                 </ThemedText>
               </View>
-              <ThemedText style={styles.hintText}>
-                {currentTrack.isAlbum
-                  ? "🎵 Trouvez l'album"
-                  : "🎤 Trouvez le single"}
-              </ThemedText>
             </View>
-          </View>
 
-          <View style={styles.albumContainer}>
-            <View style={styles.albumPlaceholder}>
-              <Image
-                source={{ uri: currentTrack.track.album.cover_xl }}
-                style={styles.albumImage}
-                blurRadius={getBlurRadius(blurLevel)}
+            <View style={styles.albumContainer}>
+              <View style={styles.albumPlaceholder}>
+                <Image
+                  source={{ uri: currentTrack.track.album.cover_xl }}
+                  style={styles.albumImage}
+                  blurRadius={getBlurRadius(blurLevel)}
+                />
+              </View>
+            </View>
+
+            <View style={styles.answerSection}>
+              <TextInput
+                style={styles.answerInput}
+                placeholder="Entrez votre réponse..."
+                placeholderTextColor="#666"
+                value={answer}
+                onChangeText={setAnswer}
+                autoCorrect={false}
+                autoCapitalize="words"
+                editable={!hasAnswered}
+                onSubmitEditing={submitAnswer}
+                returnKeyType="done"
+              />
+              <Button
+                title="Valider"
+                onPress={submitAnswer}
+                style={styles.submitButton}
+                disabled={!answer.trim() || hasAnswered}
               />
             </View>
           </View>
-
-          <View style={styles.answerSection}>
-            <TextInput
-              style={styles.answerInput}
-              placeholder="Entrez votre réponse..."
-              placeholderTextColor="#666"
-              value={answer}
-              onChangeText={setAnswer}
-              autoCorrect={false}
-              autoCapitalize="words"
-              editable={!hasAnswered}
-              onSubmitEditing={submitAnswer}
-              returnKeyType="done"
-            />
-            <Button
-              title="Valider"
-              onPress={submitAnswer}
-              style={styles.submitButton}
-              disabled={!answer.trim() || hasAnswered}
-            />
-          </View>
-        </View>
-      </>
+        </>
+      </GameErrorFeedback>
     );
   }
 
