@@ -8,7 +8,7 @@
     "splash": {
       "image": "./assets/images/ios-dark.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#343434"
     },
     "scheme": "frontmobile",
     "userInterfaceStyle": "dark",
@@ -26,8 +26,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/ios-dark.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/images/android-dark.png",
+        "backgroundColor": "#343434"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.frontmobile",
@@ -49,9 +49,19 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#000000",
-          "image": "./assets/images/ios-dark.png",
-          "imageWidth": 200
+          "backgroundColor": "#343434",
+          "image": "./assets/images/logo-rythmix-light.png",
+          "imageWidth": 200,
+          "ios": {
+            "image": "./assets/images/ios-dark.png"
+          },
+          "android": {
+            "image": "./assets/images/android-dark.png",
+            "adaptiveIcon": {
+              "foregroundImage": "./assets/images/android-dark.png",
+              "backgroundColor": "#343434"
+            }
+          }
         }
       ],
       "expo-web-browser",
