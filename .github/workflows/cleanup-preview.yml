@@ -9,14 +9,13 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: front-mobile
     steps:
       - uses: actions/checkout@v4
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+          packager: npm
       - run: eas branch:delete ${{ github.head_ref }} --non-interactive
+        working-directory: front-mobile
         continue-on-error: true
