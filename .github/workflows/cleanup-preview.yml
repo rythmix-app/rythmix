@@ -1,0 +1,22 @@
+name: cleanup preview
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - "front-mobile/**"
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front-mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: eas branch:delete ${{ github.head_ref }} --non-interactive
+        continue-on-error: true
