@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  Animated,
   ActivityIndicator,
   Alert,
   FlatList,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -65,6 +70,48 @@ export default function BlurchetteGameScreen() {
       timestamp: string;
     }[]
   >([]);
+
+  const keyboardAnim = useRef(new Animated.Value(0)).current;
+
+  const albumScale = keyboardAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.6],
+    extrapolate: "clamp",
+  });
+
+  const albumOpacity = keyboardAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.6],
+    extrapolate: "clamp",
+  });
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      Animated.timing(keyboardAnim, {
+        toValue: 1,
+        duration: Platform.OS === "ios" ? e.duration : 200,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, (e) => {
+      Animated.timing(keyboardAnim, {
+        toValue: 0,
+        duration: Platform.OS === "ios" ? e.duration : 200,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [keyboardAnim]);
 
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const user = useAuthStore((state) => state.user);
@@ -359,7 +406,11 @@ export default function BlurchetteGameScreen() {
       >
         <>
           <Header title="Blurchette" variant="withBack" />
-          <View style={styles.container}>
+          <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+          >
             <View style={styles.gameHeader}>
               <View style={styles.levelInfo}>
                 <View style={styles.levelBadge}>
@@ -375,37 +426,54 @@ export default function BlurchetteGameScreen() {
               </View>
             </View>
 
-            <View style={styles.albumContainer}>
-              <View style={styles.albumPlaceholder}>
-                <Image
-                  source={{ uri: currentTrack.track.album.cover_xl }}
-                  style={styles.albumImage}
-                  blurRadius={getBlurRadius(blurLevel)}
-                />
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View style={styles.albumContainer}>
+                <Animated.View
+                  style={[
+                    styles.albumPlaceholder,
+                    {
+                      transform: [{ scale: albumScale }],
+                      opacity: albumOpacity,
+                    },
+                  ]}
+                >
+                  <Image
+                    source={{ uri: currentTrack.track.album.cover_xl }}
+                    style={styles.albumImage}
+                    blurRadius={getBlurRadius(blurLevel)}
+                  />
+                </Animated.View>
               </View>
-            </View>
+            </TouchableWithoutFeedback>
 
             <View style={styles.answerSection}>
-              <TextInput
-                style={styles.answerInput}
-                placeholder="Entrez votre réponse..."
-                placeholderTextColor="#666"
-                value={answer}
-                onChangeText={setAnswer}
-                autoCorrect={false}
-                autoCapitalize="words"
-                editable={!hasAnswered}
-                onSubmitEditing={submitAnswer}
-                returnKeyType="done"
-              />
-              <Button
-                title="Valider"
-                onPress={submitAnswer}
-                style={styles.submitButton}
-                disabled={!answer.trim() || hasAnswered}
-              />
+              <View style={styles.answerRow}>
+                <TextInput
+                  style={styles.answerInput}
+                  placeholder="Entrez votre réponse..."
+                  placeholderTextColor="#666"
+                  value={answer}
+                  onChangeText={setAnswer}
+                  autoCorrect={false}
+                  autoCapitalize="words"
+                  editable={!hasAnswered}
+                  onSubmitEditing={submitAnswer}
+                  returnKeyType="send"
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.sendButton,
+                    (!answer.trim() || hasAnswered) &&
+                      styles.sendButtonDisabled,
+                  ]}
+                  onPress={submitAnswer}
+                  disabled={!answer.trim() || hasAnswered}
+                >
+                  <MaterialIcons name="send" size={22} color="white" />
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </>
       </GameErrorFeedback>
     );
@@ -563,7 +631,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    overflow: "hidden",
   },
   albumPlaceholder: {
     width: 320,
@@ -595,20 +663,33 @@ const styles = StyleSheet.create({
   answerSection: {
     padding: 20,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    gap: 12,
+  },
+  answerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   answerInput: {
+    flex: 1,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 12,
-    padding: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     color: "white",
-    fontSize: 18,
+    fontSize: 16,
     borderWidth: 2,
     borderColor: Colors.primary.survol,
-    textAlign: "center",
   },
-  submitButton: {
-    paddingVertical: 16,
+  sendButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: Colors.primary.survol,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sendButtonDisabled: {
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
   resultContainer: {
     flex: 1,

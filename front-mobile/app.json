@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.frontmobile",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": ["audio", "audio"]
       }
     },
     "android": {
@@ -22,7 +22,18 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.frontmobile",
-      "permissions": ["INTERNET", "MODIFY_AUDIO_SETTINGS", "WAKE_LOCK"]
+      "permissions": [
+        "INTERNET",
+        "MODIFY_AUDIO_SETTINGS",
+        "WAKE_LOCK",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "INTERNET",
+        "MODIFY_AUDIO_SETTINGS",
+        "WAKE_LOCK",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -46,6 +57,19 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "160a02f5-15f4-41a9-bdd9-e402672188b0"
+      }
+    },
+    "owner": "aldo26",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/160a02f5-15f4-41a9-bdd9-e402672188b0"
     }
   }
 }
