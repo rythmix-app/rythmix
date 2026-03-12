@@ -690,7 +690,7 @@ export default function TracklistGameScreen() {
         animationsEnabled={errorAnimationsEnabled}
       >
         <>
-          <Header title="Trackliste" variant="withBack" />
+          <Header title="Tracklist" variant="withBack" />
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -729,7 +729,11 @@ export default function TracklistGameScreen() {
                 </ThemedText>
               </View>
             </View>
-
+            <ScrollView
+              style={styles.trackList}
+              contentContainerStyle={styles.trackListContent}
+              keyboardShouldPersistTaps="handled"
+            >
             {/* Carte album */}
             <View style={styles.albumCard}>
               <Image
@@ -751,11 +755,7 @@ export default function TracklistGameScreen() {
             </View>
 
             {/* Liste des titres (scrollable) */}
-            <ScrollView
-              style={styles.trackList}
-              contentContainerStyle={styles.trackListContent}
-              keyboardShouldPersistTaps="handled"
-            >
+
               {currentAlbum.tracks.map((track, index) => {
                 const isFound = foundTrackIds.has(track.id);
                 return (
