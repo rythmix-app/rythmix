@@ -690,7 +690,7 @@ export default function TracklistGameScreen() {
         animationsEnabled={errorAnimationsEnabled}
       >
         <>
-          <Header title="Trackliste" variant="withBack" />
+          <Header title="Tracklist" variant="withBack" />
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -729,33 +729,33 @@ export default function TracklistGameScreen() {
                 </ThemedText>
               </View>
             </View>
-
-            {/* Carte album */}
-            <View style={styles.albumCard}>
-              <Image
-                source={{ uri: currentAlbum.album.cover_xl }}
-                style={styles.coverImage}
-              />
-              <ThemedText style={styles.albumTitle}>
-                {currentAlbum.album.title}
-              </ThemedText>
-              <ThemedText style={styles.artistName}>
-                {currentAlbum.album.artist?.name ?? selectedArtist?.name}
-              </ThemedText>
-              <TouchableOpacity
-                style={styles.abandonButtonSmall}
-                onPress={handleAbandon}
-              >
-                <ThemedText style={styles.abandonText}>Abandonner</ThemedText>
-              </TouchableOpacity>
-            </View>
-
-            {/* Liste des titres (scrollable) */}
             <ScrollView
               style={styles.trackList}
               contentContainerStyle={styles.trackListContent}
               keyboardShouldPersistTaps="handled"
             >
+              {/* Carte album */}
+              <View style={styles.albumCard}>
+                <Image
+                  source={{ uri: currentAlbum.album.cover_xl }}
+                  style={styles.coverImage}
+                />
+                <ThemedText style={styles.albumTitle}>
+                  {currentAlbum.album.title}
+                </ThemedText>
+                <ThemedText style={styles.artistName}>
+                  {currentAlbum.album.artist?.name ?? selectedArtist?.name}
+                </ThemedText>
+                <TouchableOpacity
+                  style={styles.abandonButtonSmall}
+                  onPress={handleAbandon}
+                >
+                  <ThemedText style={styles.abandonText}>Abandonner</ThemedText>
+                </TouchableOpacity>
+              </View>
+
+              {/* Liste des titres (scrollable) */}
+
               {currentAlbum.tracks.map((track, index) => {
                 const isFound = foundTrackIds.has(track.id);
                 return (
