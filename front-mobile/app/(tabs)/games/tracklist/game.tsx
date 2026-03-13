@@ -416,30 +416,34 @@ export default function TracklistGameScreen() {
     if (!currentAlbum || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
-    setIsTimerRunning(false);
-    const usedFoundIds = finalFoundIds ?? foundTrackIds;
-    const usedAnswers = finalAnswers ?? validatedAnswers;
-    const score = usedFoundIds.size;
+    try {
+      setIsTimerRunning(false);
+      const usedFoundIds = finalFoundIds ?? foundTrackIds;
+      const usedAnswers = finalAnswers ?? validatedAnswers;
+      const score = usedFoundIds.size;
 
-    if (sessionId) {
-      try {
-        const finalData: Partial<TracklistGameData> = {
-          answers: usedAnswers,
-          score,
-          timeElapsed: GAME_DURATION - timeRemaining,
-          completedAt: new Date().toISOString(),
-        };
+      if (sessionId) {
+        try {
+          const finalData: Partial<TracklistGameData> = {
+            answers: usedAnswers,
+            score,
+            timeElapsed: GAME_DURATION - timeRemaining,
+            completedAt: new Date().toISOString(),
+          };
 
-        await updateGameSession(sessionId, {
-          status: "completed",
-          gameData: finalData as unknown as Record<string, unknown>,
-        });
-      } catch (err) {
-        console.error("Failed to update session:", err);
+          await updateGameSession(sessionId, {
+            status: "completed",
+            gameData: finalData as unknown as Record<string, unknown>,
+          });
+        } catch (err) {
+          console.error("Failed to update session:", err);
+        }
       }
-    }
 
-    setGameState("result");
+      setGameState("result");
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   const handleAbandon = () => {
