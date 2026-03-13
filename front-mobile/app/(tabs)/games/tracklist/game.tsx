@@ -16,6 +16,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
 import Header from "@/components/Header";
+import { GameErrorFeedback } from "@/components/GameErrorFeedback";
 import { Colors } from "@/constants/Colors";
 import {
   deezerAPI,
@@ -25,12 +26,14 @@ import {
   DeezerTrack,
 } from "@/services/deezer-api";
 import { useAuthStore } from "@/stores/authStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import {
   createGameSession,
   updateGameSession,
 } from "@/services/gameSessionService";
 import { TracklistGameData, TrackAnswer } from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useErrorFeedback } from "@/hooks/useErrorFeedback";
 
 type GameState =
   | "genreSelection"
@@ -164,6 +167,10 @@ export default function TracklistGameScreen() {
 
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const user = useAuthStore((state) => state.user);
+  const { errorAnimationsEnabled } = useSettingsStore();
+  const { shakeAnimation, borderOpacity, triggerError } = useErrorFeedback(
+    errorAnimationsEnabled,
+  );
 
   useEffect(() => {
     loadGenres();
@@ -390,6 +397,7 @@ export default function TracklistGameScreen() {
       }
     } else {
       setCurrentInput("");
+      triggerError();
       showFeedback("wrong", "Essaie encore !");
     }
 
@@ -675,153 +683,163 @@ export default function TracklistGameScreen() {
     const totalCount = currentAlbum.tracks.length;
 
     return (
-      <>
-        <Header title="Trackliste" variant="withBack" />
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-        >
-          {/* Badges compteur + chrono */}
-          <View style={styles.badgeRow}>
-            <View style={styles.badge}>
-              <ThemedText style={styles.badgeText}>
-                {foundCount}/{totalCount}{" "}
-                {foundCount > 1 ? "TROUVÉS" : "TROUVÉ"}
-              </ThemedText>
-            </View>
-            <View
-              style={[styles.badge, timeRemaining < 60 && styles.badgeWarning]}
-            >
-              <MaterialIcons
-                name="timer"
-                size={14}
-                color={
-                  timeRemaining < 60
-                    ? Colors.game.warning
-                    : Colors.primary.survol
-                }
-              />
-              <ThemedText
-                style={[
-                  styles.badgeText,
-                  timeRemaining < 60 && styles.badgeTextWarning,
-                ]}
-              >
-                {formatTime(timeRemaining)}
-              </ThemedText>
-            </View>
-          </View>
-
-          {/* Carte album */}
-          <View style={styles.albumCard}>
-            <Image
-              source={{ uri: currentAlbum.album.cover_xl }}
-              style={styles.coverImage}
-            />
-            <ThemedText style={styles.albumTitle}>
-              {currentAlbum.album.title}
-            </ThemedText>
-            <ThemedText style={styles.artistName}>
-              {currentAlbum.album.artist?.name ?? selectedArtist?.name}
-            </ThemedText>
-            <TouchableOpacity
-              style={styles.abandonButtonSmall}
-              onPress={handleAbandon}
-            >
-              <ThemedText style={styles.abandonText}>Abandonner</ThemedText>
-            </TouchableOpacity>
-          </View>
-
-          {/* Liste des titres (scrollable) */}
-          <ScrollView
-            style={styles.trackList}
-            contentContainerStyle={styles.trackListContent}
-            keyboardShouldPersistTaps="handled"
+      <GameErrorFeedback
+        shakeAnimation={shakeAnimation}
+        borderOpacity={borderOpacity}
+        errorMessage={null}
+        animationsEnabled={errorAnimationsEnabled}
+      >
+        <>
+          <Header title="Tracklist" variant="withBack" />
+          <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           >
-            {currentAlbum.tracks.map((track, index) => {
-              const isFound = foundTrackIds.has(track.id);
-              return (
-                <View key={track.id} style={styles.trackItem}>
-                  <ThemedText style={styles.trackNumber}>
-                    {index + 1}.
-                  </ThemedText>
-                  {isFound ? (
-                    <>
-                      <ThemedText style={styles.trackFound}>
-                        {track.title}
-                      </ThemedText>
-                      <MaterialIcons
-                        name="check-circle"
-                        size={16}
-                        color={Colors.game.success}
-                      />
-                    </>
-                  ) : (
-                    <ThemedText style={styles.trackHidden}>
-                      {track.title
-                        .split(" ")
-                        .map(
-                          (word) =>
-                            word.charAt(0).toUpperCase() +
-                            "_".repeat(Math.max(0, word.length - 1)),
-                        )
-                        .join(" ")}
-                    </ThemedText>
-                  )}
-                </View>
-              );
-            })}
-          </ScrollView>
-
-          {/* Feedback réponse + champ de saisie épinglé en bas */}
-          <View style={styles.inputWrapper}>
-            {answerFeedback && (
-              <View
-                style={[
-                  styles.feedbackBanner,
-                  answerFeedback.type === "correct"
-                    ? styles.feedbackCorrect
-                    : styles.feedbackWrong,
-                ]}
-              >
-                <ThemedText style={styles.feedbackText}>
-                  {answerFeedback.message}
+            {/* Badges compteur + chrono */}
+            <View style={styles.badgeRow}>
+              <View style={styles.badge}>
+                <ThemedText style={styles.badgeText}>
+                  {foundCount}/{totalCount}{" "}
+                  {foundCount > 1 ? "TROUVÉS" : "TROUVÉ"}
                 </ThemedText>
               </View>
-            )}
-            <View style={styles.inputContainer}>
-              <TextInput
-                ref={inputRef}
-                style={styles.singleInput}
-                placeholder="Tape un son..."
-                placeholderTextColor={Colors.game.textSubtle}
-                value={currentInput}
-                onChangeText={setCurrentInput}
-                onSubmitEditing={handleSubmitAnswer}
-                autoCorrect={false}
-                autoCapitalize="words"
-                returnKeyType="send"
-                blurOnSubmit={false}
-                accessibilityLabel="Saisir un titre de l'album"
-                accessibilityHint="Entrez un titre de chanson de l'album pour valider votre réponse"
-              />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={handleSubmitAnswer}
-                accessibilityLabel="Valider la réponse"
-                accessibilityRole="button"
+              <View
+                style={[
+                  styles.badge,
+                  timeRemaining < 60 && styles.badgeWarning,
+                ]}
               >
                 <MaterialIcons
-                  name="send"
-                  size={22}
-                  color={Colors.primary.survol}
+                  name="timer"
+                  size={14}
+                  color={
+                    timeRemaining < 60
+                      ? Colors.game.warning
+                      : Colors.primary.survol
+                  }
                 />
-              </TouchableOpacity>
+                <ThemedText
+                  style={[
+                    styles.badgeText,
+                    timeRemaining < 60 && styles.badgeTextWarning,
+                  ]}
+                >
+                  {formatTime(timeRemaining)}
+                </ThemedText>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
-      </>
+            <ScrollView
+              style={styles.trackList}
+              contentContainerStyle={styles.trackListContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Carte album */}
+              <View style={styles.albumCard}>
+                <Image
+                  source={{ uri: currentAlbum.album.cover_xl }}
+                  style={styles.coverImage}
+                />
+                <ThemedText style={styles.albumTitle}>
+                  {currentAlbum.album.title}
+                </ThemedText>
+                <ThemedText style={styles.artistName}>
+                  {currentAlbum.album.artist?.name ?? selectedArtist?.name}
+                </ThemedText>
+                <TouchableOpacity
+                  style={styles.abandonButtonSmall}
+                  onPress={handleAbandon}
+                >
+                  <ThemedText style={styles.abandonText}>Abandonner</ThemedText>
+                </TouchableOpacity>
+              </View>
+
+              {/* Liste des titres (scrollable) */}
+
+              {currentAlbum.tracks.map((track, index) => {
+                const isFound = foundTrackIds.has(track.id);
+                return (
+                  <View key={track.id} style={styles.trackItem}>
+                    <ThemedText style={styles.trackNumber}>
+                      {index + 1}.
+                    </ThemedText>
+                    {isFound ? (
+                      <>
+                        <ThemedText style={styles.trackFound}>
+                          {track.title}
+                        </ThemedText>
+                        <MaterialIcons
+                          name="check-circle"
+                          size={16}
+                          color={Colors.game.success}
+                        />
+                      </>
+                    ) : (
+                      <ThemedText style={styles.trackHidden}>
+                        {track.title
+                          .split(" ")
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() +
+                              "_".repeat(Math.max(0, word.length - 1)),
+                          )
+                          .join(" ")}
+                      </ThemedText>
+                    )}
+                  </View>
+                );
+              })}
+            </ScrollView>
+
+            {/* Feedback réponse + champ de saisie épinglé en bas */}
+            <View style={styles.inputWrapper}>
+              {answerFeedback && (
+                <View
+                  style={[
+                    styles.feedbackBanner,
+                    answerFeedback.type === "correct"
+                      ? styles.feedbackCorrect
+                      : styles.feedbackWrong,
+                  ]}
+                >
+                  <ThemedText style={styles.feedbackText}>
+                    {answerFeedback.message}
+                  </ThemedText>
+                </View>
+              )}
+              <View style={styles.inputContainer}>
+                <TextInput
+                  ref={inputRef}
+                  style={styles.singleInput}
+                  placeholder="Tape un son..."
+                  placeholderTextColor={Colors.game.textSubtle}
+                  value={currentInput}
+                  onChangeText={setCurrentInput}
+                  onSubmitEditing={handleSubmitAnswer}
+                  autoCorrect={false}
+                  autoCapitalize="words"
+                  returnKeyType="send"
+                  blurOnSubmit={false}
+                  accessibilityLabel="Saisir un titre de l'album"
+                  accessibilityHint="Entrez un titre de chanson de l'album pour valider votre réponse"
+                />
+                <TouchableOpacity
+                  style={styles.sendButton}
+                  onPress={handleSubmitAnswer}
+                  accessibilityLabel="Valider la réponse"
+                  accessibilityRole="button"
+                >
+                  <MaterialIcons
+                    name="send"
+                    size={22}
+                    color={Colors.primary.survol}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </>
+      </GameErrorFeedback>
     );
   }
 
