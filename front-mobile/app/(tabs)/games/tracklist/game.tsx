@@ -326,7 +326,7 @@ export default function TracklistGameScreen() {
       const session = await createGameSession({
         gameId: parseInt(gameId, 10),
         status: "active",
-        players: { [user.id]: user.username },
+        players: [{ userId: user.id }],
         gameData: gameData as unknown as Record<string, unknown>,
       });
 

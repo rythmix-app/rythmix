@@ -1,0 +1,360 @@
+{
+  "info": {
+    "_postman_id": "c1ad3bac-edb0-454d-9757-69726311ea76",
+    "name": "Rythmix API",
+    "description": "Collection complète de l'API Rythmix",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "50059134",
+    "_collection_link": "https://go.postman.co/collection/50059134-c1ad3bac-edb0-454d-9757-69726311ea76?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"daennoah@gmail.com\",\n  \"username\": \"johndoe\",\n  \"password\": \"SecurePassword123!\",\n  \"password_confirmation\": \"SecurePassword123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) pm.collectionVariables.set('accessToken', json.token.token);",
+                  "if (json.refreshToken) pm.collectionVariables.set('refreshToken', json.refreshToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"daennoah@gmail.com\",\n  \"password\": \"SecurePassword123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Me (profil connecté)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "auth", "refresh"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/verify-email?token=TOKEN_ICI", "host": ["{{baseUrl}}"], "path": ["api", "auth", "verify-email"], "query": [{ "key": "token", "value": "TOKEN_ICI" }] }
+          },
+          "response": []
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"daennoah@gmail.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/resend-verification", "host": ["{{baseUrl}}"], "path": ["api", "auth", "resend-verification"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Game Sessions",
+      "item": [
+        {
+          "name": "Get All Game Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/game-sessions", "host": ["{{baseUrl}}"], "path": ["api", "game-sessions"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Game Sessions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/game-sessions/me", "host": ["{{baseUrl}}"], "path": ["api", "game-sessions", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Game Sessions (completed)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/game-sessions/me?status=completed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "game-sessions", "me"],
+              "query": [{ "key": "status", "value": "completed" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Game Sessions (sans token — doit retourner 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/game-sessions/me", "host": ["{{baseUrl}}"], "path": ["api", "game-sessions", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Game Session by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/game-sessions/:id", "host": ["{{baseUrl}}"], "path": ["api", "game-sessions", ":id"], "variable": [{ "key": "id", "value": "UUID_ICI" }] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sessions by Game ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/game-sessions/:gameId/sessions", "host": ["{{baseUrl}}"], "path": ["api", "game-sessions", ":gameId", "sessions"], "variable": [{ "key": "gameId", "value": "1" }] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sessions by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/game-sessions/status/:status", "host": ["{{baseUrl}}"], "path": ["api", "game-sessions", "status", ":status"], "variable": [{ "key": "status", "value": "completed" }] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Game Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gameId\": 1,\n  \"status\": \"completed\",\n  \"players\": [\n    {\n      \"userId\": \"USER_UUID_ICI\",\n      \"status\": \"finished\",\n      \"score\": 1500,\n      \"expGained\": 120,\n      \"rank\": 1\n    }\n  ],\n  \"gameData\": {\n    \"score\": 1500,\n    \"round\": 5\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/game-sessions", "host": ["{{baseUrl}}"], "path": ["api", "game-sessions"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Game Session",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/game-sessions/:id", "host": ["{{baseUrl}}"], "path": ["api", "game-sessions", ":id"], "variable": [{ "key": "id", "value": "UUID_ICI" }] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Game Session",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/game-sessions/:id", "host": ["{{baseUrl}}"], "path": ["api", "game-sessions", ":id"], "variable": [{ "key": "id", "value": "UUID_ICI" }] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Games",
+      "item": [
+        {
+          "name": "Get All Games",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/games", "host": ["{{baseUrl}}"], "path": ["api", "games"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Game by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/games/:id", "host": ["{{baseUrl}}"], "path": ["api", "games", ":id"], "variable": [{ "key": "id", "value": "1" }] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Favorite Games",
+      "item": [
+        {
+          "name": "Get My Favorites",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/favorite-games/me", "host": ["{{baseUrl}}"], "path": ["api", "favorite-games", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Favorite",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gameId\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/favorite-games", "host": ["{{baseUrl}}"], "path": ["api", "favorite-games"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Favorite by ID",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/favorite-games/:id", "host": ["{{baseUrl}}"], "path": ["api", "favorite-games", ":id"], "variable": [{ "key": "id", "value": "UUID_ICI" }] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Achievements",
+      "item": [
+        {
+          "name": "Get My Achievements",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/user-achievements/me", "host": ["{{baseUrl}}"], "path": ["api", "user-achievements", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/user-achievements/stats", "host": ["{{baseUrl}}"], "path": ["api", "user-achievements", "stats"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Liked Tracks",
+      "item": [
+        {
+          "name": "Get All Liked Tracks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/liked-tracks", "host": ["{{baseUrl}}"], "path": ["api", "liked-tracks"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Like a Track",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trackId\": 123456\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/liked-tracks", "host": ["{{baseUrl}}"], "path": ["api", "liked-tracks"] }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.localhost"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    }
+  ]
+}
