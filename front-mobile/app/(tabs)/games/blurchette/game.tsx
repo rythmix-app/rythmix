@@ -342,7 +342,7 @@ export default function BlurchetteGameScreen() {
   if (gameState === "genreSelection") {
     return (
       <>
-        <Header title="Blurchette" variant="withBack" />
+        <Header title="Blurchette" variant="withBack" isGame={true} />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -405,7 +405,7 @@ export default function BlurchetteGameScreen() {
         animationsEnabled={errorAnimationsEnabled}
       >
         <>
-          <Header title="Blurchette" variant="withBack" />
+          <Header title="Blurchette" variant="withBack" isGame={true} />
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
