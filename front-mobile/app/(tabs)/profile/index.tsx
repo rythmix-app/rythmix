@@ -36,19 +36,22 @@ const MOCK_TOP_GENRES = [
 
 // TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
 const MOCK_BADGES = [
-  { id: "1", name: "Mélomane", icon: "🎵", unlocked: true },
-  { id: "2", name: "Swipeur Pro", icon: "🔥", unlocked: true },
-  { id: "3", name: "Match King", icon: "👑", unlocked: true },
-  { id: "4", name: "Explorer", icon: "🗺️", unlocked: false },
-  { id: "5", name: "Legend", icon: "⭐", unlocked: false },
-  { id: "6", name: "Guru", icon: "🎧", unlocked: false },
+  { id: "1", name: "Bienvenue dans l'arène", icon: "🏟️", unlocked: true },
+  { id: "2", name: "Premier pas", icon: "👣", unlocked: true },
+  { id: "3", name: "Première victoire", icon: "🥇", unlocked: true },
+  { id: "4", name: "Oreille d'or", icon: "🎧", unlocked: true },
+  { id: "5", name: "Éclair", icon: "⚡", unlocked: true },
+  { id: "6", name: "Perfectionniste", icon: "💎", unlocked: false },
+  { id: "7", name: "Vétéran", icon: "🏆", unlocked: false },
+  { id: "8", name: "Légende", icon: "👑", unlocked: false },
+  { id: "9", name: "Mélomane absolu", icon: "🎵", unlocked: false },
 ];
 
 // TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
 const MOCK_RECENT_ACTIVITIES = [
   {
     id: "1",
-    name: "Partie BlurChette",
+    name: "Partie Blurchette",
     detail: "Score : 8/10",
     relativeDate: "Il y a 2h",
   },
@@ -124,10 +127,7 @@ export default function ProfileScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
-            <Text style={styles.settingsIcon}>⚙️</Text>
-            <Text style={styles.settingsText}>Paramètres</Text>
-          </TouchableOpacity>
+          
         </View>
 
         {/* ── Statistiques ── */}
@@ -145,19 +145,54 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Mes préférences</Text>
 
           <Text style={styles.subSectionTitle}>TOP Artistes</Text>
-          <View style={styles.artistsRow}>
-            {MOCK_TOP_ARTISTS.map((artist) => (
-              <View key={artist.id} style={styles.artistItem}>
-                <View style={styles.artistAvatar}>
-                  {artist.avatarUrl ? (
-                    <Image source={{ uri: artist.avatarUrl }} style={styles.artistAvatarImage} />
-                  ) : (
-                    <Text style={styles.artistAvatarFallback}>🎤</Text>
-                  )}
-                </View>
-                <Text style={styles.artistName} numberOfLines={1}>{artist.name}</Text>
+          <View style={styles.podium}>
+            {/* 2e place */}
+            <View style={styles.podiumItem}>
+              <Text style={styles.podiumMedal}>🥈</Text>
+              <View style={[styles.podiumAvatar, styles.podiumAvatar2]}>
+                {MOCK_TOP_ARTISTS[1]?.avatarUrl ? (
+                  <Image source={{ uri: MOCK_TOP_ARTISTS[1].avatarUrl }} style={styles.podiumAvatarImage2} />
+                ) : (
+                  <Text style={styles.podiumAvatarFallback}>🎤</Text>
+                )}
               </View>
-            ))}
+              <Text style={styles.podiumName} numberOfLines={1}>{MOCK_TOP_ARTISTS[1]?.name}</Text>
+              <View style={[styles.podiumBase, styles.podiumBase2]}>
+                <Text style={styles.podiumRank}>2</Text>
+              </View>
+            </View>
+
+            {/* 1re place */}
+            <View style={styles.podiumItem}>
+              <Text style={styles.podiumMedal}>🥇</Text>
+              <View style={[styles.podiumAvatar, styles.podiumAvatar1]}>
+                {MOCK_TOP_ARTISTS[0]?.avatarUrl ? (
+                  <Image source={{ uri: MOCK_TOP_ARTISTS[0].avatarUrl }} style={styles.podiumAvatarImage1} />
+                ) : (
+                  <Text style={[styles.podiumAvatarFallback, { fontSize: 30 }]}>🎤</Text>
+                )}
+              </View>
+              <Text style={[styles.podiumName, styles.podiumName1]} numberOfLines={1}>{MOCK_TOP_ARTISTS[0]?.name}</Text>
+              <View style={[styles.podiumBase, styles.podiumBase1]}>
+                <Text style={[styles.podiumRank, styles.podiumRank1]}>1</Text>
+              </View>
+            </View>
+
+            {/* 3e place */}
+            <View style={styles.podiumItem}>
+              <Text style={styles.podiumMedal}>🥉</Text>
+              <View style={[styles.podiumAvatar, styles.podiumAvatar3]}>
+                {MOCK_TOP_ARTISTS[2]?.avatarUrl ? (
+                  <Image source={{ uri: MOCK_TOP_ARTISTS[2].avatarUrl }} style={styles.podiumAvatarImage3} />
+                ) : (
+                  <Text style={[styles.podiumAvatarFallback, { fontSize: 18 }]}>🎤</Text>
+                )}
+              </View>
+              <Text style={styles.podiumName} numberOfLines={1}>{MOCK_TOP_ARTISTS[2]?.name}</Text>
+              <View style={[styles.podiumBase, styles.podiumBase3]}>
+                <Text style={styles.podiumRank}>3</Text>
+              </View>
+            </View>
           </View>
 
           <Text style={styles.subSectionTitle}>TOP Genres</Text>
@@ -176,7 +211,7 @@ export default function ProfileScreen() {
 
         {/* ── Succès & Récompenses ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Succès & Récompenses</Text>
+          <Text style={styles.sectionTitleCentered}>Succès & Récompenses</Text>
           <View style={styles.badgesGrid}>
             {MOCK_BADGES.map((badge) => (
               <View
@@ -317,6 +352,13 @@ const styles = StyleSheet.create({
     borderLeftColor: Colors.primary.CTA,
     paddingLeft: 10,
   },
+  sectionTitleCentered: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.dark.text,
+    marginBottom: 14,
+    textAlign: "center",
+  },
   subSectionTitle: {
     fontSize: 14,
     fontWeight: "600",
@@ -351,39 +393,95 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // Artists
-  artistsRow: {
+  // Podium TOP Artistes
+  podium: {
     flexDirection: "row",
-    gap: 16,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 8,
     marginBottom: 18,
   },
-  artistItem: {
+  podiumItem: {
     flex: 1,
     alignItems: "center",
-    gap: 6,
   },
-  artistAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  podiumMedal: {
+    fontSize: 20,
+    marginBottom: 6,
+  },
+  podiumAvatar: {
+    borderRadius: 100,
     backgroundColor: "#1A1A1A",
-    borderWidth: 1,
-    borderColor: "#2A2A2A",
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 6,
   },
-  artistAvatarImage: {
+  podiumAvatar1: {
+    width: 72,
+    height: 72,
+    borderColor: "#FFD700",
+  },
+  podiumAvatar2: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderColor: "#C0C0C0",
   },
-  artistAvatarFallback: {
-    fontSize: 24,
+  podiumAvatar3: {
+    width: 48,
+    height: 48,
+    borderColor: "#CD7F32",
   },
-  artistName: {
-    fontSize: 12,
+  podiumAvatarImage1: { width: 72, height: 72, borderRadius: 36 },
+  podiumAvatarImage2: { width: 56, height: 56, borderRadius: 28 },
+  podiumAvatarImage3: { width: 48, height: 48, borderRadius: 24 },
+  podiumAvatarFallback: {
+    fontSize: 22,
+  },
+  podiumName: {
+    fontSize: 11,
     color: Colors.dark.text,
     textAlign: "center",
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  podiumName1: {
+    fontSize: 12,
+    color: "#FFD700",
+  },
+  podiumBase: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+  },
+  podiumBase1: {
+    height: 70,
+    backgroundColor: "#2A2200",
+    borderTopWidth: 2,
+    borderColor: "#FFD700",
+  },
+  podiumBase2: {
+    height: 50,
+    backgroundColor: "#1E1E1E",
+    borderTopWidth: 2,
+    borderColor: "#C0C0C0",
+  },
+  podiumBase3: {
+    height: 35,
+    backgroundColor: "#1A1209",
+    borderTopWidth: 2,
+    borderColor: "#CD7F32",
+  },
+  podiumRank: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: Colors.dark.icon,
+  },
+  podiumRank1: {
+    color: "#FFD700",
+    fontSize: 20,
   },
 
   // Genres
@@ -424,7 +522,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   badgeItem: {
-    width: "29%",
+    width: "31%",
     backgroundColor: "#1A1A1A",
     borderRadius: 12,
     padding: 12,
