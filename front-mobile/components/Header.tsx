@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Href, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
   ViewStyle,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -33,6 +34,7 @@ export default function Header({
   titleStyle,
 }: HeaderProps) {
   const { top } = useSafeAreaInsets();
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const hasBack =
     typeof showBack === "boolean" ? showBack : variant === "withBack";
@@ -42,6 +44,11 @@ export default function Header({
   const shouldAddGap = hasBack || hasSettings || wantsCenteredTitle;
 
   const handleBackPress = () => {
+    setIsModalVisible(true);
+  };
+
+  const confirmBack = () => {
+    setIsModalVisible(false);
     if (onBack) {
       onBack();
       return;
@@ -60,64 +67,102 @@ export default function Header({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: top + 12 }, style]}>
-      <View style={[styles.content, shouldAddGap && styles.contentGapped]}>
-        <View
-          style={[
-            styles.sideSlot,
-            !hasBack &&
-              (wantsCenteredTitle
-                ? styles.slotPlaceholder
-                : styles.slotCollapsed),
-          ]}
-        >
-          {hasBack && (
-            <TouchableOpacity
-              onPress={handleBackPress}
-              activeOpacity={0.8}
-              style={styles.iconButton}
-              accessibilityLabel="Retour"
-            >
-              <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
-        </View>
+    <>
+      <View style={[styles.container, { paddingTop: top + 12 }, style]}>
+        <View style={[styles.content, shouldAddGap && styles.contentGapped]}>
+          <View
+            style={[
+              styles.sideSlot,
+              !hasBack &&
+                (wantsCenteredTitle
+                  ? styles.slotPlaceholder
+                  : styles.slotCollapsed),
+            ]}
+          >
+            {hasBack && (
+              <TouchableOpacity
+                onPress={handleBackPress}
+                activeOpacity={0.8}
+                style={styles.iconButton}
+                accessibilityLabel="Retour"
+              >
+                <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+          </View>
 
-        <Text
-          numberOfLines={1}
-          accessibilityRole="header"
-          style={[
-            styles.title,
-            wantsCenteredTitle ? styles.titleCentered : styles.titleLeft,
-            titleStyle,
-          ]}
-        >
-          {title}
-        </Text>
+          <Text
+            numberOfLines={1}
+            accessibilityRole="header"
+            style={[
+              styles.title,
+              wantsCenteredTitle ? styles.titleCentered : styles.titleLeft,
+              titleStyle,
+            ]}
+          >
+            {title}
+          </Text>
 
-        <View
-          style={[
-            styles.sideSlot,
-            hasSettings
-              ? undefined
-              : wantsCenteredTitle
-                ? styles.slotPlaceholder
-                : styles.slotCollapsed,
-          ]}
-        >
-          {hasSettings && (
-            <TouchableOpacity
-              onPress={handleSettingsPress}
-              activeOpacity={0.8}
-              style={styles.iconButton}
-              accessibilityLabel="Ouvrir les paramètres"
-            >
-              <Ionicons name="settings-sharp" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
+          <View
+            style={[
+              styles.sideSlot,
+              hasSettings
+                ? undefined
+                : wantsCenteredTitle
+                  ? styles.slotPlaceholder
+                  : styles.slotCollapsed,
+            ]}
+          >
+            {hasSettings && (
+              <TouchableOpacity
+                onPress={handleSettingsPress}
+                activeOpacity={0.8}
+                style={styles.iconButton}
+                accessibilityLabel="Ouvrir les paramètres"
+              >
+                <Ionicons name="settings-sharp" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
-    </View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.modalCard}>
+            <Text style={[styles.title, styles.modalTitle]}>Attention</Text>
+            <Text style={styles.modalText}>
+              Êtes-vous sûr de vouloir retourner en arrière ?
+            </Text>
+
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[
+                  styles.iconButton,
+                  styles.confirmBtn,
+                  { backgroundColor: "#323232" },
+                ]}
+                onPress={() => setIsModalVisible(false)}
+              >
+                <Text style={styles.btnLabel}>Non</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.iconButton, styles.confirmBtn]}
+                onPress={confirmBack}
+              >
+                <Text style={styles.btnLabel}>Oui</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -172,5 +217,50 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.18)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: "#121212",
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 0.2,
+    borderColor: "#14FFEC",
+  },
+  modalTitle: {
+    color: "#0D7377",
+    fontSize: 24,
+    marginBottom: 8,
+    textShadowRadius: 0,
+  },
+  modalText: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 24,
+    color: "#FFFFFF",
+    fontFamily: "Bold",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  confirmBtn: {
+    width: 80,
+    backgroundColor: "#0D7377",
+  },
+  btnLabel: {
+    color: "#FFFFFF",
+    fontFamily: "Bold",
+    fontSize: 16,
+    textShadowColor: "rgba(255, 255, 255, 0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
 });
