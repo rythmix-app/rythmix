@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  Alert,
   View,
   Text,
   StyleSheet,
@@ -21,25 +20,27 @@ import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { useAuthStore } from "@/stores/authStore";
 import { ApiError } from "@/types/auth";
+import { useToast } from "@/components/Toast";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login, isLoading } = useAuthStore();
+  const { show } = useToast();
 
   const validateForm = () => {
     if (!email.trim()) {
-      Alert.alert("Erreur", "L'email est requis");
+      show({ type: "error", message: "L'email est requis" });
       return false;
     }
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Erreur", "L'email n'est pas valide");
+      show({ type: "error", message: "L'email n'est pas valide" });
       return false;
     }
     if (!password) {
-      Alert.alert("Erreur", "Le mot de passe est requis");
+      show({ type: "error", message: "Le mot de passe est requis" });
       return false;
     }
     return true;
@@ -55,7 +56,10 @@ export default function LoginScreen() {
       router.replace("/(tabs)");
     } catch (error) {
       const apiError = error as ApiError;
-      Alert.alert("Erreur", apiError.message || "Une erreur est survenue");
+      show({
+        type: "error",
+        message: apiError.message || "Une erreur est survenue",
+      });
     }
   };
 
