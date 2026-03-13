@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,10 +14,12 @@ import { Colors } from "@/constants/Colors";
 import { Game } from "@/types/games";
 import * as gameService from "@/services/gameService";
 import { GameCard } from "@/components/games/GameCard";
+import { useToast } from "@/components/Toast";
 
 export default function GamesScreen() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const { show } = useToast();
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -40,9 +41,7 @@ export default function GamesScreen() {
       const gameRoute = game.name.toLowerCase().replace(/\s+/g, "");
       router.push(`/games/${gameRoute}` as any);
     } else {
-      Alert.alert(game.name, "Ce jeu n'est pas encore disponible.", [
-        { text: "OK" },
-      ]);
+      show({ type: "warning", message: `${game.name} n'est pas encore disponible.` });
     }
   };
 
@@ -68,11 +67,7 @@ export default function GamesScreen() {
           g.id === game.id ? { ...g, isFavorite: !g.isFavorite } : g,
         ),
       );
-      Alert.alert(
-        "Erreur",
-        "Impossible de modifier les favoris. Veuillez réessayer.",
-        [{ text: "OK" }],
-      );
+      show({ type: "error", message: "Impossible de modifier les favoris. Veuillez réessayer." });
       console.error("Failed to toggle favorite:", error);
     }
   };

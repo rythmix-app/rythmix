@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   Keyboard,
@@ -22,6 +21,7 @@ import { GameErrorFeedback } from "@/components/GameErrorFeedback";
 import { Colors } from "@/constants/Colors";
 import { deezerAPI, DeezerGenre, DeezerTrack } from "@/services/deezer-api";
 import { useAuthStore } from "@/stores/authStore";
+import { useToast } from "@/components/Toast";
 import { useSettingsStore } from "@/stores/settingsStore";
 import {
   createGameSession,
@@ -116,6 +116,7 @@ export default function BlurchetteGameScreen() {
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const user = useAuthStore((state) => state.user);
   const { errorAnimationsEnabled } = useSettingsStore();
+  const { show } = useToast();
   const { shakeAnimation, borderOpacity, errorMessage, triggerError } =
     useErrorFeedback(errorAnimationsEnabled);
 
@@ -130,7 +131,7 @@ export default function BlurchetteGameScreen() {
       setGenres(filteredGenres);
     } catch (error) {
       console.error("Failed to load genres:", error);
-      Alert.alert("Erreur", "Impossible de charger les genres musicaux");
+      show({ type: "error", message: "Impossible de charger les genres musicaux" });
     } finally {
       setLoadingGenres(false);
     }
@@ -143,7 +144,7 @@ export default function BlurchetteGameScreen() {
       const response = await deezerAPI.getGenreTracks(genre.id, 50);
 
       if (!response.data || response.data.length === 0) {
-        Alert.alert("Erreur", "Aucune musique trouvée pour ce genre");
+        show({ type: "error", message: "Aucune musique trouvée pour ce genre" });
         return;
       }
 
@@ -211,7 +212,7 @@ export default function BlurchetteGameScreen() {
       setGameState("playing");
     } catch (error) {
       console.error("Failed to load tracks:", error);
-      Alert.alert("Erreur", "Impossible de charger les musiques");
+      show({ type: "error", message: "Impossible de charger les musiques" });
     } finally {
       setLoadingTrack(false);
     }

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -26,6 +25,7 @@ import {
   DeezerTrack,
 } from "@/services/deezer-api";
 import { useAuthStore } from "@/stores/authStore";
+import { useToast } from "@/components/Toast";
 import { useSettingsStore } from "@/stores/settingsStore";
 import {
   createGameSession,
@@ -168,6 +168,7 @@ export default function TracklistGameScreen() {
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const user = useAuthStore((state) => state.user);
   const { errorAnimationsEnabled } = useSettingsStore();
+  const { show } = useToast();
   const { shakeAnimation, borderOpacity, triggerError } = useErrorFeedback(
     errorAnimationsEnabled,
   );
@@ -224,7 +225,7 @@ export default function TracklistGameScreen() {
       setGenres(filteredGenres);
     } catch (error) {
       console.error("Failed to load genres:", error);
-      Alert.alert("Erreur", "Impossible de charger les genres musicaux");
+      show({ type: "error", message: "Impossible de charger les genres musicaux" });
     } finally {
       setLoadingGenres(false);
     }
@@ -238,7 +239,7 @@ export default function TracklistGameScreen() {
       const artistsResponse = await deezerAPI.getGenreTopArtists(genre.id, 25);
 
       if (!artistsResponse.data || artistsResponse.data.length === 0) {
-        Alert.alert("Erreur", "Aucun artiste trouvé pour ce genre");
+        show({ type: "error", message: "Aucun artiste trouvé pour ce genre" });
         return;
       }
 
@@ -246,7 +247,7 @@ export default function TracklistGameScreen() {
       setGameState("artistSelection");
     } catch (error) {
       console.error("Failed to load artists:", error);
-      Alert.alert("Erreur", "Impossible de charger les artistes");
+      show({ type: "error", message: "Impossible de charger les artistes" });
     } finally {
       setLoadingAlbum(false);
     }
@@ -260,7 +261,7 @@ export default function TracklistGameScreen() {
       const albumsResponse = await deezerAPI.getArtistAlbums(artist.id, 25);
 
       if (!albumsResponse.data || albumsResponse.data.length === 0) {
-        Alert.alert("Erreur", "Aucun album trouvé pour cet artiste");
+        show({ type: "error", message: "Aucun album trouvé pour cet artiste" });
         return;
       }
 
@@ -274,7 +275,7 @@ export default function TracklistGameScreen() {
       setGameState("albumSelection");
     } catch (error) {
       console.error("Failed to load albums:", error);
-      Alert.alert("Erreur", "Impossible de charger les albums");
+      show({ type: "error", message: "Impossible de charger les albums" });
     } finally {
       setLoadingAlbum(false);
     }
@@ -292,10 +293,7 @@ export default function TracklistGameScreen() {
       const tracksResponse = await deezerAPI.getAlbumTracks(album.id);
 
       if (!tracksResponse.data || tracksResponse.data.length < 5) {
-        Alert.alert(
-          "Album insuffisant",
-          "Cet album n'a pas assez de titres. Choisissez-en un autre.",
-        );
+        show({ type: "warning", message: "Cet album n'a pas assez de titres. Choisissez-en un autre." });
         return;
       }
 
@@ -340,7 +338,7 @@ export default function TracklistGameScreen() {
       setGameState("playing");
     } catch (error) {
       console.error("Failed to start game:", error);
-      Alert.alert("Erreur", "Impossible de démarrer la partie");
+      show({ type: "error", message: "Impossible de démarrer la partie" });
     } finally {
       setLoadingAlbum(false);
     }

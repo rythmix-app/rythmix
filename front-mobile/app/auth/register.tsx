@@ -5,7 +5,6 @@ import { RythmixLogo } from "@/components/RythmixLogo";
 import { useState } from "react";
 import PasswordStrengthIndicator from "@/components/auth/PasswordStrengthIndicator";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import {
 } from "react-native";
 import { useAuthStore } from "@/stores/authStore";
 import { ApiError } from "@/types/auth";
+import { useToast } from "@/components/Toast";
 
 export default function RegisterScreen() {
   const [firstName, setFirstName] = useState("");
@@ -25,41 +25,42 @@ export default function RegisterScreen() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptNewsletter, setAcceptNewsletter] = useState(false);
   const { register, isLoading } = useAuthStore();
+  const { show } = useToast();
 
   const validateForm = () => {
     if (!firstName.trim()) {
-      Alert.alert("Erreur", "Le prénom est requis");
+      show({ type: "error", message: "Le prénom est requis" });
       return false;
     }
     if (!lastName.trim()) {
-      Alert.alert("Erreur", "Le nom est requis");
+      show({ type: "error", message: "Le nom est requis" });
       return false;
     }
     if (!email.trim()) {
-      Alert.alert("Erreur", "L'email est requis");
+      show({ type: "error", message: "L'email est requis" });
       return false;
     }
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Erreur", "L'email n'est pas valide");
+      show({ type: "error", message: "L'email n'est pas valide" });
       return false;
     }
     if (!username.trim()) {
-      Alert.alert("Erreur", "Le nom d'utilisateur est requis");
+      show({ type: "error", message: "Le nom d'utilisateur est requis" });
       return false;
     }
     if (!password) {
-      Alert.alert("Erreur", "Le mot de passe est requis");
+      show({ type: "error", message: "Le mot de passe est requis" });
       return false;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Erreur", "Les mots de passe ne correspondent pas");
+      show({ type: "error", message: "Les mots de passe ne correspondent pas" });
       return false;
     }
     if (!acceptTerms) {
-      Alert.alert("Erreur", "Vous devez accepter les conditions d'utilisation");
+      show({ type: "error", message: "Vous devez accepter les conditions d'utilisation" });
       return false;
     }
     return true;
@@ -78,15 +79,11 @@ export default function RegisterScreen() {
         email,
         password,
       });
-      Alert.alert("Succès", "Votre compte a été créé avec succès !", [
-        {
-          text: "OK",
-          onPress: () => router.replace("/auth/login"),
-        },
-      ]);
+      show({ type: "success", message: "Votre compte a été créé avec succès !" });
+      router.replace("/auth/login");
     } catch (error) {
       const apiError = error as ApiError;
-      Alert.alert("Erreur", apiError.message || "Une erreur est survenue");
+      show({ type: "error", message: apiError.message || "Une erreur est survenue" });
     }
   };
 
