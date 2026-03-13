@@ -56,11 +56,17 @@ export default function RegisterScreen() {
     }
 
     if (password !== confirmPassword) {
-      show({ type: "error", message: "Les mots de passe ne correspondent pas" });
+      show({
+        type: "error",
+        message: "Les mots de passe ne correspondent pas",
+      });
       return false;
     }
     if (!acceptTerms) {
-      show({ type: "error", message: "Vous devez accepter les conditions d'utilisation" });
+      show({
+        type: "error",
+        message: "Vous devez accepter les conditions d'utilisation",
+      });
       return false;
     }
     return true;
@@ -79,11 +85,17 @@ export default function RegisterScreen() {
         email,
         password,
       });
-      show({ type: "success", message: "Votre compte a été créé avec succès !" });
+      show({
+        type: "success",
+        message: "Votre compte a été créé avec succès !",
+      });
       router.replace("/auth/login");
     } catch (error) {
       const apiError = error as ApiError;
-      show({ type: "error", message: apiError.message || "Une erreur est survenue" });
+      show({
+        type: "error",
+        message: apiError.message || "Une erreur est survenue",
+      });
     }
   };
 

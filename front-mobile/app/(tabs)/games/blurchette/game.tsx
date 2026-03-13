@@ -131,7 +131,10 @@ export default function BlurchetteGameScreen() {
       setGenres(filteredGenres);
     } catch (error) {
       console.error("Failed to load genres:", error);
-      show({ type: "error", message: "Impossible de charger les genres musicaux" });
+      show({
+        type: "error",
+        message: "Impossible de charger les genres musicaux",
+      });
     } finally {
       setLoadingGenres(false);
     }
@@ -144,7 +147,10 @@ export default function BlurchetteGameScreen() {
       const response = await deezerAPI.getGenreTracks(genre.id, 50);
 
       if (!response.data || response.data.length === 0) {
-        show({ type: "error", message: "Aucune musique trouvée pour ce genre" });
+        show({
+          type: "error",
+          message: "Aucune musique trouvée pour ce genre",
+        });
         return;
       }
 

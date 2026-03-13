@@ -226,7 +226,10 @@ export default function TracklistGameScreen() {
       setGenres(filteredGenres);
     } catch (error) {
       console.error("Failed to load genres:", error);
-      show({ type: "error", message: "Impossible de charger les genres musicaux" });
+      show({
+        type: "error",
+        message: "Impossible de charger les genres musicaux",
+      });
     } finally {
       setLoadingGenres(false);
     }
@@ -294,7 +297,10 @@ export default function TracklistGameScreen() {
       const tracksResponse = await deezerAPI.getAlbumTracks(album.id);
 
       if (!tracksResponse.data || tracksResponse.data.length < 5) {
-        show({ type: "warning", message: "Cet album n'a pas assez de titres. Choisissez-en un autre." });
+        show({
+          type: "warning",
+          message: "Cet album n'a pas assez de titres. Choisissez-en un autre.",
+        });
         return;
       }
 

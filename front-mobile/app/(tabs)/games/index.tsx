@@ -41,7 +41,10 @@ export default function GamesScreen() {
       const gameRoute = game.name.toLowerCase().replace(/\s+/g, "");
       router.push(`/games/${gameRoute}` as any);
     } else {
-      show({ type: "warning", message: `${game.name} n'est pas encore disponible.` });
+      show({
+        type: "warning",
+        message: `${game.name} n'est pas encore disponible.`,
+      });
     }
   };
 
@@ -67,7 +70,10 @@ export default function GamesScreen() {
           g.id === game.id ? { ...g, isFavorite: !g.isFavorite } : g,
         ),
       );
-      show({ type: "error", message: "Impossible de modifier les favoris. Veuillez réessayer." });
+      show({
+        type: "error",
+        message: "Impossible de modifier les favoris. Veuillez réessayer.",
+      });
       console.error("Failed to toggle favorite:", error);
     }
   };

@@ -78,13 +78,15 @@ const WarningIcon = ({ color }: { color: string }) => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    <Path
-      d="M12 9v4"
+    <Path d="M12 9v4" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    <Circle
+      cx="12"
+      cy="17"
+      r="0.5"
+      fill={color}
       stroke={color}
-      strokeWidth="1.8"
-      strokeLinecap="round"
+      strokeWidth="1"
     />
-    <Circle cx="12" cy="17" r="0.5" fill={color} stroke={color} strokeWidth="1" />
   </Svg>
 );
 
@@ -135,14 +137,26 @@ function ToastDisplay({
   const progressWidth = useSharedValue(1);
 
   const triggerDismiss = () => {
-    translateY.value = withTiming(-100, { duration: 300, easing: Easing.in(Easing.cubic) });
-    opacity.value = withTiming(0, { duration: 300, easing: Easing.in(Easing.cubic) });
+    translateY.value = withTiming(-100, {
+      duration: 300,
+      easing: Easing.in(Easing.cubic),
+    });
+    opacity.value = withTiming(0, {
+      duration: 300,
+      easing: Easing.in(Easing.cubic),
+    });
     setTimeout(onDismiss, 320);
   };
 
   useEffect(() => {
-    translateY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
-    opacity.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) });
+    translateY.value = withTiming(0, {
+      duration: 400,
+      easing: Easing.out(Easing.cubic),
+    });
+    opacity.value = withTiming(1, {
+      duration: 400,
+      easing: Easing.out(Easing.cubic),
+    });
     progressWidth.value = withTiming(0, { duration });
 
     const timer = setTimeout(triggerDismiss, duration);

@@ -56,7 +56,10 @@ export default function LoginScreen() {
       router.replace("/(tabs)");
     } catch (error) {
       const apiError = error as ApiError;
-      show({ type: "error", message: apiError.message || "Une erreur est survenue" });
+      show({
+        type: "error",
+        message: apiError.message || "Une erreur est survenue",
+      });
     }
   };
 
@@ -140,7 +143,7 @@ export default function LoginScreen() {
                 style={{ marginTop: 24, width: "100%" }}
               />
 
-<View style={styles.bottomRow}>
+              <View style={styles.bottomRow}>
                 <Text style={styles.bottomText}>
                   Tu n’as pas encore de compte ?{" "}
                 </Text>
