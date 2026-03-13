@@ -502,7 +502,7 @@ export default function TracklistGameScreen() {
   if (gameState === "genreSelection") {
     return (
       <>
-        <Header title="Tracklist" variant="withBack" />
+        <Header title="Tracklist" variant="withBack" isGame={true} />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -562,7 +562,7 @@ export default function TracklistGameScreen() {
   if (gameState === "artistSelection") {
     return (
       <>
-        <Header title="Tracklist" variant="withBack" />
+        <Header title="Tracklist" variant="withBack" isGame={true} />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -616,7 +616,7 @@ export default function TracklistGameScreen() {
   if (gameState === "albumSelection") {
     return (
       <>
-        <Header title="Tracklist" variant="withBack" />
+        <Header title="Tracklist" variant="withBack" isGame={true} />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -690,7 +690,7 @@ export default function TracklistGameScreen() {
         animationsEnabled={errorAnimationsEnabled}
       >
         <>
-          <Header title="Tracklist" variant="withBack" />
+          <Header title="Tracklist" variant="withBack" isGame={true} />
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}

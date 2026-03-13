@@ -16,6 +16,7 @@ export interface HeaderProps {
   title: string;
   showSettings?: boolean;
   showBack?: boolean;
+  isGame?: boolean;
   onBack?: () => void;
   onSettings?: () => void;
   variant?: "simple" | "withMenu" | "withBack";
@@ -27,6 +28,7 @@ export default function Header({
   title,
   showSettings,
   showBack,
+  isGame = false,
   onBack,
   onSettings,
   variant = "simple",
@@ -44,10 +46,14 @@ export default function Header({
   const shouldAddGap = hasBack || hasSettings || wantsCenteredTitle;
 
   const handleBackPress = () => {
-    setIsModalVisible(true);
+    if (isGame && hasBack) {
+      setIsModalVisible(true);
+    } else {
+      executeBack();
+    }
   };
 
-  const confirmBack = () => {
+  const executeBack = () => {
     setIsModalVisible(false);
     if (onBack) {
       onBack();
@@ -137,7 +143,7 @@ export default function Header({
           <View style={styles.modalCard}>
             <Text style={[styles.title, styles.modalTitle]}>Attention</Text>
             <Text style={styles.modalText}>
-              Êtes-vous sûr de vouloir retourner en arrière ?
+              Êtes-vous sûr de vouloir quitter la partie en cours ?
             </Text>
 
             <View style={styles.buttonRow}>
@@ -145,7 +151,7 @@ export default function Header({
                 style={[
                   styles.iconButton,
                   styles.confirmBtn,
-                  { backgroundColor: "#323232" },
+                  styles.btnSecondary,
                 ]}
                 onPress={() => setIsModalVisible(false)}
               >
@@ -154,7 +160,7 @@ export default function Header({
 
               <TouchableOpacity
                 style={[styles.iconButton, styles.confirmBtn]}
-                onPress={confirmBack}
+                onPress={executeBack}
               >
                 <Text style={styles.btnLabel}>Oui</Text>
               </TouchableOpacity>
@@ -220,7 +226,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.8)",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
@@ -229,38 +235,40 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#121212",
     borderRadius: 24,
-    padding: 24,
+    padding: 28,
     alignItems: "center",
     borderWidth: 0.2,
     borderColor: "#14FFEC",
   },
   modalTitle: {
-    color: "#0D7377",
-    fontSize: 24,
-    marginBottom: 8,
-    textShadowRadius: 0,
+    flex: 0,
+    fontSize: 28,
+    marginBottom: 16,
+    textAlign: "center",
   },
   modalText: {
     fontSize: 18,
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 32,
     color: "#FFFFFF",
     fontFamily: "Bold",
   },
   buttonRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
   },
   confirmBtn: {
-    width: 80,
+    width: 100,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "#0D7377",
+  },
+  btnSecondary: {
+    backgroundColor: "#323232",
   },
   btnLabel: {
     color: "#FFFFFF",
     fontFamily: "Bold",
     fontSize: 16,
-    textShadowColor: "rgba(255, 255, 255, 0.2)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
   },
 });
