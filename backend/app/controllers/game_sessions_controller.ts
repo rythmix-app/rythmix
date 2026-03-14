@@ -164,6 +164,26 @@ export default class GameSessionsController {
   }
 
   @ApiOperation({
+    summary: 'Get my game sessions',
+    description:
+      'Retrieve all game sessions for the authenticated user, optionally filtered by status',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiResponse({ status: 200, description: 'Game sessions retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Error while fetching game sessions' })
+  public async mySessions({ auth, request, response }: HttpContext) {
+    try {
+      const userId = auth.user!.id
+      const status = request.qs().status as string | undefined
+      const gameSessions = await this.gameSessionService.getMySessionsByUserId(userId, status)
+      return response.json({ gameSessions })
+    } catch (error) {
+      return response.status(500).json({ message: 'Error while fetching game sessions' })
+    }
+  }
+
+  @ApiOperation({
     summary: 'Get sessions by status',
     description: 'Retrieve all game sessions with a specific status (pending, active, completed)',
   })

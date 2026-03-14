@@ -1,10 +1,14 @@
 export type GameSessionStatus = "pending" | "active" | "completed";
 
+export interface GameSessionPlayer {
+  userId: string;
+}
+
 export interface GameSession {
   id: string;
   gameId: number;
   status: GameSessionStatus;
-  players: Record<string, string>;
+  players: GameSessionPlayer[];
   gameData: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -13,14 +17,14 @@ export interface GameSession {
 export interface CreateGameSessionRequest {
   gameId: number;
   status?: GameSessionStatus;
-  players?: Record<string, string>;
+  players?: GameSessionPlayer[];
   gameData?: Record<string, unknown>;
 }
 
 export interface UpdateGameSessionRequest {
   gameId?: number;
   status?: GameSessionStatus;
-  players?: Record<string, string>;
+  players?: GameSessionPlayer[];
   gameData?: Record<string, unknown>;
 }
 
@@ -42,6 +46,10 @@ export interface GetGameSessionsByStatusResponse {
 
 export interface DeleteGameSessionResponse {
   message: string;
+}
+
+export interface GetMyGameSessionsResponse {
+  gameSessions: GameSession[];
 }
 
 // Types spécifiques pour le jeu Blurchette
