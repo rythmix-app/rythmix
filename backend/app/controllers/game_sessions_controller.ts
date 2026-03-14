@@ -184,6 +184,27 @@ export default class GameSessionsController {
   }
 
   @ApiOperation({
+    summary: 'Get my active session for a game',
+    description:
+      'Retrieve the active game session of the authenticated user for a specific game, or null if none exists. If multiple active sessions exist, returns the most recent one.',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiParam({ name: 'gameId', description: 'Game ID', required: true })
+  @ApiResponse({ status: 200, description: 'Active game session or null' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Error while fetching active game session' })
+  public async myActiveSession({ auth, params, response }: HttpContext) {
+    try {
+      const userId = auth.user!.id
+      const gameId = Number(params.gameId)
+      const gameSession = await this.gameSessionService.getMyActiveSessionByGameId(userId, gameId)
+      return response.json({ gameSession: gameSession ?? null })
+    } catch (error) {
+      return response.status(500).json({ message: 'Error while fetching active game session' })
+    }
+  }
+
+  @ApiOperation({
     summary: 'Get sessions by status',
     description: 'Retrieve all game sessions with a specific status (pending, active, completed)',
   })

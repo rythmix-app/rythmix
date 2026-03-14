@@ -109,6 +109,16 @@ export class GameSessionService {
     }
     return query.orderBy('created_at', 'desc')
   }
+
+  public async getMyActiveSessionByGameId(userId: string, gameId: number) {
+    return GameSession.query()
+      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+      .where('game_id', gameId)
+      .where('status', 'active')
+      .preload('game')
+      .orderBy('created_at', 'desc')
+      .first()
+  }
 }
 
 export default GameSessionService

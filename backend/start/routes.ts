@@ -93,6 +93,9 @@ router
       .group(() => {
         router.get('/', [GameSessionsController, 'index'])
         router.get('/me', [GameSessionsController, 'mySessions']).use(middleware.auth())
+        router
+          .get('/me/game/:gameId/active', [GameSessionsController, 'myActiveSession'])
+          .use(middleware.auth())
         router.post('/', [GameSessionsController, 'create']).use(middleware.auth())
         router.get('/:id', [GameSessionsController, 'show'])
         router.get('/:gameId/sessions', [GameSessionsController, 'getByGame'])
