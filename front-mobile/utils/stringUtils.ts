@@ -66,7 +66,7 @@ export const fuzzyMatch = (
   const normalizedInput = normalizeString(input, true);
   const normalizedTarget = normalizeString(target, true);
 
-  if (normalizedInput.length === 0) return false;
+  if (normalizedInput.length === 0 || normalizedTarget.length === 0) return false;
 
   // Exact match always succeeds, regardless of length (handles short titles like "OG")
   if (normalizedInput === normalizedTarget) return true;

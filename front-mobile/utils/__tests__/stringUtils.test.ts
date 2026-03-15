@@ -60,6 +60,10 @@ describe("fuzzyMatch", () => {
     expect(fuzzyMatch("", "anything")).toBe(false);
   });
 
+  it("returns false for empty target (avoids String.includes('') false positive)", () => {
+    expect(fuzzyMatch("anything", "")).toBe(false);
+  });
+
   it("returns false for input shorter than 3 chars with no exact match", () => {
     expect(fuzzyMatch("ab", "abcdef")).toBe(false);
   });
