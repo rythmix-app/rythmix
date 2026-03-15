@@ -100,8 +100,8 @@ export function FavoriteGamesSection() {
           />
           <Text style={styles.emptyTitle}>Aucun jeu favori</Text>
           <Text style={styles.emptySubtitle}>
-            Marque tes jeux préférés depuis l'onglet Jeux pour les retrouver
-            ici.
+            Marque tes jeux préférés depuis l&apos;onglet Jeux pour les
+            retrouver ici.
           </Text>
         </View>
       ) : (
