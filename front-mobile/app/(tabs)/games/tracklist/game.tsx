@@ -30,9 +30,14 @@ import { useToast } from "@/components/Toast";
 import { useSettingsStore } from "@/stores/settingsStore";
 import {
   createGameSession,
+  getMyActiveSession,
   updateGameSession,
 } from "@/services/gameSessionService";
-import { TracklistGameData, TrackAnswer } from "@/types/gameSession";
+import {
+  GameSession,
+  TracklistGameData,
+  TrackAnswer,
+} from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
 
@@ -160,6 +165,9 @@ export default function TracklistGameScreen() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState(false);
   const [validatedAnswers, setValidatedAnswers] = useState<TrackAnswer[]>([]);
+  // MIX-255: used to offer "Resume" or "New game" when an active session exists
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [activeSession, setActiveSession] = useState<GameSession | null>(null);
 
   const inputRef = useRef<TextInput>(null);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -176,6 +184,18 @@ export default function TracklistGameScreen() {
 
   useEffect(() => {
     loadGenres();
+    if (gameId) {
+      const timeout = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), 5000),
+      );
+      Promise.race([getMyActiveSession(Number(gameId)), timeout])
+        .then((session) => {
+          console.log("[MIX-267] Tracklist active session:", session);
+          setActiveSession(session);
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Timer effect

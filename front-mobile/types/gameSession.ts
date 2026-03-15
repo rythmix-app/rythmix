@@ -52,6 +52,10 @@ export interface GetMyGameSessionsResponse {
   gameSessions: GameSession[];
 }
 
+export interface GetMyActiveGameSessionResponse {
+  gameSession: GameSession | null;
+}
+
 // Types spécifiques pour le jeu Blurchette
 export interface BlurchetteAttempt {
   answer: string;

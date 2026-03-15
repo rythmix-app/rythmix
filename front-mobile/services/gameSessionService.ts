@@ -8,6 +8,7 @@ import {
   GetGameSessionResponse,
   GetGameSessionsByGameIdResponse,
   GetGameSessionsByStatusResponse,
+  GetMyActiveGameSessionResponse,
   GetMyGameSessionsResponse,
   UpdateGameSessionRequest,
 } from "@/types/gameSession";
@@ -81,4 +82,13 @@ export const getMyGameSessions = async (
     : "/api/game-sessions/me";
   const data = await get<GetMyGameSessionsResponse>(url);
   return data.gameSessions;
+};
+
+export const getMyActiveSession = async (
+  gameId: number,
+): Promise<GameSession | null> => {
+  const data = await get<GetMyActiveGameSessionResponse>(
+    `/api/game-sessions/me/game/${gameId}/active`,
+  );
+  return data.gameSession;
 };
