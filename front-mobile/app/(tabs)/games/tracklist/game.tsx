@@ -40,6 +40,7 @@ import {
 } from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
+import { fuzzyMatch } from "@/utils/stringUtils";
 
 type GameState =
   | "genreSelection"
@@ -59,86 +60,7 @@ interface AnswerFeedback {
 }
 
 const GAME_DURATION = 300; // 5 minutes in seconds
-const MIN_SIMILARITY_THRESHOLD = 0.75; // Seuil de similarité pour le fuzzy matching (0–1) : plus proche de 1 = plus strict
 const ALBUM_CHOICES = 6; // Number of albums proposed in the selection screen
-
-const normalizeString = (str: string): string => {
-  return str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-};
-
-const levenshteinDistance = (a: string, b: string): number => {
-  const lenA = a.length;
-  const lenB = b.length;
-
-  if (lenA === 0) return lenB;
-  if (lenB === 0) return lenA;
-
-  // Optimisation mémoire : conserver uniquement deux lignes au lieu de la matrice complète
-  let previousRow: number[] = new Array(lenA + 1);
-  let currentRow: number[] = new Array(lenA + 1);
-
-  for (let j = 0; j <= lenA; j++) {
-    previousRow[j] = j;
-  }
-
-  for (let i = 1; i <= lenB; i++) {
-    currentRow[0] = i;
-    const charB = b.charCodeAt(i - 1);
-
-    for (let j = 1; j <= lenA; j++) {
-      const cost = a.charCodeAt(j - 1) === charB ? 0 : 1;
-      currentRow[j] = Math.min(
-        previousRow[j] + 1,
-        currentRow[j - 1] + 1,
-        previousRow[j - 1] + cost,
-      );
-    }
-
-    const temp = previousRow;
-    previousRow = currentRow;
-    currentRow = temp;
-  }
-
-  return previousRow[lenA];
-};
-
-const fuzzyMatch = (input: string, target: string): boolean => {
-  const normalizedInput = normalizeString(input);
-  const normalizedTarget = normalizeString(target);
-
-  if (normalizedInput.length < 3) return false;
-
-  // Exact substring match first
-  if (
-    normalizedTarget.includes(normalizedInput) ||
-    normalizedInput.includes(normalizedTarget)
-  ) {
-    return true;
-  }
-
-  // Garde : rejeter les paires de longueurs trop différentes avant le calcul coûteux
-  const minLength = Math.min(normalizedInput.length, normalizedTarget.length);
-  const maxLength = Math.max(normalizedInput.length, normalizedTarget.length);
-
-  if (minLength === 0) {
-    return false;
-  }
-
-  const lengthRatio = minLength / maxLength;
-  if (lengthRatio < 0.5) {
-    return false;
-  }
-
-  // Fuzzy match with Levenshtein similarity
-  const distance = levenshteinDistance(normalizedInput, normalizedTarget);
-  return 1 - distance / maxLength >= MIN_SIMILARITY_THRESHOLD;
-};
 
 export default function TracklistGameScreen() {
   const [gameState, setGameState] = useState<GameState>("genreSelection");
