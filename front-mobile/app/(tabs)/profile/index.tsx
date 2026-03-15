@@ -88,7 +88,9 @@ function getMemberSince(createdAt?: string): string {
   if (diffMonths === 1) return "membre depuis 1 mois";
   if (diffMonths < 12) return `membre depuis ${diffMonths} mois`;
   const diffYears = Math.floor(diffMonths / 12);
-  return diffYears === 1 ? "membre depuis 1 an" : `membre depuis ${diffYears} ans`;
+  return diffYears === 1
+    ? "membre depuis 1 an"
+    : `membre depuis ${diffYears} ans`;
 }
 
 export default function ProfileScreen() {
@@ -106,7 +108,10 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <Text style={styles.avatarInitials}>
-                {user ? user.firstName[0].toUpperCase() + user.lastName[0].toUpperCase() : "??"}
+                {user
+                  ? user.firstName[0].toUpperCase() +
+                    user.lastName[0].toUpperCase()
+                  : "??"}
               </Text>
             </View>
           </View>
@@ -126,8 +131,6 @@ export default function ProfileScreen() {
               Niveau {MOCK_LEVEL.level} — {MOCK_LEVEL.title}
             </Text>
           </View>
-
-          
         </View>
 
         {/* ── Statistiques ── */}
@@ -151,12 +154,17 @@ export default function ProfileScreen() {
               <Text style={styles.podiumMedal}>🥈</Text>
               <View style={[styles.podiumAvatar, styles.podiumAvatar2]}>
                 {MOCK_TOP_ARTISTS[1]?.avatarUrl ? (
-                  <Image source={{ uri: MOCK_TOP_ARTISTS[1].avatarUrl }} style={styles.podiumAvatarImage2} />
+                  <Image
+                    source={{ uri: MOCK_TOP_ARTISTS[1].avatarUrl }}
+                    style={styles.podiumAvatarImage2}
+                  />
                 ) : (
                   <Text style={styles.podiumAvatarFallback}>🎤</Text>
                 )}
               </View>
-              <Text style={styles.podiumName} numberOfLines={1}>{MOCK_TOP_ARTISTS[1]?.name}</Text>
+              <Text style={styles.podiumName} numberOfLines={1}>
+                {MOCK_TOP_ARTISTS[1]?.name}
+              </Text>
               <View style={[styles.podiumBase, styles.podiumBase2]}>
                 <Text style={styles.podiumRank}>2</Text>
               </View>
@@ -167,12 +175,22 @@ export default function ProfileScreen() {
               <Text style={styles.podiumMedal}>🥇</Text>
               <View style={[styles.podiumAvatar, styles.podiumAvatar1]}>
                 {MOCK_TOP_ARTISTS[0]?.avatarUrl ? (
-                  <Image source={{ uri: MOCK_TOP_ARTISTS[0].avatarUrl }} style={styles.podiumAvatarImage1} />
+                  <Image
+                    source={{ uri: MOCK_TOP_ARTISTS[0].avatarUrl }}
+                    style={styles.podiumAvatarImage1}
+                  />
                 ) : (
-                  <Text style={[styles.podiumAvatarFallback, { fontSize: 30 }]}>🎤</Text>
+                  <Text style={[styles.podiumAvatarFallback, { fontSize: 30 }]}>
+                    🎤
+                  </Text>
                 )}
               </View>
-              <Text style={[styles.podiumName, styles.podiumName1]} numberOfLines={1}>{MOCK_TOP_ARTISTS[0]?.name}</Text>
+              <Text
+                style={[styles.podiumName, styles.podiumName1]}
+                numberOfLines={1}
+              >
+                {MOCK_TOP_ARTISTS[0]?.name}
+              </Text>
               <View style={[styles.podiumBase, styles.podiumBase1]}>
                 <Text style={[styles.podiumRank, styles.podiumRank1]}>1</Text>
               </View>
@@ -183,12 +201,19 @@ export default function ProfileScreen() {
               <Text style={styles.podiumMedal}>🥉</Text>
               <View style={[styles.podiumAvatar, styles.podiumAvatar3]}>
                 {MOCK_TOP_ARTISTS[2]?.avatarUrl ? (
-                  <Image source={{ uri: MOCK_TOP_ARTISTS[2].avatarUrl }} style={styles.podiumAvatarImage3} />
+                  <Image
+                    source={{ uri: MOCK_TOP_ARTISTS[2].avatarUrl }}
+                    style={styles.podiumAvatarImage3}
+                  />
                 ) : (
-                  <Text style={[styles.podiumAvatarFallback, { fontSize: 18 }]}>🎤</Text>
+                  <Text style={[styles.podiumAvatarFallback, { fontSize: 18 }]}>
+                    🎤
+                  </Text>
                 )}
               </View>
-              <Text style={styles.podiumName} numberOfLines={1}>{MOCK_TOP_ARTISTS[2]?.name}</Text>
+              <Text style={styles.podiumName} numberOfLines={1}>
+                {MOCK_TOP_ARTISTS[2]?.name}
+              </Text>
               <View style={[styles.podiumBase, styles.podiumBase3]}>
                 <Text style={styles.podiumRank}>3</Text>
               </View>
@@ -201,7 +226,10 @@ export default function ProfileScreen() {
               <Text style={styles.genreName}>{genre.name}</Text>
               <View style={styles.progressBar}>
                 <View
-                  style={[styles.progressFill, { width: `${genre.percentage}%` }]}
+                  style={[
+                    styles.progressFill,
+                    { width: `${genre.percentage}%` },
+                  ]}
                 />
               </View>
               <Text style={styles.genrePercent}>{genre.percentage}%</Text>
@@ -216,12 +244,20 @@ export default function ProfileScreen() {
             {MOCK_BADGES.map((badge) => (
               <View
                 key={badge.id}
-                style={[styles.badgeItem, !badge.unlocked && styles.badgeLocked]}
+                style={[
+                  styles.badgeItem,
+                  !badge.unlocked && styles.badgeLocked,
+                ]}
               >
                 <Text style={styles.badgeIcon}>
                   {badge.unlocked ? badge.icon : "🔒"}
                 </Text>
-                <Text style={[styles.badgeName, !badge.unlocked && styles.badgeNameLocked]}>
+                <Text
+                  style={[
+                    styles.badgeName,
+                    !badge.unlocked && styles.badgeNameLocked,
+                  ]}
+                >
                   {badge.name}
                 </Text>
               </View>
