@@ -1,4 +1,5 @@
 import GameSession from '#models/game_session'
+import { GameSessionStatus } from '#enums/game_session_status'
 
 export class GameSessionService {
   public async getAll() {
@@ -114,7 +115,7 @@ export class GameSessionService {
     return GameSession.query()
       .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
       .where('game_id', gameId)
-      .where('status', 'active')
+      .where('status', GameSessionStatus.Active)
       .preload('game')
       .orderBy('created_at', 'desc')
       .first()

@@ -105,6 +105,25 @@ test.group('GameSessionsController - Functional', (group) => {
     res.assertBodyContains({ message: 'GameSession not found' })
   })
 
+  test('PATCH /api/game-sessions/:id accepts canceled status', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('cancel')
+    const game = await createGame('cancel')
+    const session = await GameSession.create({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId: 'user-1', status: 'playing', score: 50, expGained: 25, rank: 1 }],
+      gameData: { round: 2 },
+    })
+
+    const res = await client
+      .patch(`/api/game-sessions/${session.id}`)
+      .bearerToken(token)
+      .json({ status: 'canceled' })
+
+    res.assertStatus(200)
+    assert.equal(res.body().status, 'canceled')
+  })
+
   test('DELETE /api/game-sessions/:id deletes record', async ({ client }) => {
     const { token } = await createAuthenticatedUser('delete')
     const game = await createGame('delete')
