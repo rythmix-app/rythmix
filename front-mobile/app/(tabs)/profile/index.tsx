@@ -12,7 +12,7 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 
-// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
+// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'APIii
 const MOCK_STATS = {
   swipes: 142,
   matchs: 87,
