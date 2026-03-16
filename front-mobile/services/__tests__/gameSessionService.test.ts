@@ -10,14 +10,14 @@ import {
   getMyActiveSession,
 } from "../gameSessionService";
 
+import { get, post, patch, del } from "../api";
+
 jest.mock("../api", () => ({
   get: jest.fn(),
   post: jest.fn(),
   patch: jest.fn(),
   del: jest.fn(),
 }));
-
-import { get, post, patch, del } from "../api";
 
 const mockGet = get as jest.MockedFunction<typeof get>;
 const mockPost = post as jest.MockedFunction<typeof post>;
