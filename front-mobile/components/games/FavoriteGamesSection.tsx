@@ -1,11 +1,9 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -49,16 +47,39 @@ function FavoriteGameCard({ game }: { game: Game }) {
       onPress={handlePress}
     >
       <Animated.View style={[styles.card, animatedStyle]}>
+        <LinearGradient
+          colors={["#0d1f1f", "#0a1a2e"]}
+          style={StyleSheet.absoluteFillObject}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+
+        {/* Glow border */}
+        <View style={styles.cardBorder} />
+
+        {/* Icon zone */}
         <View style={styles.iconContainer}>
-          <MaterialIcons name={gameIcon.name} size={36} color="#D8E7E7" />
           <LinearGradient
-            colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0.45)"]}
+            colors={["#1a3a3a", "#0d2233"]}
             style={StyleSheet.absoluteFillObject}
           />
+          <MaterialIcons name={gameIcon.name} size={40} color={Colors.primary.survol} />
         </View>
-        <Text numberOfLines={2} style={styles.cardTitle}>
-          {game.name}
-        </Text>
+
+        {/* Footer */}
+        <View style={styles.cardFooter}>
+          <Text numberOfLines={1} style={styles.cardTitle}>
+            {game.name}
+          </Text>
+          <MaterialIcons name="chevron-right" size={14} color={Colors.primary.survol} />
+        </View>
+
+        {/* Enabled badge */}
+        {!game.isEnabled && (
+          <View style={styles.disabledBadge}>
+            <Text style={styles.disabledText}>Bientôt</Text>
+          </View>
+        )}
       </Animated.View>
     </Pressable>
   );
@@ -68,52 +89,65 @@ export function FavoriteGamesSection() {
   const [favoriteGames, setFavoriteGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    gameService
-      .getMyFavoriteGames()
-      .then((games) => {
-        setFavoriteGames(games.sort((a) => (a.isEnabled ? -1 : 1)));
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      gameService
+        .getMyFavoriteGames()
+        .then((games) => {
+          setFavoriteGames(games.sort((a) => (a.isEnabled ? -1 : 1)));
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    }, [])
+  );
 
   return (
     <View style={styles.section}>
+      {/* Header */}
       <View style={styles.sectionHeader}>
-        <MaterialIcons name="star" size={22} color={Colors.primary.survol} />
-        <Text style={styles.sectionTitle}>Jeux favoris</Text>
+        <View style={styles.sectionTitleRow}>
+          <MaterialIcons name="star" size={20} color={Colors.primary.survol} />
+          <Text style={styles.sectionTitle}>Jeux favoris</Text>
+        </View>
+        <Pressable onPress={() => router.push("/(tabs)/games" as any)}>
+          <Text style={styles.seeAll}>Voir tout</Text>
+        </Pressable>
       </View>
 
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={Colors.primary.survol}
-          style={styles.loader}
-        />
-      ) : favoriteGames.length === 0 ? (
-        <View style={styles.emptyState}>
-          <MaterialIcons
-            name="star-border"
-            size={32}
-            color={Colors.primary.CTA}
-          />
-          <Text style={styles.emptyTitle}>Aucun jeu favori</Text>
-          <Text style={styles.emptySubtitle}>
-            Marque tes jeux préférés depuis l&apos;onglet Jeux pour les
-            retrouver ici.
-          </Text>
+        <View style={styles.grid}>
+          {[1, 2, 3, 4].map((i) => (
+            <View key={i} style={styles.skeleton} />
+          ))}
         </View>
-      ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.carousel}
+      ) : favoriteGames.length === 0 ? (
+        <Pressable
+          style={styles.emptyState}
+          onPress={() => router.push("/(tabs)/games" as any)}
         >
+          <LinearGradient
+            colors={["#0d1a1a", "#0a1520"]}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={styles.emptyIconWrap}>
+            <MaterialIcons name="star-border" size={28} color={Colors.primary.survol} />
+          </View>
+          <Text style={styles.emptyTitle}>Aucun favori</Text>
+          <Text style={styles.emptySubtitle}>
+            Ajoute des jeux depuis l&apos;onglet Jeux
+          </Text>
+          <View style={styles.emptyAction}>
+            <Text style={styles.emptyActionText}>Explorer les jeux</Text>
+            <MaterialIcons name="arrow-forward" size={14} color={Colors.primary.CTA} />
+          </View>
+        </Pressable>
+      ) : (
+        <View style={styles.grid}>
           {favoriteGames.map((game) => (
             <FavoriteGameCard key={game.id} game={game} />
           ))}
-        </ScrollView>
+        </View>
       )}
     </View>
   );
@@ -121,67 +155,128 @@ export function FavoriteGamesSection() {
 
 const styles = StyleSheet.create({
   section: {
-    marginTop: 28,
+    marginTop: 32,
   },
+
+  // Header
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    marginBottom: 14,
   },
   sectionTitle: {
     color: Colors.dark.text,
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "Bold",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
-  loader: {
-    marginTop: 12,
+  seeAll: {
+    color: Colors.primary.CTA,
+    fontSize: 13,
+    fontFamily: "Regular",
   },
-  carousel: {
-    gap: 12,
-    paddingRight: 4,
-  },
+
+  // Card
   card: {
-    width: 120,
-    height: 140,
-    borderRadius: 16,
-    backgroundColor: "#121212",
-    padding: 12,
+    width: 140,
+    height: 160,
+    borderRadius: 18,
+    overflow: "hidden",
+    padding: 14,
     alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    shadowColor: "#14FFEC",
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
+    justifyContent: "space-between",
+  },
+  cardBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(20, 255, 236, 0.18)",
   },
   iconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 12,
-    backgroundColor: "#161c27",
+    width: 76,
+    height: 76,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(20, 255, 236, 0.12)",
+  },
+  cardFooter: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   cardTitle: {
     color: "#FFFFFF",
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "Bold",
-    textAlign: "center",
+    flex: 1,
   },
-  emptyState: {
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    backgroundColor: "#121212",
-    borderRadius: 16,
+  disabledBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(245, 165, 36, 0.2)",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: "#F5A524",
+  },
+  disabledText: {
+    color: "#F5A524",
+    fontSize: 10,
+    fontFamily: "Bold",
+  },
+
+  // Grid
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 12,
+  },
+
+  // Skeleton loader
+  skeleton: {
+    width: 140,
+    height: 160,
+    borderRadius: 18,
+    backgroundColor: "#141414",
     borderWidth: 1,
     borderColor: "#1e1e1e",
+    opacity: 0.6,
+  },
+
+  // Empty state
+  emptyState: {
+    borderRadius: 18,
+    overflow: "hidden",
+    padding: 24,
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "rgba(20, 255, 236, 0.12)",
+  },
+  emptyIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(20, 255, 236, 0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: "rgba(20, 255, 236, 0.15)",
   },
   emptyTitle: {
     color: Colors.dark.text,
@@ -189,10 +284,25 @@ const styles = StyleSheet.create({
     fontFamily: "Bold",
   },
   emptySubtitle: {
-    color: "#666",
-    fontSize: 13,
+    color: "#555",
+    fontSize: 12,
     fontFamily: "Regular",
     textAlign: "center",
-    lineHeight: 18,
+  },
+  emptyAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary.CTA,
+  },
+  emptyActionText: {
+    color: Colors.primary.CTA,
+    fontSize: 13,
+    fontFamily: "Bold",
   },
 });

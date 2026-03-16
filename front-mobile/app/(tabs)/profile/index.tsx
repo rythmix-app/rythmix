@@ -1,5 +1,6 @@
+import { MaterialIcons } from "@expo/vector-icons";
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
@@ -86,7 +87,7 @@ function getMemberSince(createdAt?: string): string {
 }
 
 export default function ProfileScreen() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
@@ -267,6 +268,12 @@ export default function ProfileScreen() {
             </View>
           ))}
         </View>
+
+        {/* ── Déconnexion ── */}
+        <Pressable style={styles.logoutButton} onPress={logout}>
+          <MaterialIcons name="logout" size={18} color="#FF4D4D" />
+          <Text style={styles.logoutText}>Se déconnecter</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -605,5 +612,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.game.textMuted,
     flexShrink: 0,
+  },
+
+  // Logout
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FF4D4D",
+    marginTop: 8,
+  },
+  logoutText: {
+    color: "#FF4D4D",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
