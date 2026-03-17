@@ -2,12 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -63,7 +58,11 @@ function FavoriteGameCard({ game }: { game: Game }) {
             colors={["#1a3a3a", "#0d2233"]}
             style={StyleSheet.absoluteFillObject}
           />
-          <MaterialIcons name={gameIcon.name} size={40} color={Colors.primary.survol} />
+          <MaterialIcons
+            name={gameIcon.name}
+            size={40}
+            color={Colors.primary.survol}
+          />
         </View>
 
         {/* Footer */}
@@ -71,7 +70,11 @@ function FavoriteGameCard({ game }: { game: Game }) {
           <Text numberOfLines={1} style={styles.cardTitle}>
             {game.name}
           </Text>
-          <MaterialIcons name="chevron-right" size={14} color={Colors.primary.survol} />
+          <MaterialIcons
+            name="chevron-right"
+            size={14}
+            color={Colors.primary.survol}
+          />
         </View>
 
         {/* Enabled badge */}
@@ -99,7 +102,7 @@ export function FavoriteGamesSection() {
         })
         .catch(console.error)
         .finally(() => setLoading(false));
-    }, [])
+    }, []),
   );
 
   return (
@@ -131,7 +134,11 @@ export function FavoriteGamesSection() {
             style={StyleSheet.absoluteFillObject}
           />
           <View style={styles.emptyIconWrap}>
-            <MaterialIcons name="star-border" size={28} color={Colors.primary.survol} />
+            <MaterialIcons
+              name="star-border"
+              size={28}
+              color={Colors.primary.survol}
+            />
           </View>
           <Text style={styles.emptyTitle}>Aucun favori</Text>
           <Text style={styles.emptySubtitle}>
@@ -139,7 +146,11 @@ export function FavoriteGamesSection() {
           </Text>
           <View style={styles.emptyAction}>
             <Text style={styles.emptyActionText}>Explorer les jeux</Text>
-            <MaterialIcons name="arrow-forward" size={14} color={Colors.primary.CTA} />
+            <MaterialIcons
+              name="arrow-forward"
+              size={14}
+              color={Colors.primary.CTA}
+            />
           </View>
         </Pressable>
       ) : (

@@ -1,6 +1,13 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Image, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Pressable,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Colors } from "@/constants/Colors";
