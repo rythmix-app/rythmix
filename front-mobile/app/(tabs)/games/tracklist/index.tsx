@@ -7,11 +7,13 @@ import Button from "@/components/Button";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/Colors";
 import { getAllGames } from "@/services/gameService";
+import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
 export default function TracklistIndexScreen() {
   const [gameId, setGameId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const { markGameAsPlayed } = usePlayedGamesStore();
 
   useEffect(() => {
     loadGameId();
@@ -36,6 +38,7 @@ export default function TracklistIndexScreen() {
 
   const handleStartGame = () => {
     if (gameId) {
+      markGameAsPlayed(gameId);
       router.push({
         pathname: "/games/tracklist/game",
         params: { gameId: gameId.toString() },

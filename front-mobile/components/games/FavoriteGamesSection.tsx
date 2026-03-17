@@ -13,10 +13,12 @@ import { Colors } from "@/constants/Colors";
 import * as gameService from "@/services/gameService";
 import { Game } from "@/types/games";
 import { getGameIcon } from "@/utils/games";
+import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
 function FavoriteGameCard({ game }: { game: Game }) {
   const scale = useSharedValue(1);
   const gameIcon = getGameIcon(game.name);
+  const playedGameIds = usePlayedGamesStore((state) => state.playedGameIds);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -32,7 +34,14 @@ function FavoriteGameCard({ game }: { game: Game }) {
 
   const handlePress = () => {
     const gameRoute = game.name.toLowerCase().replace(/\s+/g, "");
-    router.push(`/games/${gameRoute}` as any);
+    if (playedGameIds.includes(game.id)) {
+      router.push({
+        pathname: `/games/${gameRoute}/game` as any,
+        params: { gameId: game.id.toString() },
+      });
+    } else {
+      router.push(`/games/${gameRoute}` as any);
+    }
   };
 
   return (
