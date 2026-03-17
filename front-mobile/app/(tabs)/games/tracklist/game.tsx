@@ -16,6 +16,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
 import Header from "@/components/Header";
+import { GameErrorFeedback } from "@/components/GameErrorFeedback";
 import { Colors } from "@/constants/Colors";
 import {
   deezerAPI,
@@ -25,12 +26,20 @@ import {
   DeezerTrack,
 } from "@/services/deezer-api";
 import { useAuthStore } from "@/stores/authStore";
+import { useToast } from "@/components/Toast";
+import { useSettingsStore } from "@/stores/settingsStore";
 import {
   createGameSession,
+  getMyActiveSession,
   updateGameSession,
 } from "@/services/gameSessionService";
-import { TracklistGameData, TrackAnswer } from "@/types/gameSession";
+import {
+  GameSession,
+  TracklistGameData,
+  TrackAnswer,
+} from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useErrorFeedback } from "@/hooks/useErrorFeedback";
 
 type GameState =
   | "genreSelection"
@@ -156,6 +165,9 @@ export default function TracklistGameScreen() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState(false);
   const [validatedAnswers, setValidatedAnswers] = useState<TrackAnswer[]>([]);
+  // MIX-255: used to offer "Resume" or "New game" when an active session exists
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [activeSession, setActiveSession] = useState<GameSession | null>(null);
 
   const inputRef = useRef<TextInput>(null);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,9 +176,26 @@ export default function TracklistGameScreen() {
 
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const user = useAuthStore((state) => state.user);
+  const { errorAnimationsEnabled } = useSettingsStore();
+  const { show } = useToast();
+  const { shakeAnimation, borderOpacity, triggerError } = useErrorFeedback(
+    errorAnimationsEnabled,
+  );
 
   useEffect(() => {
     loadGenres();
+    if (gameId) {
+      const timeout = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), 5000),
+      );
+      Promise.race([getMyActiveSession(Number(gameId)), timeout])
+        .then((session) => {
+          console.log("[MIX-267] Tracklist active session:", session);
+          setActiveSession(session);
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Timer effect
@@ -217,7 +246,10 @@ export default function TracklistGameScreen() {
       setGenres(filteredGenres);
     } catch (error) {
       console.error("Failed to load genres:", error);
-      Alert.alert("Erreur", "Impossible de charger les genres musicaux");
+      show({
+        type: "error",
+        message: "Impossible de charger les genres musicaux",
+      });
     } finally {
       setLoadingGenres(false);
     }
@@ -231,7 +263,7 @@ export default function TracklistGameScreen() {
       const artistsResponse = await deezerAPI.getGenreTopArtists(genre.id, 25);
 
       if (!artistsResponse.data || artistsResponse.data.length === 0) {
-        Alert.alert("Erreur", "Aucun artiste trouvé pour ce genre");
+        show({ type: "error", message: "Aucun artiste trouvé pour ce genre" });
         return;
       }
 
@@ -239,7 +271,7 @@ export default function TracklistGameScreen() {
       setGameState("artistSelection");
     } catch (error) {
       console.error("Failed to load artists:", error);
-      Alert.alert("Erreur", "Impossible de charger les artistes");
+      show({ type: "error", message: "Impossible de charger les artistes" });
     } finally {
       setLoadingAlbum(false);
     }
@@ -253,7 +285,7 @@ export default function TracklistGameScreen() {
       const albumsResponse = await deezerAPI.getArtistAlbums(artist.id, 25);
 
       if (!albumsResponse.data || albumsResponse.data.length === 0) {
-        Alert.alert("Erreur", "Aucun album trouvé pour cet artiste");
+        show({ type: "error", message: "Aucun album trouvé pour cet artiste" });
         return;
       }
 
@@ -267,7 +299,7 @@ export default function TracklistGameScreen() {
       setGameState("albumSelection");
     } catch (error) {
       console.error("Failed to load albums:", error);
-      Alert.alert("Erreur", "Impossible de charger les albums");
+      show({ type: "error", message: "Impossible de charger les albums" });
     } finally {
       setLoadingAlbum(false);
     }
@@ -285,10 +317,10 @@ export default function TracklistGameScreen() {
       const tracksResponse = await deezerAPI.getAlbumTracks(album.id);
 
       if (!tracksResponse.data || tracksResponse.data.length < 5) {
-        Alert.alert(
-          "Album insuffisant",
-          "Cet album n'a pas assez de titres. Choisissez-en un autre.",
-        );
+        show({
+          type: "warning",
+          message: "Cet album n'a pas assez de titres. Choisissez-en un autre.",
+        });
         return;
       }
 
@@ -319,7 +351,7 @@ export default function TracklistGameScreen() {
       const session = await createGameSession({
         gameId: parseInt(gameId, 10),
         status: "active",
-        players: { [user.id]: user.username },
+        players: [{ userId: user.id }],
         gameData: gameData as unknown as Record<string, unknown>,
       });
 
@@ -333,7 +365,7 @@ export default function TracklistGameScreen() {
       setGameState("playing");
     } catch (error) {
       console.error("Failed to start game:", error);
-      Alert.alert("Erreur", "Impossible de démarrer la partie");
+      show({ type: "error", message: "Impossible de démarrer la partie" });
     } finally {
       setLoadingAlbum(false);
     }
@@ -390,6 +422,7 @@ export default function TracklistGameScreen() {
       }
     } else {
       setCurrentInput("");
+      triggerError();
       showFeedback("wrong", "Essaie encore !");
     }
 
@@ -403,30 +436,34 @@ export default function TracklistGameScreen() {
     if (!currentAlbum || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
 
-    setIsTimerRunning(false);
-    const usedFoundIds = finalFoundIds ?? foundTrackIds;
-    const usedAnswers = finalAnswers ?? validatedAnswers;
-    const score = usedFoundIds.size;
+    try {
+      setIsTimerRunning(false);
+      const usedFoundIds = finalFoundIds ?? foundTrackIds;
+      const usedAnswers = finalAnswers ?? validatedAnswers;
+      const score = usedFoundIds.size;
 
-    if (sessionId) {
-      try {
-        const finalData: Partial<TracklistGameData> = {
-          answers: usedAnswers,
-          score,
-          timeElapsed: GAME_DURATION - timeRemaining,
-          completedAt: new Date().toISOString(),
-        };
+      if (sessionId) {
+        try {
+          const finalData: Partial<TracklistGameData> = {
+            answers: usedAnswers,
+            score,
+            timeElapsed: GAME_DURATION - timeRemaining,
+            completedAt: new Date().toISOString(),
+          };
 
-        await updateGameSession(sessionId, {
-          status: "completed",
-          gameData: finalData as unknown as Record<string, unknown>,
-        });
-      } catch (err) {
-        console.error("Failed to update session:", err);
+          await updateGameSession(sessionId, {
+            status: "completed",
+            gameData: finalData as unknown as Record<string, unknown>,
+          });
+        } catch (err) {
+          console.error("Failed to update session:", err);
+        }
       }
-    }
 
-    setGameState("result");
+      setGameState("result");
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   const handleAbandon = () => {
@@ -494,7 +531,7 @@ export default function TracklistGameScreen() {
   if (gameState === "genreSelection") {
     return (
       <>
-        <Header title="Tracklist" variant="withBack" />
+        <Header title="Tracklist" variant="withBack" isGame={true} />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -554,7 +591,7 @@ export default function TracklistGameScreen() {
   if (gameState === "artistSelection") {
     return (
       <>
-        <Header title="Tracklist" variant="withBack" />
+        <Header title="Tracklist" variant="withBack" isGame={true} />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -608,7 +645,7 @@ export default function TracklistGameScreen() {
   if (gameState === "albumSelection") {
     return (
       <>
-        <Header title="Tracklist" variant="withBack" />
+        <Header title="Tracklist" variant="withBack" isGame={true} />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -675,153 +712,163 @@ export default function TracklistGameScreen() {
     const totalCount = currentAlbum.tracks.length;
 
     return (
-      <>
-        <Header title="Trackliste" variant="withBack" />
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-        >
-          {/* Badges compteur + chrono */}
-          <View style={styles.badgeRow}>
-            <View style={styles.badge}>
-              <ThemedText style={styles.badgeText}>
-                {foundCount}/{totalCount}{" "}
-                {foundCount > 1 ? "TROUVÉS" : "TROUVÉ"}
-              </ThemedText>
-            </View>
-            <View
-              style={[styles.badge, timeRemaining < 60 && styles.badgeWarning]}
-            >
-              <MaterialIcons
-                name="timer"
-                size={14}
-                color={
-                  timeRemaining < 60
-                    ? Colors.game.warning
-                    : Colors.primary.survol
-                }
-              />
-              <ThemedText
-                style={[
-                  styles.badgeText,
-                  timeRemaining < 60 && styles.badgeTextWarning,
-                ]}
-              >
-                {formatTime(timeRemaining)}
-              </ThemedText>
-            </View>
-          </View>
-
-          {/* Carte album */}
-          <View style={styles.albumCard}>
-            <Image
-              source={{ uri: currentAlbum.album.cover_xl }}
-              style={styles.coverImage}
-            />
-            <ThemedText style={styles.albumTitle}>
-              {currentAlbum.album.title}
-            </ThemedText>
-            <ThemedText style={styles.artistName}>
-              {currentAlbum.album.artist?.name ?? selectedArtist?.name}
-            </ThemedText>
-            <TouchableOpacity
-              style={styles.abandonButtonSmall}
-              onPress={handleAbandon}
-            >
-              <ThemedText style={styles.abandonText}>Abandonner</ThemedText>
-            </TouchableOpacity>
-          </View>
-
-          {/* Liste des titres (scrollable) */}
-          <ScrollView
-            style={styles.trackList}
-            contentContainerStyle={styles.trackListContent}
-            keyboardShouldPersistTaps="handled"
+      <GameErrorFeedback
+        shakeAnimation={shakeAnimation}
+        borderOpacity={borderOpacity}
+        errorMessage={null}
+        animationsEnabled={errorAnimationsEnabled}
+      >
+        <>
+          <Header title="Tracklist" variant="withBack" isGame={true} />
+          <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           >
-            {currentAlbum.tracks.map((track, index) => {
-              const isFound = foundTrackIds.has(track.id);
-              return (
-                <View key={track.id} style={styles.trackItem}>
-                  <ThemedText style={styles.trackNumber}>
-                    {index + 1}.
-                  </ThemedText>
-                  {isFound ? (
-                    <>
-                      <ThemedText style={styles.trackFound}>
-                        {track.title}
-                      </ThemedText>
-                      <MaterialIcons
-                        name="check-circle"
-                        size={16}
-                        color={Colors.game.success}
-                      />
-                    </>
-                  ) : (
-                    <ThemedText style={styles.trackHidden}>
-                      {track.title
-                        .split(" ")
-                        .map(
-                          (word) =>
-                            word.charAt(0).toUpperCase() +
-                            "_".repeat(Math.max(0, word.length - 1)),
-                        )
-                        .join(" ")}
-                    </ThemedText>
-                  )}
-                </View>
-              );
-            })}
-          </ScrollView>
-
-          {/* Feedback réponse + champ de saisie épinglé en bas */}
-          <View style={styles.inputWrapper}>
-            {answerFeedback && (
-              <View
-                style={[
-                  styles.feedbackBanner,
-                  answerFeedback.type === "correct"
-                    ? styles.feedbackCorrect
-                    : styles.feedbackWrong,
-                ]}
-              >
-                <ThemedText style={styles.feedbackText}>
-                  {answerFeedback.message}
+            {/* Badges compteur + chrono */}
+            <View style={styles.badgeRow}>
+              <View style={styles.badge}>
+                <ThemedText style={styles.badgeText}>
+                  {foundCount}/{totalCount}{" "}
+                  {foundCount > 1 ? "TROUVÉS" : "TROUVÉ"}
                 </ThemedText>
               </View>
-            )}
-            <View style={styles.inputContainer}>
-              <TextInput
-                ref={inputRef}
-                style={styles.singleInput}
-                placeholder="Tape un son..."
-                placeholderTextColor={Colors.game.textSubtle}
-                value={currentInput}
-                onChangeText={setCurrentInput}
-                onSubmitEditing={handleSubmitAnswer}
-                autoCorrect={false}
-                autoCapitalize="words"
-                returnKeyType="send"
-                blurOnSubmit={false}
-                accessibilityLabel="Saisir un titre de l'album"
-                accessibilityHint="Entrez un titre de chanson de l'album pour valider votre réponse"
-              />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={handleSubmitAnswer}
-                accessibilityLabel="Valider la réponse"
-                accessibilityRole="button"
+              <View
+                style={[
+                  styles.badge,
+                  timeRemaining < 60 && styles.badgeWarning,
+                ]}
               >
                 <MaterialIcons
-                  name="send"
-                  size={22}
-                  color={Colors.primary.survol}
+                  name="timer"
+                  size={14}
+                  color={
+                    timeRemaining < 60
+                      ? Colors.game.warning
+                      : Colors.primary.survol
+                  }
                 />
-              </TouchableOpacity>
+                <ThemedText
+                  style={[
+                    styles.badgeText,
+                    timeRemaining < 60 && styles.badgeTextWarning,
+                  ]}
+                >
+                  {formatTime(timeRemaining)}
+                </ThemedText>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
-      </>
+            <ScrollView
+              style={styles.trackList}
+              contentContainerStyle={styles.trackListContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Carte album */}
+              <View style={styles.albumCard}>
+                <Image
+                  source={{ uri: currentAlbum.album.cover_xl }}
+                  style={styles.coverImage}
+                />
+                <ThemedText style={styles.albumTitle}>
+                  {currentAlbum.album.title}
+                </ThemedText>
+                <ThemedText style={styles.artistName}>
+                  {currentAlbum.album.artist?.name ?? selectedArtist?.name}
+                </ThemedText>
+                <TouchableOpacity
+                  style={styles.abandonButtonSmall}
+                  onPress={handleAbandon}
+                >
+                  <ThemedText style={styles.abandonText}>Abandonner</ThemedText>
+                </TouchableOpacity>
+              </View>
+
+              {/* Liste des titres (scrollable) */}
+
+              {currentAlbum.tracks.map((track, index) => {
+                const isFound = foundTrackIds.has(track.id);
+                return (
+                  <View key={track.id} style={styles.trackItem}>
+                    <ThemedText style={styles.trackNumber}>
+                      {index + 1}.
+                    </ThemedText>
+                    {isFound ? (
+                      <>
+                        <ThemedText style={styles.trackFound}>
+                          {track.title}
+                        </ThemedText>
+                        <MaterialIcons
+                          name="check-circle"
+                          size={16}
+                          color={Colors.game.success}
+                        />
+                      </>
+                    ) : (
+                      <ThemedText style={styles.trackHidden}>
+                        {track.title
+                          .split(" ")
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() +
+                              "_".repeat(Math.max(0, word.length - 1)),
+                          )
+                          .join(" ")}
+                      </ThemedText>
+                    )}
+                  </View>
+                );
+              })}
+            </ScrollView>
+
+            {/* Feedback réponse + champ de saisie épinglé en bas */}
+            <View style={styles.inputWrapper}>
+              {answerFeedback && (
+                <View
+                  style={[
+                    styles.feedbackBanner,
+                    answerFeedback.type === "correct"
+                      ? styles.feedbackCorrect
+                      : styles.feedbackWrong,
+                  ]}
+                >
+                  <ThemedText style={styles.feedbackText}>
+                    {answerFeedback.message}
+                  </ThemedText>
+                </View>
+              )}
+              <View style={styles.inputContainer}>
+                <TextInput
+                  ref={inputRef}
+                  style={styles.singleInput}
+                  placeholder="Tape un son..."
+                  placeholderTextColor={Colors.game.textSubtle}
+                  value={currentInput}
+                  onChangeText={setCurrentInput}
+                  onSubmitEditing={handleSubmitAnswer}
+                  autoCorrect={false}
+                  autoCapitalize="words"
+                  returnKeyType="send"
+                  blurOnSubmit={false}
+                  accessibilityLabel="Saisir un titre de l'album"
+                  accessibilityHint="Entrez un titre de chanson de l'album pour valider votre réponse"
+                />
+                <TouchableOpacity
+                  style={styles.sendButton}
+                  onPress={handleSubmitAnswer}
+                  accessibilityLabel="Valider la réponse"
+                  accessibilityRole="button"
+                >
+                  <MaterialIcons
+                    name="send"
+                    size={22}
+                    color={Colors.primary.survol}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </>
+      </GameErrorFeedback>
     );
   }
 

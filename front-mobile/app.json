@@ -4,25 +4,37 @@
     "slug": "front-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/ios-dark.png",
+    "splash": {
+      "image": "./assets/images/ios-dark.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#343434"
+    },
     "scheme": "frontmobile",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.frontmobile",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": ["audio", "audio"],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/android-dark.png",
+        "backgroundColor": "#343434"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.frontmobile",
-      "permissions": ["INTERNET", "MODIFY_AUDIO_SETTINGS", "WAKE_LOCK"]
+      "permissions": [
+        "INTERNET",
+        "MODIFY_AUDIO_SETTINGS",
+        "WAKE_LOCK",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -34,10 +46,19 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "backgroundColor": "#343434",
+          "image": "./assets/images/logo-rythmix-light.png",
           "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "ios": {
+            "image": "./assets/images/ios-dark.png"
+          },
+          "android": {
+            "image": "./assets/images/android-dark.png",
+            "adaptiveIcon": {
+              "foregroundImage": "./assets/images/android-dark.png",
+              "backgroundColor": "#343434"
+            }
+          }
         }
       ],
       "expo-web-browser",
@@ -46,6 +67,19 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "160a02f5-15f4-41a9-bdd9-e402672188b0"
+      }
+    },
+    "owner": "aldo26",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/160a02f5-15f4-41a9-bdd9-e402672188b0"
     }
   }
 }

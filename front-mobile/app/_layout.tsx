@@ -11,6 +11,7 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
+import { ToastProvider } from "@/components/Toast";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -61,15 +62,17 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="auth" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="+not-found"
-          options={{ headerShown: true, title: "Page introuvable" }}
-        />
-      </Stack>
-      <StatusBar style="auto" />
+      <ToastProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="auth" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="+not-found"
+            options={{ headerShown: true, title: "Page introuvable" }}
+          />
+        </Stack>
+        <StatusBar style="auto" />
+      </ToastProvider>
     </ThemeProvider>
   );
 }
