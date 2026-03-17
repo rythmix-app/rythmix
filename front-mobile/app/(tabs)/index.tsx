@@ -5,6 +5,7 @@ import { router } from "expo-router";
 
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
+import { FavoriteGamesSection } from "@/components/games/FavoriteGamesSection";
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
@@ -27,6 +28,8 @@ export default function HomeScreen() {
             resizeMode="cover"
           />
         </Pressable>
+
+        <FavoriteGamesSection />
       </ScrollView>
     </SafeAreaView>
   );

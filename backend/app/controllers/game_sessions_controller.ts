@@ -9,6 +9,7 @@ import {
   ApiResponse,
   ApiSecurity,
 } from '@foadonis/openapi/decorators'
+import { GameSessionStatus } from '#enums/game_session_status'
 
 @inject()
 export default class GameSessionsController {
@@ -42,7 +43,11 @@ export default class GameSessionsController {
       required: ['gameId'],
       properties: {
         gameId: { type: 'integer', example: 1 },
-        status: { type: 'string', enum: ['pending', 'active', 'completed'], example: 'pending' },
+        status: {
+          type: 'string',
+          enum: Object.values(GameSessionStatus),
+          example: GameSessionStatus.Pending,
+        },
         players: { type: 'object', example: { player1: 'John', player2: 'Jane' } },
         gameData: { type: 'object', example: { score: 0, round: 1 } },
       },
@@ -98,7 +103,11 @@ export default class GameSessionsController {
       type: 'object',
       properties: {
         gameId: { type: 'integer', example: 1 },
-        status: { type: 'string', enum: ['pending', 'active', 'completed'], example: 'active' },
+        status: {
+          type: 'string',
+          enum: Object.values(GameSessionStatus),
+          example: GameSessionStatus.Active,
+        },
         players: { type: 'object', example: { player1: 'John', player2: 'Jane' } },
         gameData: { type: 'object', example: { score: 100, round: 3 } },
       },
@@ -206,11 +215,12 @@ export default class GameSessionsController {
 
   @ApiOperation({
     summary: 'Get sessions by status',
-    description: 'Retrieve all game sessions with a specific status (pending, active, completed)',
+    description:
+      'Retrieve all game sessions with a specific status (pending, active, completed, canceled)',
   })
   @ApiParam({
     name: 'status',
-    description: 'Session status (pending, active, completed)',
+    description: 'Session status (pending, active, completed, canceled)',
     required: true,
   })
   @ApiResponse({ status: 200, description: 'Game sessions retrieved successfully' })

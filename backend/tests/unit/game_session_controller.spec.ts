@@ -65,7 +65,7 @@ test.group('GameSessionsController - Unit', () => {
   test('create returns 201 when service returns model', async ({ assert }) => {
     const model = new GameSession()
     model.gameId = 1
-    model.status = 'en_cours'
+    model.status = 'active'
     ;(model as any).id = 'session-123'
 
     const service = { createGameSession: async () => model } as any
@@ -184,7 +184,7 @@ test.group('GameSessionsController - Unit', () => {
 
   test('update returns 200 with model on success', async ({ assert }) => {
     const model = new GameSession()
-    model.status = 'terminee'
+    model.status = 'completed'
     ;(model as any).id = 'session-5'
 
     const service = { updateGameSession: async () => model } as any
@@ -198,7 +198,7 @@ test.group('GameSessionsController - Unit', () => {
 
     assert.equal(response.statusCode, 200)
     console.log(response.body)
-    assert.equal(response.body.status, 'terminee')
+    assert.equal(response.body.status, 'completed')
   })
 
   test('update returns mapped status when service returns error object', async ({ assert }) => {

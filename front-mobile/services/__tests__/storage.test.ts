@@ -5,10 +5,18 @@ import * as storage from "../storage";
 
 // Mock des dépendances
 jest.mock("@react-native-async-storage/async-storage");
-jest.mock("expo-secure-store");
+jest.mock("expo-secure-store", () => ({
+  getItemAsync: jest.fn(),
+  setItemAsync: jest.fn(),
+  deleteItemAsync: jest.fn(),
+  isAvailableAsync: jest.fn().mockResolvedValue(true),
+}));
 jest.mock("react-native/Libraries/Utilities/Platform", () => ({
-  OS: "ios", // Tester en mode natif par défaut
-  select: jest.fn((obj: any) => obj.ios || obj.default),
+  __esModule: true,
+  default: {
+    OS: "ios",
+    select: jest.fn((obj: any) => obj.ios || obj.default),
+  },
 }));
 
 describe("storage service", () => {
