@@ -15,11 +15,13 @@ import { Game } from "@/types/games";
 import * as gameService from "@/services/gameService";
 import { GameCard } from "@/components/games/GameCard";
 import { useToast } from "@/components/Toast";
+import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
 export default function GamesScreen() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const { show } = useToast();
+  const playedGameIds = usePlayedGamesStore((state) => state.playedGameIds);
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -39,7 +41,14 @@ export default function GamesScreen() {
   const handleGamePress = (game: Game) => {
     if (game.isEnabled) {
       const gameRoute = game.name.toLowerCase().replace(/\s+/g, "");
-      router.push(`/games/${gameRoute}` as any);
+      if (playedGameIds.includes(game.id)) {
+        router.push({
+          pathname: `/games/${gameRoute}/game` as any,
+          params: { gameId: game.id.toString() },
+        });
+      } else {
+        router.push(`/games/${gameRoute}` as any);
+      }
     } else {
       show({
         type: "warning",

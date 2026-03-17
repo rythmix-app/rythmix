@@ -4,10 +4,12 @@ import {
   Alert,
   FlatList,
   Image,
+  Modal,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -141,6 +143,7 @@ const fuzzyMatch = (input: string, target: string): boolean => {
 };
 
 export default function TracklistGameScreen() {
+  const [showRules, setShowRules] = useState(false);
   const [gameState, setGameState] = useState<GameState>("genreSelection");
   const [genres, setGenres] = useState<DeezerGenre[]>([]);
   const [loadingGenres, setLoadingGenres] = useState(true);
@@ -528,10 +531,80 @@ export default function TracklistGameScreen() {
 
   // ─── Genre selection ───────────────────────────────────────────────────────
 
+  const rulesModal = (
+    <Modal
+      visible={showRules}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowRules(false)}
+    >
+      <View style={rulesStyles.overlay}>
+        <View style={rulesStyles.container}>
+          <View style={rulesStyles.header}>
+            <Text style={rulesStyles.title}>Règles — Tracklist</Text>
+            <TouchableOpacity
+              onPress={() => setShowRules(false)}
+              style={rulesStyles.closeBtn}
+            >
+              <Text style={rulesStyles.closeText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={rulesStyles.content}>
+            {[
+              {
+                icon: "⏱",
+                bold: "5 minutes",
+                desc: "Timer visible à l'écran",
+              },
+              {
+                icon: "🔀",
+                bold: "N'importe quel ordre",
+                desc: "Pas besoin de respecter l'ordre de l'album",
+              },
+              {
+                icon: "✅",
+                bold: "1 point par titre correct",
+                desc: "Chaque titre trouvé = 1 point",
+              },
+              {
+                icon: "🔡",
+                bold: "Approximation acceptée",
+                desc: "Majuscules, accents et ponctuation non pris en compte",
+              },
+              {
+                icon: "🚫",
+                bold: "Pas de doublons",
+                desc: "Un titre répété = 0 point",
+              },
+              {
+                icon: "🏳️",
+                bold: "Possibilité d'abandonner",
+                desc: "Bouton d'abandon disponible",
+              },
+            ].map((rule, i) => (
+              <View key={i} style={rulesStyles.rule}>
+                <Text style={rulesStyles.ruleIcon}>{rule.icon}</Text>
+                <View style={rulesStyles.ruleText}>
+                  <Text style={rulesStyles.ruleBold}>{rule.bold}</Text>
+                  <Text style={rulesStyles.ruleDesc}>{rule.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (gameState === "genreSelection") {
     return (
       <>
-        <Header title="Tracklist" variant="withBack" isGame={true} />
+        <Header
+          title="Tracklist"
+          variant="withBack"
+          isGame={true}
+          onInfo={() => setShowRules(true)}
+        />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -582,6 +655,7 @@ export default function TracklistGameScreen() {
             )}
           </View>
         </View>
+        {rulesModal}
       </>
     );
   }
@@ -591,7 +665,12 @@ export default function TracklistGameScreen() {
   if (gameState === "artistSelection") {
     return (
       <>
-        <Header title="Tracklist" variant="withBack" isGame={true} />
+        <Header
+          title="Tracklist"
+          variant="withBack"
+          isGame={true}
+          onInfo={() => setShowRules(true)}
+        />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -636,6 +715,7 @@ export default function TracklistGameScreen() {
             )}
           </View>
         </View>
+        {rulesModal}
       </>
     );
   }
@@ -645,7 +725,12 @@ export default function TracklistGameScreen() {
   if (gameState === "albumSelection") {
     return (
       <>
-        <Header title="Tracklist" variant="withBack" isGame={true} />
+        <Header
+          title="Tracklist"
+          variant="withBack"
+          isGame={true}
+          onInfo={() => setShowRules(true)}
+        />
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -701,6 +786,7 @@ export default function TracklistGameScreen() {
             )}
           </View>
         </View>
+        {rulesModal}
       </>
     );
   }
@@ -719,7 +805,12 @@ export default function TracklistGameScreen() {
         animationsEnabled={errorAnimationsEnabled}
       >
         <>
-          <Header title="Tracklist" variant="withBack" isGame={true} />
+          <Header
+            title="Tracklist"
+            variant="withBack"
+            isGame={true}
+            onInfo={() => setShowRules(true)}
+          />
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -867,6 +958,7 @@ export default function TracklistGameScreen() {
               </View>
             </View>
           </KeyboardAvoidingView>
+          {rulesModal}
         </>
       </GameErrorFeedback>
     );
@@ -965,6 +1057,76 @@ export default function TracklistGameScreen() {
 
   return null;
 }
+
+const rulesStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
+  },
+  container: {
+    backgroundColor: "#121212",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "80%",
+    borderTopWidth: 1,
+    borderColor: "#14FFEC33",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2A2A2A",
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#2A2A2A",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+  },
+  content: {
+    padding: 20,
+    gap: 14,
+  },
+  rule: {
+    flexDirection: "row",
+    gap: 14,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 12,
+    padding: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: "#14FFEC",
+  },
+  ruleIcon: {
+    fontSize: 22,
+  },
+  ruleText: {
+    flex: 1,
+    gap: 4,
+  },
+  ruleBold: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  ruleDesc: {
+    color: "#999",
+    fontSize: 13,
+  },
+});
 
 const styles = StyleSheet.create({
   container: {
