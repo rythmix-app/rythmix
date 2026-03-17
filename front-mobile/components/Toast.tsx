@@ -136,7 +136,7 @@ function ToastDisplay({
   const opacity = useSharedValue(0);
   const progressWidth = useSharedValue(1);
 
-  const triggerDismiss = () => {
+  const triggerDismiss = useCallback(() => {
     translateY.value = withTiming(-100, {
       duration: 300,
       easing: Easing.in(Easing.cubic),
@@ -146,7 +146,7 @@ function ToastDisplay({
       easing: Easing.in(Easing.cubic),
     });
     setTimeout(onDismiss, 320);
-  };
+  }, [onDismiss, opacity, translateY]);
 
   useEffect(() => {
     translateY.value = withTiming(0, {
@@ -161,7 +161,7 @@ function ToastDisplay({
 
     const timer = setTimeout(triggerDismiss, duration);
     return () => clearTimeout(timer);
-  }, [toast.id]);
+  }, [duration, opacity, progressWidth, toast.id, translateY, triggerDismiss]);
 
   const containerStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
