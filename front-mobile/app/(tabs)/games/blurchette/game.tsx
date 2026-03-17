@@ -31,6 +31,7 @@ import {
 import { BlurchetteGameData, GameSession } from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
+import { fuzzyMatch } from "@/utils/stringUtils";
 
 type GameState = "genreSelection" | "playing" | "result";
 type BlurLevel = 1 | 2 | 3 | 4 | 5;
@@ -39,14 +40,6 @@ interface GameTrack {
   track: DeezerTrack;
   isAlbum: boolean;
 }
-
-const normalizeString = (str: string): string => {
-  return str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
-};
 
 export default function BlurchetteGameScreen() {
   const [gameState, setGameState] = useState<GameState>("genreSelection");
@@ -238,18 +231,6 @@ export default function BlurchetteGameScreen() {
     }
   };
 
-  const checkAnswer = (userAnswer: string, targetText: string): boolean => {
-    const normalizedAnswer = normalizeString(userAnswer);
-    const normalizedTarget = normalizeString(targetText);
-
-    if (normalizedAnswer.length < 3) return false; // Réponse trop courte
-
-    return (
-      normalizedTarget.includes(normalizedAnswer) ||
-      normalizedAnswer.includes(normalizedTarget)
-    );
-  };
-
   const submitAnswer = async () => {
     if (!answer.trim() || hasAnswered || !currentTrack) return;
 
@@ -260,13 +241,13 @@ export default function BlurchetteGameScreen() {
     let isCorrect = false;
 
     if (currentTrack.isAlbum) {
-      isCorrect = checkAnswer(answer, albumTitle);
+      isCorrect = fuzzyMatch(answer, albumTitle);
     } else {
-      isCorrect = checkAnswer(answer, trackTitle);
+      isCorrect = fuzzyMatch(answer, trackTitle);
     }
 
     if (!isCorrect) {
-      isCorrect = checkAnswer(answer, artistName);
+      isCorrect = fuzzyMatch(answer, artistName);
     }
 
     const newAttempt = {
