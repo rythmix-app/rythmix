@@ -4,6 +4,7 @@ import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { randomUUID } from 'node:crypto'
 import Game from '#models/game'
 import { ApiProperty } from '@foadonis/openapi/decorators'
+import { GameSessionStatus } from '#enums/game_session_status'
 
 // Type pour la structure d'un joueur
 export interface PlayerData {
@@ -28,8 +29,8 @@ export default class GameSession extends BaseModel {
 
   @ApiProperty({
     description: 'Session status',
-    enum: ['pending', 'active', 'completed'],
-    example: 'active',
+    enum: Object.values(GameSessionStatus),
+    example: GameSessionStatus.Active,
   })
   @column()
   declare status: string
