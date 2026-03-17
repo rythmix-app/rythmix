@@ -12,3 +12,14 @@ export interface Game {
 export interface getAllGamesResponse {
   games: Game[];
 }
+
+export interface FavoriteGame {
+  id: string;
+  userId: string;
+  gameId: number;
+  game: Game;
+}
+
+export interface getMyFavoriteGamesResponse {
+  favoriteGames: FavoriteGame[];
+}
