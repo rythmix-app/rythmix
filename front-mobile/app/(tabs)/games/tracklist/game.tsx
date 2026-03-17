@@ -15,6 +15,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
+import GameLayout from "@/components/GameLayout";
 import Header from "@/components/Header";
 import { GameErrorFeedback } from "@/components/GameErrorFeedback";
 import { Colors } from "@/constants/Colors";
@@ -452,8 +453,7 @@ export default function TracklistGameScreen() {
 
   if (gameState === "genreSelection") {
     return (
-      <>
-        <Header title="Tracklist" variant="withBack" isGame={true} />
+      <GameLayout title="Tracklist" sessionId={sessionId}>
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -504,7 +504,7 @@ export default function TracklistGameScreen() {
             )}
           </View>
         </View>
-      </>
+      </GameLayout>
     );
   }
 
@@ -512,8 +512,7 @@ export default function TracklistGameScreen() {
 
   if (gameState === "artistSelection") {
     return (
-      <>
-        <Header title="Tracklist" variant="withBack" isGame={true} />
+      <GameLayout title="Tracklist" sessionId={sessionId}>
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -558,7 +557,7 @@ export default function TracklistGameScreen() {
             )}
           </View>
         </View>
-      </>
+      </GameLayout>
     );
   }
 
@@ -566,8 +565,7 @@ export default function TracklistGameScreen() {
 
   if (gameState === "albumSelection") {
     return (
-      <>
-        <Header title="Tracklist" variant="withBack" isGame={true} />
+      <GameLayout title="Tracklist" sessionId={sessionId}>
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -623,7 +621,7 @@ export default function TracklistGameScreen() {
             )}
           </View>
         </View>
-      </>
+      </GameLayout>
     );
   }
 
@@ -640,8 +638,7 @@ export default function TracklistGameScreen() {
         errorMessage={null}
         animationsEnabled={errorAnimationsEnabled}
       >
-        <>
-          <Header title="Tracklist" variant="withBack" isGame={true} />
+        <GameLayout title="Tracklist" sessionId={sessionId}>
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -789,7 +786,7 @@ export default function TracklistGameScreen() {
               </View>
             </View>
           </KeyboardAvoidingView>
-        </>
+        </GameLayout>
       </GameErrorFeedback>
     );
   }
