@@ -16,6 +16,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
+import GameLayout from "@/components/GameLayout";
 import Header from "@/components/Header";
 import { GameErrorFeedback } from "@/components/GameErrorFeedback";
 import { Colors } from "@/constants/Colors";
@@ -343,8 +344,7 @@ export default function BlurchetteGameScreen() {
 
   if (gameState === "genreSelection") {
     return (
-      <>
-        <Header title="Blurchette" variant="withBack" isGame={true} />
+      <GameLayout title="Blurchette" sessionId={sessionId}>
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -394,7 +394,7 @@ export default function BlurchetteGameScreen() {
             )}
           </View>
         </View>
-      </>
+      </GameLayout>
     );
   }
 
@@ -406,8 +406,7 @@ export default function BlurchetteGameScreen() {
         errorMessage={errorMessage}
         animationsEnabled={errorAnimationsEnabled}
       >
-        <>
-          <Header title="Blurchette" variant="withBack" isGame={true} />
+        <GameLayout title="Blurchette" sessionId={sessionId}>
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -476,7 +475,7 @@ export default function BlurchetteGameScreen() {
               </View>
             </View>
           </KeyboardAvoidingView>
-        </>
+        </GameLayout>
       </GameErrorFeedback>
     );
   }
