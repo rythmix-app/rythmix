@@ -17,11 +17,7 @@ export default class ProfileController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   public async show({ auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const profile = await this.userService.getById(user.id)
-    if (!profile) {
-      return response.status(404).json({ message: 'User not found' })
-    }
-    return response.json({ user: profile })
+    return response.json({ user })
   }
 
   @ApiOperation({
@@ -42,7 +38,9 @@ export default class ProfileController {
     },
   })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 400, description: 'Value too long' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 409, description: 'Username already taken' })
   public async update({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
@@ -51,7 +49,8 @@ export default class ProfileController {
       request.only(['firstName', 'lastName', 'username'])
     )
     if (!(result instanceof User)) {
-      return response.status(result.status || 500).json({ message: result.error })
+      const message = result.status === 409 ? 'Username already taken' : result.error
+      return response.status(result.status || 500).json({ message })
     }
     return response.json({ user: result })
   }
