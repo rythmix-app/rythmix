@@ -1,5 +1,4 @@
 import { test } from '@japa/runner'
-import User from '#models/user'
 import { createAuthenticatedUser } from '../utils/auth_helpers.js'
 import { deleteUser } from '#tests/utils/user_helpers'
 
