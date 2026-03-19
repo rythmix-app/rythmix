@@ -6,7 +6,7 @@ import { ApiOperation, ApiResponse, ApiSecurity, ApiBody } from '@foadonis/opena
 
 @inject()
 export default class ProfileController {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @ApiOperation({
     summary: 'Get current user profile',
