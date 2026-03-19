@@ -12,6 +12,7 @@ const GameSessionsController = () => import('#controllers/game_sessions_controll
 const LikedTracksController = () => import('#controllers/liked_tracks_controller')
 const FavoriteGamesController = () => import('#controllers/favorite_games_controller')
 const UserAchievementsController = () => import('#controllers/user_achievements_controller')
+const ProfileController = () => import('#controllers/profile_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -30,6 +31,7 @@ router.get('/', async ({ response }) => {
       favoriteGames: '/api/favorite-games',
       userAchievements: '/api/user-achievements',
       gameSessions: '/api/game-sessions',
+      profile: '/api/profile',
       docs: '/docs',
     },
   })
@@ -69,6 +71,12 @@ router
           .use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/users')
+    router
+      .group(() => {
+        router.get('/', [ProfileController, 'show']).use(middleware.auth())
+        router.patch('/', [ProfileController, 'update']).use(middleware.auth())
+      })
+      .prefix('/profile')
     router
       .group(() => {
         router.get('/', [AchievementsController, 'index'])
