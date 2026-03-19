@@ -75,6 +75,17 @@ test.group('ProfileController - Update', (group) => {
     response.assertStatus(401)
   })
 
+  test('PATCH /api/profile should return 400 for value too long', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('profile_update5')
+
+    const response = await client.patch('/api/profile').bearerToken(token).json({
+      firstName: 'x'.repeat(300),
+    })
+
+    response.assertStatus(400)
+    response.assertBodyContains({ message: 'One or more fields exceed maximum length' })
+  })
+
   test('PATCH /api/profile should ignore non-allowed fields', async ({ client, assert }) => {
     const { user, token } = await createAuthenticatedUser('profile_update4')
     const originalEmail = user.email
