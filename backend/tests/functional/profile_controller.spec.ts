@@ -66,7 +66,7 @@ test.group('ProfileController - Update', (group) => {
     })
 
     response.assertStatus(409)
-    response.assertBodyContains({ message: 'User with this email or username already exists' })
+    response.assertBodyContains({ message: 'Username already taken' })
   })
 
   test('PATCH /api/profile should return 401 without authentication', async ({ client }) => {
