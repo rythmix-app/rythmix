@@ -5,10 +5,7 @@ import { deleteUser } from '#tests/utils/user_helpers'
 test.group('ProfileController - Show', (group) => {
   deleteUser(group)
 
-  test('GET /api/profile should return authenticated user profile', async ({
-    client,
-    assert,
-  }) => {
+  test('GET /api/profile should return authenticated user profile', async ({ client, assert }) => {
     const { user, token } = await createAuthenticatedUser('profile_show1')
 
     const response = await client.get('/api/profile').bearerToken(token)
