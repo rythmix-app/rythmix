@@ -11,6 +11,10 @@ export class LikedTrackService {
     return LikedTrack.query().where('id', likedTrackId).first()
   }
 
+  public async getByUserId(userId: string) {
+    return LikedTrack.query().where('userId', userId)
+  }
+
   public async createLikedTrack(payload: {
     userId: string
     spotifyId?: string

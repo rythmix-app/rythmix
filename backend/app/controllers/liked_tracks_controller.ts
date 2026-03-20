@@ -12,7 +12,7 @@ import {
 
 @inject()
 export default class LikedTracksController {
-  constructor(private likedTrackService: LikedTrackService) {}
+  constructor(private readonly likedTrackService: LikedTrackService) {}
 
   @ApiOperation({
     summary: 'List all liked tracks',
@@ -26,6 +26,23 @@ export default class LikedTracksController {
       return response.json({ likedTracks })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching liked tracks' })
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Get current user liked tracks',
+    description: 'Get all liked tracks for the authenticated user',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiResponse({ status: 200, description: 'User liked tracks retrieved successfully' })
+  @ApiResponse({ status: 500, description: 'Error while fetching user liked tracks' })
+  public async myLikedTracks({ auth, response }: HttpContext) {
+    try {
+      const user = auth.user!
+      const likedTracks = await this.likedTrackService.getByUserId(user.id)
+      return response.json({ likedTracks })
+    } catch (error) {
+      return response.status(500).json({ message: 'Error while fetching user liked tracks' })
     }
   }
 

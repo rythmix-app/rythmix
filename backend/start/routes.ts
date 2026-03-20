@@ -115,6 +115,7 @@ router
     router
       .group(() => {
         router.get('/', [LikedTracksController, 'index'])
+        router.get('/me', [LikedTracksController, 'myLikedTracks']).use(middleware.auth())
         router.post('/', [LikedTracksController, 'create']).use(middleware.auth())
         router.get('/:id', [LikedTracksController, 'show'])
         router.patch('/:id', [LikedTracksController, 'update']).use(middleware.auth())
