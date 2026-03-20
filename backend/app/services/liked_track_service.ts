@@ -1,5 +1,6 @@
 // TypeScript
 import LikedTrack from '#models/liked_track'
+import { type ServiceError } from '#types/service_error'
 
 export class LikedTrackService {
   public async getAll() {
@@ -21,7 +22,7 @@ export class LikedTrackService {
     title?: string | null
     artist?: string | null
     type?: string | null
-  }) {
+  }): Promise<LikedTrack | ServiceError> {
     try {
       return await LikedTrack.create(payload)
     } catch (error: any) {
@@ -42,7 +43,10 @@ export class LikedTrackService {
     }
   }
 
-  public async updateLikedTrack(likedTrackId: number | string, payload: Partial<LikedTrack>) {
+  public async updateLikedTrack(
+    likedTrackId: number | string,
+    payload: Partial<LikedTrack>
+  ): Promise<LikedTrack | ServiceError> {
     const likedTrack = await LikedTrack.query().where('id', likedTrackId).first()
     if (!likedTrack) {
       return {
@@ -72,7 +76,9 @@ export class LikedTrackService {
     }
   }
 
-  public async deleteLikedTrack(likedTrackId: number | string) {
+  public async deleteLikedTrack(
+    likedTrackId: number | string
+  ): Promise<{ message: string } | ServiceError> {
     const likedTrack = await LikedTrack.query().where('id', likedTrackId).first()
     if (!likedTrack) {
       return {
@@ -84,7 +90,10 @@ export class LikedTrackService {
     return { message: `LikedTrack with ID: ${likedTrackId} deleted successfully` }
   }
 
-  public async deleteMyLikedTrack(userId: string, deezerTrackId: string) {
+  public async deleteMyLikedTrack(
+    userId: string,
+    deezerTrackId: string
+  ): Promise<{ message: string } | ServiceError> {
     const likedTrack = await LikedTrack.query()
       .where('userId', userId)
       .where('deezerTrackId', deezerTrackId)

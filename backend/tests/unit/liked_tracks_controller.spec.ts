@@ -189,29 +189,13 @@ test.group('LikedTracksController - Unit', () => {
     const controller = new LikedTracksController(service)
 
     const response = makeResponse()
-    const request = { only: () => ({ deezerTrackId: 'track_1' }) } as any
+    const params = { deezerTrackId: 'track_1' } as any
     const auth = { user: { id: 'user-1' } } as any
 
-    await controller.deleteMyLikedTrack({ auth, request, response } as any as HttpContext)
+    await controller.deleteMyLikedTrack({ auth, params, response } as any as HttpContext)
 
     assert.equal(response.statusCode, 200)
     assert.equal(response.body.message, 'ok')
-  })
-
-  test('deleteMyLikedTrack returns 400 when deezerTrackId missing', async ({ assert }) => {
-    const service = {
-      deleteMyLikedTrack: async () => ({ message: 'ok' }),
-    } as any
-    const controller = new LikedTracksController(service)
-
-    const response = makeResponse()
-    const request = { only: () => ({}) } as any
-    const auth = { user: { id: 'user-1' } } as any
-
-    await controller.deleteMyLikedTrack({ auth, request, response } as any as HttpContext)
-
-    assert.equal(response.statusCode, 400)
-    assert.match(response.body.message, /required/i)
   })
 
   test('deleteMyLikedTrack returns mapped status when service returns error object', async ({
@@ -223,10 +207,10 @@ test.group('LikedTracksController - Unit', () => {
     const controller = new LikedTracksController(service)
 
     const response = makeResponse()
-    const request = { only: () => ({ deezerTrackId: 'track_1' }) } as any
+    const params = { deezerTrackId: 'track_1' } as any
     const auth = { user: { id: 'user-1' } } as any
 
-    await controller.deleteMyLikedTrack({ auth, request, response } as any as HttpContext)
+    await controller.deleteMyLikedTrack({ auth, params, response } as any as HttpContext)
 
     assert.equal(response.statusCode, 404)
     assert.match(response.body.message, /not found/i)
@@ -241,10 +225,10 @@ test.group('LikedTracksController - Unit', () => {
     const controller = new LikedTracksController(service)
 
     const response = makeResponse()
-    const request = { only: () => ({ deezerTrackId: 'track_1' }) } as any
+    const params = { deezerTrackId: 'track_1' } as any
     const auth = { user: { id: 'user-1' } } as any
 
-    await controller.deleteMyLikedTrack({ auth, request, response } as any as HttpContext)
+    await controller.deleteMyLikedTrack({ auth, params, response } as any as HttpContext)
 
     assert.equal(response.statusCode, 500)
     assert.match(response.body.message, /Error while deleting liked track/i)

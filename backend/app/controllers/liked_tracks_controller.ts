@@ -1,7 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { LikedTrackService } from '#services/liked_track_service'
-import LikedTrack from '#models/liked_track'
 import { inject } from '@adonisjs/core'
+import { isServiceError } from '#types/service_error'
 import {
   ApiOperation,
   ApiResponse,
@@ -72,8 +72,8 @@ export default class LikedTracksController {
     try {
       const payload = request.only(['userId', 'deezerTrackId', 'title', 'artist', 'type'])
       const result = await this.likedTrackService.createLikedTrack(payload)
-      if (!(result instanceof LikedTrack)) {
-        return response.status(result.status || 500).json({ message: result.error })
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
       }
       return response.status(201).json({ likedTrack: result })
     } catch {
@@ -111,8 +111,8 @@ export default class LikedTracksController {
         ...payload,
       })
 
-      if (!(result instanceof LikedTrack)) {
-        return response.status(result.status || 500).json({ message: result.error })
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
       }
 
       return response.status(201).json({ likedTrack: result })
@@ -126,39 +126,23 @@ export default class LikedTracksController {
     description: 'Delete one liked track from authenticated user collection by deezerTrackId',
   })
   @ApiSecurity('bearerAuth')
-  @ApiBody({
-    description: 'Liked track identifier',
-    required: true,
-    schema: {
-      type: 'object',
-      required: ['deezerTrackId'],
-      properties: {
-        deezerTrackId: { type: 'string', example: '3135556' },
-      },
-    },
-  })
+  @ApiParam({ name: 'deezerTrackId', description: 'Deezer track ID', required: true })
   @ApiResponse({ status: 200, description: 'Liked track deleted successfully' })
-  @ApiResponse({ status: 400, description: 'deezerTrackId is required' })
+  @ApiResponse({ status: 401, description: 'Authentication required' })
   @ApiResponse({ status: 404, description: 'Liked track not found' })
   @ApiResponse({ status: 500, description: 'Error while deleting liked track' })
-  public async deleteMyLikedTrack({ auth, request, response }: HttpContext) {
+  public async deleteMyLikedTrack({ auth, params, response }: HttpContext) {
     try {
       const user = auth.user!
-      const { deezerTrackId } = request.only(['deezerTrackId'])
-
-      if (!deezerTrackId) {
-        return response.status(400).json({ message: 'deezerTrackId is required' })
-      }
+      const { deezerTrackId } = params
 
       const result = await this.likedTrackService.deleteMyLikedTrack(user.id, deezerTrackId)
 
-      if ((result as any).error) {
-        return response
-          .status((result as any).status || 500)
-          .json({ message: (result as any).error })
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
       }
 
-      return response.json({ message: (result as any).message })
+      return response.json({ message: result.message })
     } catch {
       return response.status(500).json({ message: 'Error while deleting liked track' })
     }
@@ -213,8 +197,8 @@ export default class LikedTracksController {
         params.id,
         request.only(['deezerTrackId', 'title', 'artist', 'type', 'userId'])
       )
-      if (!(result instanceof LikedTrack)) {
-        return response.status(result.status || 500).json({ message: result.error })
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
       }
       return response.json({ likedTrack: result })
     } catch {
@@ -235,13 +219,11 @@ export default class LikedTracksController {
     try {
       const result = await this.likedTrackService.deleteLikedTrack(params.id)
 
-      if ((result as any).error) {
-        return response
-          .status((result as any).status || 500)
-          .json({ message: (result as any).error })
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
       }
 
-      return response.json({ message: (result as any).message })
+      return response.json({ message: result.message })
     } catch {
       return response.status(500).json({ message: 'Error while deleting liked track' })
     }
