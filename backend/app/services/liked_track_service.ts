@@ -83,6 +83,23 @@ export class LikedTrackService {
     await likedTrack.delete()
     return { message: `LikedTrack with ID: ${likedTrackId} deleted successfully` }
   }
+
+  public async deleteMyLikedTrack(userId: string, deezerTrackId: string) {
+    const likedTrack = await LikedTrack.query()
+      .where('userId', userId)
+      .where('deezerTrackId', deezerTrackId)
+      .first()
+
+    if (!likedTrack) {
+      return {
+        error: 'LikedTrack not found',
+        status: 404,
+      }
+    }
+
+    await likedTrack.delete()
+    return { message: `LikedTrack with deezerTrackId: ${deezerTrackId} deleted successfully` }
+  }
 }
 
 export default LikedTrackService

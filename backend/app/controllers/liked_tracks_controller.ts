@@ -122,6 +122,47 @@ export default class LikedTracksController {
   }
 
   @ApiOperation({
+    summary: 'Delete a liked track for current user',
+    description: 'Delete one liked track from authenticated user collection by deezerTrackId',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiBody({
+    description: 'Liked track identifier',
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['deezerTrackId'],
+      properties: {
+        deezerTrackId: { type: 'string', example: '3135556' },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Liked track deleted successfully' })
+  @ApiResponse({ status: 400, description: 'deezerTrackId is required' })
+  @ApiResponse({ status: 404, description: 'Liked track not found' })
+  @ApiResponse({ status: 500, description: 'Error while deleting liked track' })
+  public async deleteMyLikedTrack({ auth, request, response }: HttpContext) {
+    try {
+      const user = auth.user!
+      const { deezerTrackId } = request.only(['deezerTrackId'])
+
+      if (!deezerTrackId) {
+        return response.status(400).json({ message: 'deezerTrackId is required' })
+      }
+
+      const result = await this.likedTrackService.deleteMyLikedTrack(user.id, deezerTrackId)
+
+      if ((result as any).error) {
+        return response.status((result as any).status || 500).json({ message: (result as any).error })
+      }
+
+      return response.json({ message: (result as any).message })
+    } catch {
+      return response.status(500).json({ message: 'Error while deleting liked track' })
+    }
+  }
+
+  @ApiOperation({
     summary: 'Get liked track by ID',
     description: 'Retrieve a specific liked track by its ID',
   })

@@ -198,6 +198,34 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
     }
   })
 
+  test('deleteMyLikedTrack deletes successfully for current user', async ({ assert }) => {
+    const user = await createTestUser('delete_me')
+    const rec = await user.related('likedTracks').create({ deezerTrackId: 'del_me' })
+
+    const res = await service.deleteMyLikedTrack(user.id, 'del_me')
+
+    if (isServiceError(res)) {
+      assert.fail(`Expected success, got ${res.status}`)
+    } else {
+      assert.match(res.message, /deleted successfully/i)
+    }
+
+    const stillThere = await service.getById(rec.id)
+    assert.isNull(stillThere)
+  })
+
+  test('deleteMyLikedTrack returns 404 when track is not found for user', async ({ assert }) => {
+    const user = await createTestUser('delete_me_missing')
+    const res = await service.deleteMyLikedTrack(user.id, 'missing')
+
+    if (isServiceError(res)) {
+      assert.equal(res.status, 404)
+      assert.match(res.error, /not found/i)
+    } else {
+      assert.fail('Expected a not found error response')
+    }
+  })
+
   test('createLikedTrack rethrows on unknown DB error', async ({ assert }) => {
     const user = await createTestUser('unknown_create')
     const originalCreate = (LikedTrack as any).create

@@ -182,6 +182,74 @@ test.group('LikedTracksController - Unit', () => {
     assert.match(response.body.message, /Error while creating liked track/i)
   })
 
+  test('deleteMyLikedTrack returns 200 on success', async ({ assert }) => {
+    const service = {
+      deleteMyLikedTrack: async () => ({ message: 'ok' }),
+    } as any
+    const controller = new LikedTracksController(service)
+
+    const response = makeResponse()
+    const request = { only: () => ({ deezerTrackId: 'track_1' }) } as any
+    const auth = { user: { id: 'user-1' } } as any
+
+    await controller.deleteMyLikedTrack({ auth, request, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 200)
+    assert.equal(response.body.message, 'ok')
+  })
+
+  test('deleteMyLikedTrack returns 400 when deezerTrackId missing', async ({ assert }) => {
+    const service = {
+      deleteMyLikedTrack: async () => ({ message: 'ok' }),
+    } as any
+    const controller = new LikedTracksController(service)
+
+    const response = makeResponse()
+    const request = { only: () => ({}) } as any
+    const auth = { user: { id: 'user-1' } } as any
+
+    await controller.deleteMyLikedTrack({ auth, request, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 400)
+    assert.match(response.body.message, /required/i)
+  })
+
+  test('deleteMyLikedTrack returns mapped status when service returns error object', async ({
+    assert,
+  }) => {
+    const service = {
+      deleteMyLikedTrack: async () => ({ error: 'LikedTrack not found', status: 404 }),
+    } as any
+    const controller = new LikedTracksController(service)
+
+    const response = makeResponse()
+    const request = { only: () => ({ deezerTrackId: 'track_1' }) } as any
+    const auth = { user: { id: 'user-1' } } as any
+
+    await controller.deleteMyLikedTrack({ auth, request, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 404)
+    assert.match(response.body.message, /not found/i)
+  })
+
+  test('deleteMyLikedTrack returns 500 when service throws', async ({ assert }) => {
+    const service = {
+      deleteMyLikedTrack: async () => {
+        throw new Error('oops')
+      },
+    } as any
+    const controller = new LikedTracksController(service)
+
+    const response = makeResponse()
+    const request = { only: () => ({ deezerTrackId: 'track_1' }) } as any
+    const auth = { user: { id: 'user-1' } } as any
+
+    await controller.deleteMyLikedTrack({ auth, request, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(response.body.message, /Error while deleting liked track/i)
+  })
+
   test('show returns 200 with model when found', async ({ assert }) => {
     const service = { getById: async () => ({ id: 77 }) } as any
     const controller = new LikedTracksController(service)

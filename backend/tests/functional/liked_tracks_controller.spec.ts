@@ -15,7 +15,8 @@ test.group('LikedTracksController - Functional', (group) => {
   deleteLikedTrack(group)
 
   test('GET /api/liked-tracks returns empty list', async ({ client, assert }) => {
-    const res = await client.get('/api/liked-tracks')
+    const { token } = await createAuthenticatedUser('index_admin', 'admin')
+    const res = await client.get('/api/liked-tracks').bearerToken(token)
     res.assertStatus(200)
     assert.isArray(res.body().likedTracks)
   })
@@ -75,8 +76,39 @@ test.group('LikedTracksController - Functional', (group) => {
     assert.equal(res.body().likedTrack.deezerTrackId, payload.deezerTrackId)
   })
 
+  test('DELETE /api/liked-tracks/me deletes one track for authenticated user', async ({
+    client,
+    assert,
+  }) => {
+    const { token, user } = await createAuthenticatedUser('delete_me')
+    await user.related('likedTracks').create({ deezerTrackId: 'delete_me_track', title: 'To delete' })
+
+    const res = await client
+      .delete('/api/liked-tracks/me')
+      .bearerToken(token)
+      .json({ deezerTrackId: 'delete_me_track' })
+
+    res.assertStatus(200)
+    assert.match(res.body().message, /deleted successfully/i)
+  })
+
+  test('DELETE /api/liked-tracks/me returns 404 when track does not exist', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser('delete_me_not_found')
+
+    const res = await client
+      .delete('/api/liked-tracks/me')
+      .bearerToken(token)
+      .json({ deezerTrackId: 'missing_track' })
+
+    res.assertStatus(404)
+    assert.match(res.body().message, /not found/i)
+  })
+
   test('PATCH /api/liked-tracks/:id updates record', async ({ client, assert }) => {
-    const { token } = await createAuthenticatedUser('patch')
+    const { token } = await createAuthenticatedUser('patch_admin', 'admin')
     const user = await createUser('patch')
     const rec = await user.related('likedTracks').create({ deezerTrackId: 'sp', title: 'Old' })
 
@@ -90,7 +122,7 @@ test.group('LikedTracksController - Functional', (group) => {
   })
 
   test('DELETE /api/liked-tracks/:id deletes record', async ({ client }) => {
-    const { token } = await createAuthenticatedUser('delete')
+    const { token } = await createAuthenticatedUser('delete_admin', 'admin')
     const user = await createUser('delete')
     const rec = await user.related('likedTracks').create({ deezerTrackId: 'x' })
 
