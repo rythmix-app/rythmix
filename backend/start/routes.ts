@@ -117,7 +117,7 @@ router
         router.get('/', [LikedTracksController, 'index']).use(middleware.role({ roles: ['admin'] }))
         router.get('/me', [LikedTracksController, 'myLikedTracks']).use(middleware.auth())
         router.post('/me', [LikedTracksController, 'createMyLikedTrack']).use(middleware.auth())
-        router.delete('/me', [LikedTracksController, 'deleteMyLikedTrack']).use(middleware.auth())
+        router.delete('/me/:deezerTrackId', [LikedTracksController, 'deleteMyLikedTrack']).use(middleware.auth())
         router.post('/', [LikedTracksController, 'create']).use(middleware.auth())
         router.get('/:id', [LikedTracksController, 'show'])
         router
