@@ -153,7 +153,9 @@ export default class LikedTracksController {
       const result = await this.likedTrackService.deleteMyLikedTrack(user.id, deezerTrackId)
 
       if ((result as any).error) {
-        return response.status((result as any).status || 500).json({ message: (result as any).error })
+        return response
+          .status((result as any).status || 500)
+          .json({ message: (result as any).error })
       }
 
       return response.json({ message: (result as any).message })

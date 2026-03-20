@@ -120,8 +120,12 @@ router
         router.delete('/me', [LikedTracksController, 'deleteMyLikedTrack']).use(middleware.auth())
         router.post('/', [LikedTracksController, 'create']).use(middleware.auth())
         router.get('/:id', [LikedTracksController, 'show'])
-        router.patch('/:id', [LikedTracksController, 'update']).use(middleware.role({ roles: ['admin'] }))
-        router.delete('/:id', [LikedTracksController, 'delete']).use(middleware.role({ roles: ['admin'] }))
+        router
+          .patch('/:id', [LikedTracksController, 'update'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .delete('/:id', [LikedTracksController, 'delete'])
+          .use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/liked-tracks')
     router

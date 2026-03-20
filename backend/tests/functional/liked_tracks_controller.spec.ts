@@ -81,7 +81,9 @@ test.group('LikedTracksController - Functional', (group) => {
     assert,
   }) => {
     const { token, user } = await createAuthenticatedUser('delete_me')
-    await user.related('likedTracks').create({ deezerTrackId: 'delete_me_track', title: 'To delete' })
+    await user
+      .related('likedTracks')
+      .create({ deezerTrackId: 'delete_me_track', title: 'To delete' })
 
     const res = await client
       .delete('/api/liked-tracks/me')
