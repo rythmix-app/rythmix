@@ -29,7 +29,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
     const user = await createTestUser('create')
     const created = await service.createLikedTrack({
       userId: user.id,
-      spotifyId: 'sp_1',
+      deezerTrackId: 'sp_1',
       title: 'Song',
       artist: 'Artist',
       type: 'like',
@@ -48,7 +48,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
       err.code = '23505'
       throw err
     }
-    const result = await service.createLikedTrack({ userId: user.id, spotifyId: 'dup' })
+    const result = await service.createLikedTrack({ userId: user.id, deezerTrackId: 'dup' })
     assert.notInstanceOf(result, LikedTrack)
     if (isServiceError(result)) {
       assert.equal(result.status, 409)
@@ -64,7 +64,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
       err.code = '22001'
       throw err
     }
-    const result = await service.createLikedTrack({ userId: user.id, spotifyId: 'x' })
+    const result = await service.createLikedTrack({ userId: user.id, deezerTrackId: 'x' })
     assert.notInstanceOf(result, LikedTrack)
     if (isServiceError(result)) {
       assert.equal(result.status, 400)
@@ -78,7 +78,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
     const len0 = before.length
 
     const user = await createTestUser('list')
-    await user.related('likedTracks').create({ spotifyId: 's1' })
+    await user.related('likedTracks').create({ deezerTrackId: 's1' })
 
     const after = await service.getAll()
     const len1 = after.length
@@ -90,7 +90,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
 
   test('getById returns model when exists, null otherwise', async ({ assert }) => {
     const user = await createTestUser('getbyid')
-    const rec = await user.related('likedTracks').create({ spotifyId: 'spX' })
+    const rec = await user.related('likedTracks').create({ deezerTrackId: 'spX' })
     const found = await service.getById(rec.id)
     assert.isNotNull(found)
     assert.equal(found?.id, rec.id)
@@ -102,20 +102,20 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
     const userA = await createTestUser('by_user_a')
     const userB = await createTestUser('by_user_b')
 
-    await userA.related('likedTracks').create({ spotifyId: 'a_sp_1' })
-    await userB.related('likedTracks').create({ spotifyId: 'b_sp_1' })
+    await userA.related('likedTracks').create({ deezerTrackId: 'a_sp_1' })
+    await userB.related('likedTracks').create({ deezerTrackId: 'b_sp_1' })
 
     const records = await service.getByUserId(userA.id)
 
     assert.isArray(records)
     assert.equal(records.length, 1)
     assert.equal(records[0].userId, userA.id)
-    assert.equal(records[0].spotifyId, 'a_sp_1')
+    assert.equal(records[0].deezerTrackId, 'a_sp_1')
   })
 
   test('updateLikedTrack updates successfully', async ({ assert }) => {
     const user = await createTestUser('update')
-    const rec = await user.related('likedTracks').create({ spotifyId: 'spA', title: 'A' })
+    const rec = await user.related('likedTracks').create({ deezerTrackId: 'spA', title: 'A' })
     const updated = await service.updateLikedTrack(rec.id, { title: 'A2' })
     assert.instanceOf(updated, LikedTrack)
     if (updated instanceof LikedTrack) assert.equal(updated.title, 'A2')
@@ -132,7 +132,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
 
   test('updateLikedTrack maps 23505 -> 409', async ({ assert }) => {
     const user = await createTestUser('conflict')
-    const rec = await user.related('likedTracks').create({ spotifyId: 'spB' })
+    const rec = await user.related('likedTracks').create({ deezerTrackId: 'spB' })
     const originalQuery = (LikedTrack as any).query
     ;(LikedTrack as any).query = () => ({
       where: () => ({
@@ -146,7 +146,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
         },
       }),
     })
-    const result = await service.updateLikedTrack(rec.id, { spotifyId: 'dup' } as any)
+    const result = await service.updateLikedTrack(rec.id, { deezerTrackId: 'dup' } as any)
     assert.notInstanceOf(result, LikedTrack)
     if (isServiceError(result)) {
       assert.equal(result.status, 409)
@@ -156,7 +156,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
 
   test('updateLikedTrack maps 22001 -> 400', async ({ assert }) => {
     const user = await createTestUser('too_long_upd')
-    const rec = await user.related('likedTracks').create({ spotifyId: 'spC' })
+    const rec = await user.related('likedTracks').create({ deezerTrackId: 'spC' })
     const originalQuery = (LikedTrack as any).query
     ;(LikedTrack as any).query = () => ({
       where: () => ({
@@ -180,7 +180,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
 
   test('deleteLikedTrack deletes successfully', async ({ assert }) => {
     const user = await createTestUser('delete')
-    const rec = await user.related('likedTracks').create({ spotifyId: 'spDel' })
+    const rec = await user.related('likedTracks').create({ deezerTrackId: 'spDel' })
     const res = await service.deleteLikedTrack(rec.id)
     if (isServiceError(res)) {
       assert.fail(`Expected success, got ${res.status}`)
@@ -209,7 +209,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
     }
 
     try {
-      await service.createLikedTrack({ userId: user.id, spotifyId: 'oops' })
+      await service.createLikedTrack({ userId: user.id, deezerTrackId: 'oops' })
       assert.fail('Expected service.createLikedTrack to throw, but it resolved')
     } catch (e: any) {
       assert.instanceOf(e, Error)
@@ -221,7 +221,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
 
   test('updateLikedTrack rethrows on unknown DB error', async ({ assert }) => {
     const user = await createTestUser('unknown_update')
-    const rec = await user.related('likedTracks').create({ spotifyId: 'spU' })
+    const rec = await user.related('likedTracks').create({ deezerTrackId: 'spU' })
 
     const originalQuery = (LikedTrack as any).query
     ;(LikedTrack as any).query = () => ({

@@ -25,7 +25,7 @@ test.group('LikedTracksController - Functional', (group) => {
     const user = await createUser('post')
     const payload = {
       userId: user.id,
-      spotifyId: 'sp',
+      deezerTrackId: 'sp',
       title: 'Song',
       artist: 'Artist',
       type: 'like',
@@ -44,8 +44,8 @@ test.group('LikedTracksController - Functional', (group) => {
     const { token, user } = await createAuthenticatedUser('get_me')
     const otherUser = await createUser('get_me_other')
 
-    await user.related('likedTracks').create({ spotifyId: 'my_sp', title: 'Mine' })
-    await otherUser.related('likedTracks').create({ spotifyId: 'other_sp', title: 'Other' })
+    await user.related('likedTracks').create({ deezerTrackId: 'my_sp', title: 'Mine' })
+    await otherUser.related('likedTracks').create({ deezerTrackId: 'other_sp', title: 'Other' })
 
     const res = await client.get('/api/liked-tracks/me').bearerToken(token)
 
@@ -53,7 +53,7 @@ test.group('LikedTracksController - Functional', (group) => {
     assert.isArray(res.body().likedTracks)
     assert.equal(res.body().likedTracks.length, 1)
     assert.equal(res.body().likedTracks[0].userId, user.id)
-    assert.equal(res.body().likedTracks[0].spotifyId, 'my_sp')
+    assert.equal(res.body().likedTracks[0].deezerTrackId, 'my_sp')
   })
 
   test('POST /api/liked-tracks/me creates record for authenticated user', async ({
@@ -62,7 +62,7 @@ test.group('LikedTracksController - Functional', (group) => {
   }) => {
     const { token, user } = await createAuthenticatedUser('post_me')
     const payload = {
-      spotifyId: 'sp_me',
+      deezerTrackId: 'sp_me',
       title: 'Song Me',
       artist: 'Artist Me',
       type: 'like',
@@ -72,13 +72,13 @@ test.group('LikedTracksController - Functional', (group) => {
 
     res.assertStatus(201)
     assert.equal(res.body().likedTrack.userId, user.id)
-    assert.equal(res.body().likedTrack.spotifyId, payload.spotifyId)
+    assert.equal(res.body().likedTrack.deezerTrackId, payload.deezerTrackId)
   })
 
   test('PATCH /api/liked-tracks/:id updates record', async ({ client, assert }) => {
     const { token } = await createAuthenticatedUser('patch')
     const user = await createUser('patch')
-    const rec = await user.related('likedTracks').create({ spotifyId: 'sp', title: 'Old' })
+    const rec = await user.related('likedTracks').create({ deezerTrackId: 'sp', title: 'Old' })
 
     const res = await client
       .patch(`/api/liked-tracks/${rec.id}`)
@@ -92,7 +92,7 @@ test.group('LikedTracksController - Functional', (group) => {
   test('DELETE /api/liked-tracks/:id deletes record', async ({ client }) => {
     const { token } = await createAuthenticatedUser('delete')
     const user = await createUser('delete')
-    const rec = await user.related('likedTracks').create({ spotifyId: 'x' })
+    const rec = await user.related('likedTracks').create({ deezerTrackId: 'x' })
 
     const res = await client.delete(`/api/liked-tracks/${rec.id}`).bearerToken(token)
 

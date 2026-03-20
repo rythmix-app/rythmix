@@ -48,7 +48,7 @@ export default class LikedTracksController {
 
   @ApiOperation({
     summary: 'Add a liked track',
-    description: 'Add a track to user liked tracks collection (requires userId, spotifyId)',
+    description: 'Add a track to user liked tracks collection (requires userId, deezerTrackId)',
   })
   @ApiSecurity('bearerAuth')
   @ApiBody({
@@ -56,10 +56,10 @@ export default class LikedTracksController {
     required: true,
     schema: {
       type: 'object',
-      required: ['userId', 'spotifyId'],
+      required: ['userId', 'deezerTrackId'],
       properties: {
         userId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
-        spotifyId: { type: 'string', example: '3n3Ppam7vgaVa1iaRUc9Lp' },
+        deezerTrackId: { type: 'string', example: '3135556' },
         title: { type: 'string', example: 'Bohemian Rhapsody' },
         artist: { type: 'string', example: 'Queen' },
         type: { type: 'string', example: 'song' },
@@ -70,7 +70,7 @@ export default class LikedTracksController {
   @ApiResponse({ status: 500, description: 'Error while creating liked track' })
   public async create({ request, response }: HttpContext) {
     try {
-      const payload = request.only(['userId', 'spotifyId', 'title', 'artist', 'type'])
+      const payload = request.only(['userId', 'deezerTrackId', 'title', 'artist', 'type'])
       const result = await this.likedTrackService.createLikedTrack(payload)
       if (!(result instanceof LikedTrack)) {
         return response.status(result.status || 500).json({ message: result.error })
@@ -91,9 +91,9 @@ export default class LikedTracksController {
     required: true,
     schema: {
       type: 'object',
-      required: ['spotifyId'],
+      required: ['deezerTrackId'],
       properties: {
-        spotifyId: { type: 'string', example: '3n3Ppam7vgaVa1iaRUc9Lp' },
+        deezerTrackId: { type: 'string', example: '3135556' },
         title: { type: 'string', example: 'Bohemian Rhapsody' },
         artist: { type: 'string', example: 'Queen' },
         type: { type: 'string', example: 'song' },
@@ -105,7 +105,7 @@ export default class LikedTracksController {
   public async createMyLikedTrack({ auth, request, response }: HttpContext) {
     try {
       const user = auth.user!
-      const payload = request.only(['spotifyId', 'title', 'artist', 'type'])
+      const payload = request.only(['deezerTrackId', 'title', 'artist', 'type'])
       const result = await this.likedTrackService.createLikedTrack({
         userId: user.id,
         ...payload,
@@ -153,7 +153,7 @@ export default class LikedTracksController {
     schema: {
       type: 'object',
       properties: {
-        spotifyId: { type: 'string', example: '3n3Ppam7vgaVa1iaRUc9Lp' },
+        deezerTrackId: { type: 'string', example: '3135556' },
         title: { type: 'string', example: 'Bohemian Rhapsody' },
         artist: { type: 'string', example: 'Queen' },
         type: { type: 'string', example: 'song' },
@@ -168,7 +168,7 @@ export default class LikedTracksController {
     try {
       const result = await this.likedTrackService.updateLikedTrack(
         params.id,
-        request.only(['spotifyId', 'title', 'artist', 'type', 'userId'])
+        request.only(['deezerTrackId', 'title', 'artist', 'type', 'userId'])
       )
       if (!(result instanceof LikedTrack)) {
         return response.status(result.status || 500).json({ message: result.error })

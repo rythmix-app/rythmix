@@ -15,9 +15,9 @@ export default class LikedTrack extends BaseModel {
   @column()
   declare userId: string
 
-  @ApiProperty({ description: 'Spotify track ID', example: '3n3Ppam7vgaVa1iaRUc9Lp' })
+  @ApiProperty({ description: 'Deezer track ID', example: '3135556' })
   @column()
-  declare spotifyId: string
+  declare deezerTrackId: string
 
   @ApiProperty({ description: 'Track title', example: 'Blinding Lights', nullable: true })
   @column()

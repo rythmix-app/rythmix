@@ -82,7 +82,7 @@ test.group('LikedTracksController - Unit', () => {
     const controller = new LikedTracksController(service)
 
     const response = makeResponse()
-    const request = { only: () => ({ userId: 1, spotifyId: 'sp' }) } as any
+    const request = { only: () => ({ userId: 1, deezerTrackId: 'sp' }) } as any
 
     await controller.create({ request, response } as any as HttpContext)
 
@@ -134,7 +134,7 @@ test.group('LikedTracksController - Unit', () => {
     const controller = new LikedTracksController(service)
 
     const response = makeResponse()
-    const request = { only: () => ({ spotifyId: 'sp' }) } as any
+    const request = { only: () => ({ deezerTrackId: 'sp' }) } as any
     const auth = { user: { id: 'user-1' } } as any
 
     await controller.createMyLikedTrack({ auth, request, response } as any as HttpContext)
@@ -155,7 +155,7 @@ test.group('LikedTracksController - Unit', () => {
     const controller = new LikedTracksController(service)
 
     const response = makeResponse()
-    const request = { only: () => ({ spotifyId: 'sp' }) } as any
+    const request = { only: () => ({ deezerTrackId: 'sp' }) } as any
     const auth = { user: { id: 'user-1' } } as any
 
     await controller.createMyLikedTrack({ auth, request, response } as any as HttpContext)
@@ -173,7 +173,7 @@ test.group('LikedTracksController - Unit', () => {
     const controller = new LikedTracksController(service)
 
     const response = makeResponse()
-    const request = { only: () => ({ spotifyId: 'sp' }) } as any
+    const request = { only: () => ({ deezerTrackId: 'sp' }) } as any
     const auth = { user: { id: 'user-1' } } as any
 
     await controller.createMyLikedTrack({ auth, request, response } as any as HttpContext)

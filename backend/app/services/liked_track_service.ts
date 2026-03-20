@@ -17,7 +17,7 @@ export class LikedTrackService {
 
   public async createLikedTrack(payload: {
     userId: string
-    spotifyId?: string
+    deezerTrackId?: string
     title?: string | null
     artist?: string | null
     type?: string | null
