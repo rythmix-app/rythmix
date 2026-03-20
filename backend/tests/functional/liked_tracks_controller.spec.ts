@@ -37,6 +37,44 @@ test.group('LikedTracksController - Functional', (group) => {
     assert.equal(res.body().likedTrack.userId, payload.userId)
   })
 
+  test('GET /api/liked-tracks/me returns only authenticated user liked tracks', async ({
+    client,
+    assert,
+  }) => {
+    const { token, user } = await createAuthenticatedUser('get_me')
+    const otherUser = await createUser('get_me_other')
+
+    await user.related('likedTracks').create({ spotifyId: 'my_sp', title: 'Mine' })
+    await otherUser.related('likedTracks').create({ spotifyId: 'other_sp', title: 'Other' })
+
+    const res = await client.get('/api/liked-tracks/me').bearerToken(token)
+
+    res.assertStatus(200)
+    assert.isArray(res.body().likedTracks)
+    assert.equal(res.body().likedTracks.length, 1)
+    assert.equal(res.body().likedTracks[0].userId, user.id)
+    assert.equal(res.body().likedTracks[0].spotifyId, 'my_sp')
+  })
+
+  test('POST /api/liked-tracks/me creates record for authenticated user', async ({
+    client,
+    assert,
+  }) => {
+    const { token, user } = await createAuthenticatedUser('post_me')
+    const payload = {
+      spotifyId: 'sp_me',
+      title: 'Song Me',
+      artist: 'Artist Me',
+      type: 'like',
+    }
+
+    const res = await client.post('/api/liked-tracks/me').bearerToken(token).json(payload)
+
+    res.assertStatus(201)
+    assert.equal(res.body().likedTrack.userId, user.id)
+    assert.equal(res.body().likedTrack.spotifyId, payload.spotifyId)
+  })
+
   test('PATCH /api/liked-tracks/:id updates record', async ({ client, assert }) => {
     const { token } = await createAuthenticatedUser('patch')
     const user = await createUser('patch')

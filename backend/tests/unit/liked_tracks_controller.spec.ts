@@ -43,6 +43,36 @@ test.group('LikedTracksController - Unit', () => {
     assert.match(response.body.message, /Error while fetching liked tracks/i)
   })
 
+  test('myLikedTracks returns 200 with user liked tracks', async ({ assert }) => {
+    const service = { getByUserId: async () => [{ id: 1 }, { id: 2 }] } as any
+    const controller = new LikedTracksController(service)
+
+    const response = makeResponse()
+    const auth = { user: { id: 'user-1' } } as any
+
+    await controller.myLikedTracks({ auth, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 200)
+    assert.deepEqual(response.body.likedTracks, [{ id: 1 }, { id: 2 }])
+  })
+
+  test('myLikedTracks returns 500 when service throws', async ({ assert }) => {
+    const service = {
+      getByUserId: async () => {
+        throw new Error('boom')
+      },
+    } as any
+    const controller = new LikedTracksController(service)
+
+    const response = makeResponse()
+    const auth = { user: { id: 'user-1' } } as any
+
+    await controller.myLikedTracks({ auth, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(response.body.message, /Error while fetching user liked tracks/i)
+  })
+
   test('create returns 201 when service returns model', async ({ assert }) => {
     const model = new LikedTrack()
     model.userId = '1'
@@ -90,6 +120,63 @@ test.group('LikedTracksController - Unit', () => {
     const request = { only: () => ({}) } as any
 
     await controller.create({ request, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(response.body.message, /Error while creating liked track/i)
+  })
+
+  test('createMyLikedTrack returns 201 when service returns model', async ({ assert }) => {
+    const model = new LikedTrack()
+    model.userId = 'user-1'
+    ;(model as any).id = 321
+
+    const service = { createLikedTrack: async () => model } as any
+    const controller = new LikedTracksController(service)
+
+    const response = makeResponse()
+    const request = { only: () => ({ spotifyId: 'sp' }) } as any
+    const auth = { user: { id: 'user-1' } } as any
+
+    await controller.createMyLikedTrack({ auth, request, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 201)
+    assert.equal(response.body.likedTrack.userId, 'user-1')
+  })
+
+  test('createMyLikedTrack returns mapped status when service returns error object', async ({
+    assert,
+  }) => {
+    const service = {
+      createLikedTrack: async () => ({
+        error: 'Conflict when creating liked track',
+        status: 409,
+      }),
+    } as any
+    const controller = new LikedTracksController(service)
+
+    const response = makeResponse()
+    const request = { only: () => ({ spotifyId: 'sp' }) } as any
+    const auth = { user: { id: 'user-1' } } as any
+
+    await controller.createMyLikedTrack({ auth, request, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 409)
+    assert.match(response.body.message, /Conflict/i)
+  })
+
+  test('createMyLikedTrack returns 500 when service throws', async ({ assert }) => {
+    const service = {
+      createLikedTrack: async () => {
+        throw new Error('db down')
+      },
+    } as any
+    const controller = new LikedTracksController(service)
+
+    const response = makeResponse()
+    const request = { only: () => ({ spotifyId: 'sp' }) } as any
+    const auth = { user: { id: 'user-1' } } as any
+
+    await controller.createMyLikedTrack({ auth, request, response } as any as HttpContext)
 
     assert.equal(response.statusCode, 500)
     assert.match(response.body.message, /Error while creating liked track/i)
