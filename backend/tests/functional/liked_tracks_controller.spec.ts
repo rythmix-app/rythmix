@@ -85,9 +85,7 @@ test.group('LikedTracksController - Functional', (group) => {
       .related('likedTracks')
       .create({ deezerTrackId: 'delete_me_track', title: 'To delete' })
 
-    const res = await client
-      .delete('/api/liked-tracks/me/delete_me_track')
-      .bearerToken(token)
+    const res = await client.delete('/api/liked-tracks/me/delete_me_track').bearerToken(token)
 
     res.assertStatus(200)
     assert.match(res.body().message, /deleted successfully/i)
@@ -99,9 +97,7 @@ test.group('LikedTracksController - Functional', (group) => {
   }) => {
     const { token } = await createAuthenticatedUser('delete_me_not_found')
 
-    const res = await client
-      .delete('/api/liked-tracks/me/missing_track')
-      .bearerToken(token)
+    const res = await client.delete('/api/liked-tracks/me/missing_track').bearerToken(token)
 
     res.assertStatus(404)
     assert.match(res.body().message, /not found/i)

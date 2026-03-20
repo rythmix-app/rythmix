@@ -75,6 +75,9 @@ export default class LikedTracksController {
       if (isServiceError(result)) {
         return response.status(result.status).json({ message: result.error })
       }
+      if (typeof result === 'object' && result !== null && 'error' in result) {
+        return response.status(500).json({ message: (result as any).error })
+      }
       return response.status(201).json({ likedTrack: result })
     } catch {
       return response.status(500).json({ message: 'Error while creating liked track' })
@@ -200,6 +203,9 @@ export default class LikedTracksController {
       if (isServiceError(result)) {
         return response.status(result.status).json({ message: result.error })
       }
+      if (typeof result === 'object' && result !== null && 'error' in result) {
+        return response.status(500).json({ message: (result as any).error })
+      }
       return response.json({ likedTrack: result })
     } catch {
       return response.status(500).json({ message: 'Error while updating liked track' })
@@ -221,6 +227,10 @@ export default class LikedTracksController {
 
       if (isServiceError(result)) {
         return response.status(result.status).json({ message: result.error })
+      }
+
+      if (typeof result === 'object' && result !== null && 'error' in result) {
+        return response.status(500).json({ message: (result as any).error })
       }
 
       return response.json({ message: result.message })
