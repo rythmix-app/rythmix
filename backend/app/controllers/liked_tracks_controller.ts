@@ -1,7 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { LikedTrackService } from '#services/liked_track_service'
-import LikedTrack from '#models/liked_track'
 import { inject } from '@adonisjs/core'
+import { isServiceError } from '#types/service_error'
 import {
   ApiOperation,
   ApiResponse,
@@ -12,7 +12,7 @@ import {
 
 @inject()
 export default class LikedTracksController {
-  constructor(private likedTrackService: LikedTrackService) {}
+  constructor(private readonly likedTrackService: LikedTrackService) {}
 
   @ApiOperation({
     summary: 'List all liked tracks',
@@ -24,14 +24,31 @@ export default class LikedTracksController {
     try {
       const likedTracks = await this.likedTrackService.getAll()
       return response.json({ likedTracks })
-    } catch (error) {
+    } catch {
       return response.status(500).json({ message: 'Error while fetching liked tracks' })
     }
   }
 
   @ApiOperation({
+    summary: 'Get current user liked tracks',
+    description: 'Get all liked tracks for the authenticated user',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiResponse({ status: 200, description: 'User liked tracks retrieved successfully' })
+  @ApiResponse({ status: 500, description: 'Error while fetching user liked tracks' })
+  public async myLikedTracks({ auth, response }: HttpContext) {
+    try {
+      const user = auth.user!
+      const likedTracks = await this.likedTrackService.getByUserId(user.id)
+      return response.json({ likedTracks })
+    } catch {
+      return response.status(500).json({ message: 'Error while fetching user liked tracks' })
+    }
+  }
+
+  @ApiOperation({
     summary: 'Add a liked track',
-    description: 'Add a track to user liked tracks collection (requires userId, spotifyId)',
+    description: 'Add a track to user liked tracks collection (requires userId, deezerTrackId)',
   })
   @ApiSecurity('bearerAuth')
   @ApiBody({
@@ -39,10 +56,10 @@ export default class LikedTracksController {
     required: true,
     schema: {
       type: 'object',
-      required: ['userId', 'spotifyId'],
+      required: ['userId', 'deezerTrackId'],
       properties: {
         userId: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
-        spotifyId: { type: 'string', example: '3n3Ppam7vgaVa1iaRUc9Lp' },
+        deezerTrackId: { type: 'string', example: '3135556' },
         title: { type: 'string', example: 'Bohemian Rhapsody' },
         artist: { type: 'string', example: 'Queen' },
         type: { type: 'string', example: 'song' },
@@ -53,14 +70,84 @@ export default class LikedTracksController {
   @ApiResponse({ status: 500, description: 'Error while creating liked track' })
   public async create({ request, response }: HttpContext) {
     try {
-      const payload = request.only(['userId', 'spotifyId', 'title', 'artist', 'type'])
+      const payload = request.only(['userId', 'deezerTrackId', 'title', 'artist', 'type'])
       const result = await this.likedTrackService.createLikedTrack(payload)
-      if (!(result instanceof LikedTrack)) {
-        return response.status(result.status || 500).json({ message: result.error })
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
+      }
+      if (typeof result === 'object' && result !== null && 'error' in result) {
+        return response.status(500).json({ message: (result as any).error })
       }
       return response.status(201).json({ likedTrack: result })
-    } catch (error) {
+    } catch {
       return response.status(500).json({ message: 'Error while creating liked track' })
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Add a liked track for current user',
+    description: 'Add a track to the authenticated user liked tracks collection',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiBody({
+    description: 'Liked track data',
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['deezerTrackId'],
+      properties: {
+        deezerTrackId: { type: 'string', example: '3135556' },
+        title: { type: 'string', example: 'Bohemian Rhapsody' },
+        artist: { type: 'string', example: 'Queen' },
+        type: { type: 'string', example: 'song' },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Liked track added successfully' })
+  @ApiResponse({ status: 500, description: 'Error while creating liked track' })
+  public async createMyLikedTrack({ auth, request, response }: HttpContext) {
+    try {
+      const user = auth.user!
+      const payload = request.only(['deezerTrackId', 'title', 'artist', 'type'])
+      const result = await this.likedTrackService.createLikedTrack({
+        userId: user.id,
+        ...payload,
+      })
+
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
+      }
+
+      return response.status(201).json({ likedTrack: result })
+    } catch {
+      return response.status(500).json({ message: 'Error while creating liked track' })
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Delete a liked track for current user',
+    description: 'Delete one liked track from authenticated user collection by deezerTrackId',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiParam({ name: 'deezerTrackId', description: 'Deezer track ID', required: true })
+  @ApiResponse({ status: 200, description: 'Liked track deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Authentication required' })
+  @ApiResponse({ status: 404, description: 'Liked track not found' })
+  @ApiResponse({ status: 500, description: 'Error while deleting liked track' })
+  public async deleteMyLikedTrack({ auth, params, response }: HttpContext) {
+    try {
+      const user = auth.user!
+      const { deezerTrackId } = params
+
+      const result = await this.likedTrackService.deleteMyLikedTrack(user.id, deezerTrackId)
+
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
+      }
+
+      return response.json({ message: result.message })
+    } catch {
+      return response.status(500).json({ message: 'Error while deleting liked track' })
     }
   }
 
@@ -79,7 +166,7 @@ export default class LikedTracksController {
         return response.status(404).json({ message: 'Liked track not found' })
       }
       return response.json({ likedTrack })
-    } catch (error) {
+    } catch {
       return response.status(500).json({ message: 'Error while fetching liked track' })
     }
   }
@@ -96,7 +183,7 @@ export default class LikedTracksController {
     schema: {
       type: 'object',
       properties: {
-        spotifyId: { type: 'string', example: '3n3Ppam7vgaVa1iaRUc9Lp' },
+        deezerTrackId: { type: 'string', example: '3135556' },
         title: { type: 'string', example: 'Bohemian Rhapsody' },
         artist: { type: 'string', example: 'Queen' },
         type: { type: 'string', example: 'song' },
@@ -111,13 +198,16 @@ export default class LikedTracksController {
     try {
       const result = await this.likedTrackService.updateLikedTrack(
         params.id,
-        request.only(['spotifyId', 'title', 'artist', 'type', 'userId'])
+        request.only(['deezerTrackId', 'title', 'artist', 'type', 'userId'])
       )
-      if (!(result instanceof LikedTrack)) {
-        return response.status(result.status || 500).json({ message: result.error })
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
+      }
+      if (typeof result === 'object' && result !== null && 'error' in result) {
+        return response.status(500).json({ message: (result as any).error })
       }
       return response.json({ likedTrack: result })
-    } catch (error) {
+    } catch {
       return response.status(500).json({ message: 'Error while updating liked track' })
     }
   }
@@ -135,14 +225,16 @@ export default class LikedTracksController {
     try {
       const result = await this.likedTrackService.deleteLikedTrack(params.id)
 
-      if ((result as any).error) {
-        return response
-          .status((result as any).status || 500)
-          .json({ message: (result as any).error })
+      if (isServiceError(result)) {
+        return response.status(result.status).json({ message: result.error })
       }
 
-      return response.json({ message: (result as any).message })
-    } catch (error) {
+      if (typeof result === 'object' && result !== null && 'error' in result) {
+        return response.status(500).json({ message: (result as any).error })
+      }
+
+      return response.json({ message: result.message })
+    } catch {
       return response.status(500).json({ message: 'Error while deleting liked track' })
     }
   }
