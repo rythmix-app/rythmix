@@ -12,6 +12,7 @@
     },
     "scheme": "frontmobile",
     "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.frontmobile",
@@ -25,6 +26,7 @@
         "foregroundImage": "./assets/images/android-dark.png",
         "backgroundColor": "#343434"
       },
+      "edgeToEdgeEnabled": true,
       "package": "com.anonymous.frontmobile",
       "permissions": [
         "INTERNET",
@@ -61,10 +63,7 @@
       ],
       "expo-web-browser",
       "expo-font",
-      "expo-audio",
-      "expo-image",
-      "expo-secure-store",
-      "expo-asset"
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true
