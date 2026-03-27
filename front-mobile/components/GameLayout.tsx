@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React from "react";
 import { router } from "expo-router";
 import Header from "@/components/Header";
 import { useBackGuard } from "@/hooks/useBackGuard";
@@ -15,16 +15,20 @@ export default function GameLayout({
   sessionId,
   children,
 }: GameLayoutProps) {
-  const handleAbandon = useCallback(() => {
+  const handleAbandon = async () => {
     if (sessionId) {
-      updateGameSession(sessionId, { status: "canceled" }).catch(() => {});
+      try {
+        await updateGameSession(sessionId, { status: "canceled" });
+      } catch (e) {
+        console.error("Failed to cancel game session:", e);
+      }
     }
     if (router.canGoBack()) {
       router.back();
     }
-  }, [sessionId]);
+  };
 
-  const { onBack, BackGuardModal } = useBackGuard({
+  const { onBack, backGuardModal } = useBackGuard({
     enabled: sessionId != null,
     // onSave intentionally omitted: session stays "active" so user can resume later (MIX-255)
     onAbandon: handleAbandon,
@@ -33,7 +37,7 @@ export default function GameLayout({
   return (
     <>
       <Header title={title} variant="withBack" onBack={onBack} />
-      {BackGuardModal}
+      {backGuardModal}
       {children}
     </>
   );
