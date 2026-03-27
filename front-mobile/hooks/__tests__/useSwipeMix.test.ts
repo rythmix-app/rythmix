@@ -396,6 +396,37 @@ describe("useSwipeMix", () => {
         expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledWith(10, 0);
       });
     });
+
+    it("should not reload if a load is already in progress", async () => {
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      mockDeezerAPI.getTopTracks.mockClear();
+
+      let resolveLoad: (value: any) => void;
+      const slowPromise = new Promise((resolve) => {
+        resolveLoad = resolve;
+      });
+      mockDeezerAPI.getTopTracks.mockReturnValueOnce(slowPromise as any);
+
+      // Trigger loadMore (sets isLoadingRef = true)
+      const loadMorePromise = result.current.actions.loadMore();
+
+      // Wait for loadMore to actually start
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // handleEmpty should be blocked by the lock
+      result.current.handlers.onEmpty();
+
+      resolveLoad!({ data: mockTracks, total: mockTracks.length });
+      await loadMorePromise;
+
+      // getTopTracks called only once (loadMore), not twice (handleEmpty blocked)
+      expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("pagination", () => {
