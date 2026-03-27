@@ -317,6 +317,79 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     assert.exists(sessions.find((s: any) => s.id === session2.id))
   })
 
+  test('createGameSession returns 409 when active session exists for same user and game', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('conflict_active')
+    const userId = `user-conflict-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const result = await service.createGameSession({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    assert.notInstanceOf(result, GameSession)
+    if (isServiceError(result)) {
+      assert.equal(result.status, 409)
+      assert.match(result.error, /active session already exists/i)
+    }
+  })
+
+  test('createGameSession allows creation when existing session is completed', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('completed_ok')
+    const userId = `user-completed-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 100, expGained: 50, rank: 1 }],
+      gameData: {},
+    })
+
+    const result = await service.createGameSession({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    assert.instanceOf(result, GameSession)
+  })
+
+  test('createGameSession allows creation when existing session is canceled', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('canceled_ok')
+    const userId = `user-canceled-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'canceled',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const result = await service.createGameSession({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    assert.instanceOf(result, GameSession)
+  })
+
   test('createGameSession rethrows on unknown DB error', async ({ assert }) => {
     const originalCreate = (GameSession as any).create
 
