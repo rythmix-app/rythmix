@@ -198,6 +198,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   };
 
   const seek = async (positionInSeconds: number): Promise<void> => {
+    if (!isMountedRef.current) return;
     try {
       // Valider la position
       if (positionInSeconds < 0 || positionInSeconds > duration) {
