@@ -10,7 +10,7 @@ interface UseBackGuardOptions {
 
 interface UseBackGuardResult {
   onBack: () => void;
-  BackGuardModal: ReactNode;
+  backGuardModal: ReactNode;
 }
 
 export function useBackGuard({
@@ -52,7 +52,7 @@ export function useBackGuard({
     }
   };
 
-  const BackGuardModal = (
+  const backGuardModal = (
     <Modal
       animationType="fade"
       transparent={true}
@@ -85,7 +85,7 @@ export function useBackGuard({
     </Modal>
   );
 
-  return { onBack, BackGuardModal };
+  return { onBack, backGuardModal };
 }
 
 const styles = StyleSheet.create({
