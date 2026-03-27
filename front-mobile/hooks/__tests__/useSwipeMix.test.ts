@@ -415,8 +415,10 @@ describe("useSwipeMix", () => {
       // Trigger loadMore (sets isLoadingRef = true)
       const loadMorePromise = result.current.actions.loadMore();
 
-      // Wait for loadMore to actually start
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      // Wait for loadMore to actually start (getTopTracks called for the in-flight load)
+      await waitFor(() => {
+        expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledTimes(1);
+      });
 
       // handleEmpty should be blocked by the lock
       result.current.handlers.onEmpty();
