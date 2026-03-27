@@ -21,6 +21,7 @@ export default function GameLayout({
         await updateGameSession(sessionId, { status: "canceled" });
       } catch (e) {
         console.error("Failed to cancel game session:", e);
+        return;
       }
     }
     if (router.canGoBack()) {
