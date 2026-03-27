@@ -329,6 +329,24 @@ describe("useAudioPlayer", () => {
 
       expect(result.current.error).toBeTruthy();
     });
+
+    it("should be a no-op after unmount to prevent NativeSharedObjectNotFoundException", async () => {
+      const { result, unmount } = renderHook(() => useAudioPlayer());
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      unmount();
+
+      // stop() after unmount should not throw or call native player methods
+      await act(async () => {
+        await result.current.stop();
+      });
+
+      expect(mockPlayer.pause).not.toHaveBeenCalled();
+      expect(mockPlayer.seekTo).not.toHaveBeenCalled();
+    });
   });
 
   describe("seek", () => {
@@ -512,6 +530,30 @@ describe("useAudioPlayer", () => {
       });
 
       jest.useRealTimers();
+    });
+  });
+
+  describe("race condition on rapid play calls", () => {
+    it("should reflect only the last play call in state", async () => {
+      const mockTrack2: DeezerTrack = {
+        ...mockTrack,
+        id: 2,
+        title: "Track 2",
+        preview: "https://cdns-preview.dzcdn.net/stream/2.mp3",
+      };
+
+      const { result } = renderHook(() => useAudioPlayer());
+
+      await act(async () => {
+        // Simulate two rapid play calls — second should win
+        result.current.play(mockTrack);
+        await result.current.play(mockTrack2);
+      });
+
+      expect(result.current.currentTrack).toEqual(mockTrack2);
+      expect(mockPlayer.replace).toHaveBeenLastCalledWith({
+        uri: mockTrack2.preview,
+      });
     });
   });
 
