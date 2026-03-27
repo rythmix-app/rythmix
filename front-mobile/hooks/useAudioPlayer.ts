@@ -53,15 +53,13 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
     configureAudio();
 
     // Cleanup au démontage
+    // Ne pas appeler player.remove() ici : useExpoAudioPlayer gère déjà le cycle
+    // de vie natif et appelle remove() en premier (hooks imbriqués nettoyés dans
+    // l'ordre de création). Un double remove provoquerait NativeSharedObjectNotFoundException.
     return () => {
       isMountedRef.current = false;
       if (updateIntervalRef.current) {
         clearInterval(updateIntervalRef.current);
-      }
-      try {
-        player.remove();
-      } catch (err) {
-        console.error("Error removing player:", err);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
