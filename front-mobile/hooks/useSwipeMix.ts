@@ -22,12 +22,16 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
 
   // Utiliser useRef pour l'index de pagination pour éviter de recréer les callbacks
   const currentPageIndexRef = useRef(0);
+  // Verrou synchrone pour éviter les appels concurrents à loadTracks
+  const isLoadingRef = useRef(false);
 
   const audioPlayer = useAudioPlayer();
 
   // Charger les musiques initiales
   const loadTracks = useCallback(
     async (append: boolean = false) => {
+      if (isLoadingRef.current) return;
+      isLoadingRef.current = true;
       setIsLoadingCards(true);
       setError(null);
 
@@ -104,6 +108,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         );
         console.error("Error loading tracks:", err);
       } finally {
+        isLoadingRef.current = false;
         setIsLoadingCards(false);
       }
     },
@@ -172,28 +177,15 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
 
   // Handler quand il n'y a plus de cartes
   const handleEmpty = useCallback(() => {
-    console.log("No more cards, reloading...");
+    if (isLoadingRef.current) return;
     loadTracks();
   }, [loadTracks]);
 
   // Fonction pour charger plus de musiques (pagination)
   const loadMore = useCallback(async () => {
-    console.log(
-      "loadMore called, isLoadingCards:",
-      isLoadingCards,
-      "hasMoreTracks:",
-      hasMoreTracks,
-    );
-    if (isLoadingCards || !hasMoreTracks) {
-      console.log("loadMore blocked:", { isLoadingCards, hasMoreTracks });
-      return;
-    }
-    console.log(
-      "loadMore: Loading more tracks with currentPageIndex:",
-      currentPageIndexRef.current,
-    );
+    if (isLoadingRef.current || !hasMoreTracks) return;
     await loadTracks(true);
-  }, [isLoadingCards, hasMoreTracks, loadTracks]);
+  }, [hasMoreTracks, loadTracks]);
 
   // Handler appelé quand une nouvelle carte apparaît
   const handleCardAppear = useCallback(
