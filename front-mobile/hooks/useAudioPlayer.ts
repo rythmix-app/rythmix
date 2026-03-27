@@ -35,6 +35,8 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const [duration, setDuration] = useState(0);
 
   const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMountedRef = useRef(true);
+  const playRequestIdRef = useRef(0);
 
   // Configurer le mode audio au montage
   useEffect(() => {
@@ -52,6 +54,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
 
     // Cleanup au démontage
     return () => {
+      isMountedRef.current = false;
       if (updateIntervalRef.current) {
         clearInterval(updateIntervalRef.current);
       }
@@ -71,6 +74,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
     }
 
     updateIntervalRef.current = setInterval(() => {
+      if (!isMountedRef.current) return;
       try {
         setIsPlaying(player.playing);
         setPosition(player.currentTime);
@@ -88,6 +92,8 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   }, [player]);
 
   const play = async (track: DeezerTrack): Promise<void> => {
+    const requestId = ++playRequestIdRef.current;
+
     try {
       setIsLoading(true);
       setError(null);
@@ -104,16 +110,17 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
         throw AudioPlayerError.loadFailed("URL d'extrait audio invalide");
       }
 
-      // Remplacer la source audio
       player.replace({ uri: track.preview });
-
-      // Lancer la lecture
       player.play();
+
+      if (requestId !== playRequestIdRef.current) return;
 
       setCurrentTrack(track);
       setIsPlaying(true);
       setIsLoading(false);
     } catch (err) {
+      if (requestId !== playRequestIdRef.current) return;
+
       let error: AudioPlayerError;
 
       if (err instanceof AudioPlayerError) {
@@ -147,6 +154,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   };
 
   const pause = async (): Promise<void> => {
+    if (!isMountedRef.current) return;
     try {
       player.pause();
       setIsPlaying(false);
@@ -160,6 +168,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   };
 
   const resume = async (): Promise<void> => {
+    if (!isMountedRef.current) return;
     try {
       player.play();
       setIsPlaying(true);
@@ -173,6 +182,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   };
 
   const stop = async (): Promise<void> => {
+    if (!isMountedRef.current) return;
     try {
       player.pause();
       player.seekTo(0);
