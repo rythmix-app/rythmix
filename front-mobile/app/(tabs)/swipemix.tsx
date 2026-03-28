@@ -8,7 +8,8 @@ import { useSwipeMix } from "@/hooks/useSwipeMix";
 
 export default function SwipeMixScreen() {
   const { top, bottom } = useSafeAreaInsets();
-  const { cards, handlers, audioPlayer, error, actions } = useSwipeMix();
+  const { cards, isLoadingCards, handlers, audioPlayer, error, actions } =
+    useSwipeMix();
 
   // Utiliser une ref pour garder une référence stable à la fonction stop
   const audioPlayerStopRef = useRef(audioPlayer.stop);
@@ -41,6 +42,7 @@ export default function SwipeMixScreen() {
         <View style={styles.swipeCardContainer}>
           <CardStack
             cards={cards}
+            isLoadingCards={isLoadingCards}
             onSwipeLeft={handlers.onSwipeLeft}
             onSwipeRight={handlers.onSwipeRight}
             onEmpty={handlers.onEmpty}

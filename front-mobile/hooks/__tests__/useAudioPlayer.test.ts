@@ -107,27 +107,14 @@ describe("useAudioPlayer", () => {
       });
     });
 
-    it("should cleanup player on unmount", () => {
+    it("should not call player.remove on unmount (expo-audio handles it)", () => {
       const { unmount } = renderHook(() => useAudioPlayer());
 
       unmount();
 
-      expect(mockPlayer.remove).toHaveBeenCalled();
-    });
-
-    it("should handle player removal errors on unmount", () => {
-      mockPlayer.remove.mockImplementation(() => {
-        throw new Error("Remove failed");
-      });
-
-      const { unmount } = renderHook(() => useAudioPlayer());
-
-      unmount();
-
-      expect(console.error).toHaveBeenCalledWith(
-        "Error removing player:",
-        expect.any(Error),
-      );
+      // expo-audio's useAudioPlayer gère le cycle de vie natif via son propre cleanup.
+      // Notre hook ne doit pas appeler remove() pour éviter un double remove.
+      expect(mockPlayer.remove).not.toHaveBeenCalled();
     });
   });
 

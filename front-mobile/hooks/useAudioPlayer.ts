@@ -53,15 +53,12 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
     configureAudio();
 
     // Cleanup au démontage
+    // Ne pas appeler player.remove() ici : useExpoAudioPlayer gère déjà le cycle
+    // de vie natif. Un double remove provoquerait NativeSharedObjectNotFoundException.
     return () => {
       isMountedRef.current = false;
       if (updateIntervalRef.current) {
         clearInterval(updateIntervalRef.current);
-      }
-      try {
-        player.remove();
-      } catch (err) {
-        console.error("Error removing player:", err);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,6 +89,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   }, [player]);
 
   const play = async (track: DeezerTrack): Promise<void> => {
+    if (!isMountedRef.current) return;
     const requestId = ++playRequestIdRef.current;
 
     try {
