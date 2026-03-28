@@ -107,14 +107,17 @@ describe("useAudioPlayer", () => {
       });
     });
 
-    it("should not call player.remove on unmount (expo-audio handles it)", () => {
+    it("should patch player.remove to suppress NativeSharedObjectNotFoundException", () => {
+      mockPlayer.remove.mockImplementation(() => {
+        throw new Error("NativeSharedObjectNotFoundException");
+      });
+
       const { unmount } = renderHook(() => useAudioPlayer());
 
-      unmount();
+      // The patched remove should not throw
+      expect(() => mockPlayer.remove()).not.toThrow();
 
-      // expo-audio's useAudioPlayer gère le cycle de vie natif via son propre cleanup.
-      // Notre hook ne doit pas appeler remove() pour éviter un double remove.
-      expect(mockPlayer.remove).not.toHaveBeenCalled();
+      unmount();
     });
   });
 
@@ -300,6 +303,23 @@ describe("useAudioPlayer", () => {
       expect(mockPlayer.seekTo).toHaveBeenCalledWith(0);
       expect(result.current.isPlaying).toBe(false);
       expect(result.current.position).toBe(0);
+    });
+
+    it("should clear error state when stopping", async () => {
+      const trackWithoutPreview = { ...mockTrack, preview: "" };
+      const { result } = renderHook(() => useAudioPlayer());
+
+      // Trigger an error
+      await act(async () => {
+        await result.current.play(trackWithoutPreview);
+      });
+      expect(result.current.error).toBeTruthy();
+
+      // Stop should clear the error
+      await act(async () => {
+        await result.current.stop();
+      });
+      expect(result.current.error).toBeNull();
     });
 
     it("should handle stop errors", async () => {
