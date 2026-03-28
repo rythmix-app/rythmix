@@ -90,6 +90,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   }, [player]);
 
   const play = async (track: DeezerTrack): Promise<void> => {
+    if (!isMountedRef.current) return;
     const requestId = ++playRequestIdRef.current;
 
     try {
