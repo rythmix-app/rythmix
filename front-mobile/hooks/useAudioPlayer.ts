@@ -24,6 +24,9 @@ interface AudioPlayerActions {
 
 export type UseAudioPlayerReturn = AudioPlayerState & AudioPlayerActions;
 
+const POLL_INTERVAL_MS = 250;
+const ACTION_GRACE_PERIOD_MS = 1000;
+
 export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const player = useExpoAudioPlayer();
 
@@ -52,8 +55,15 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
     const patched = (() => {
       try {
         originalRemove();
-      } catch {
-        // Objet natif déjà libéré — rien à faire
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.includes("NativeSharedObject")) {
+          return;
+        }
+        if (__DEV__) {
+          console.error("Unexpected error in player.remove():", err);
+        }
+        throw err;
       }
     }) as typeof player.remove & { __patched?: boolean };
     patched.__patched = true;
@@ -94,7 +104,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
       try {
         const msSinceAction = Date.now() - lastActionTimeRef.current;
         if (
-          msSinceAction > 1000 &&
+          msSinceAction > ACTION_GRACE_PERIOD_MS &&
           player.playing !== prevIsPlayingRef.current
         ) {
           prevIsPlayingRef.current = player.playing;
@@ -113,7 +123,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
       } catch {
         // Ignorer les erreurs de lecture des propriétés
       }
-    }, 250);
+    }, POLL_INTERVAL_MS);
 
     return () => {
       if (updateIntervalRef.current) {

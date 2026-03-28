@@ -107,17 +107,26 @@ describe("useAudioPlayer", () => {
       });
     });
 
-    it("should patch player.remove to suppress NativeSharedObjectNotFoundException", () => {
+    it("should suppress NativeSharedObjectNotFoundException on remove", () => {
       mockPlayer.remove.mockImplementation(() => {
         throw new Error("NativeSharedObjectNotFoundException");
       });
 
       const { unmount } = renderHook(() => useAudioPlayer());
 
-      // The patched remove should not throw
       expect(() => mockPlayer.remove()).not.toThrow();
 
       unmount();
+    });
+
+    it("should rethrow unexpected errors on remove", () => {
+      mockPlayer.remove.mockImplementation(() => {
+        throw new Error("SomeOtherError");
+      });
+
+      renderHook(() => useAudioPlayer());
+
+      expect(() => mockPlayer.remove()).toThrow("SomeOtherError");
     });
   });
 
