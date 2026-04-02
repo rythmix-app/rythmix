@@ -24,10 +24,17 @@ interface AudioPlayerActions {
 
 export type UseAudioPlayerReturn = AudioPlayerState & AudioPlayerActions;
 
+interface UseAudioPlayerOptions {
+  onRetry?: (track: DeezerTrack) => Promise<DeezerTrack | null>;
+}
+
 const POLL_INTERVAL_MS = 250;
 const ACTION_GRACE_PERIOD_MS = 1000;
+const PLAYBACK_VERIFY_DELAY_MS = 2000;
 
-export const useAudioPlayer = (): UseAudioPlayerReturn => {
+export const useAudioPlayer = (
+  options?: UseAudioPlayerOptions,
+): UseAudioPlayerReturn => {
   const player = useExpoAudioPlayer();
 
   const [currentTrack, setCurrentTrack] = useState<DeezerTrack | null>(null);
@@ -38,6 +45,8 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const [duration, setDuration] = useState(0);
 
   const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const verifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onRetryRef = useRef(options?.onRetry);
   const isMountedRef = useRef(true);
   const playRequestIdRef = useRef(0);
   const lastActionTimeRef = useRef(0);
@@ -70,6 +79,15 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
     player.remove = patched;
   }, [player]);
 
+  onRetryRef.current = options?.onRetry;
+
+  const cancelVerification = () => {
+    if (verifyTimeoutRef.current) {
+      clearTimeout(verifyTimeoutRef.current);
+      verifyTimeoutRef.current = null;
+    }
+  };
+
   // Configurer le mode audio au montage
   useEffect(() => {
     const configureAudio = async () => {
@@ -86,6 +104,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
 
     return () => {
       isMountedRef.current = false;
+      cancelVerification();
       if (updateIntervalRef.current) {
         clearInterval(updateIntervalRef.current);
       }
@@ -132,9 +151,13 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
     };
   }, [player]);
 
-  const play = async (track: DeezerTrack): Promise<void> => {
+  const playInternal = async (
+    track: DeezerTrack,
+    { verify }: { verify: boolean } = { verify: true },
+  ): Promise<void> => {
     if (!isMountedRef.current) return;
     const requestId = ++playRequestIdRef.current;
+    cancelVerification();
 
     try {
       setIsLoading(true);
@@ -162,6 +185,45 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
       setIsPlaying(true);
       prevIsPlayingRef.current = true;
       setIsLoading(false);
+
+      // Vérifier que la lecture a réellement démarré après un délai
+      if (verify) {
+        verifyTimeoutRef.current = setTimeout(async () => {
+          verifyTimeoutRef.current = null;
+          if (!isMountedRef.current) return;
+          if (requestId !== playRequestIdRef.current) return;
+
+          // Si le player joue ou a progressé, tout va bien
+          if (player.playing || player.currentTime > 0) return;
+
+          // Playback stalled — tenter un retry avec une URL fraîche
+          const onRetry = onRetryRef.current;
+          if (onRetry) {
+            try {
+              const freshTrack = await onRetry(track);
+              if (
+                freshTrack &&
+                isMountedRef.current &&
+                requestId === playRequestIdRef.current
+              ) {
+                await playInternal(freshTrack, { verify: false });
+                return;
+              }
+            } catch {
+              // Retry échoué, on tombe dans l'affichage d'erreur ci-dessous
+            }
+          }
+
+          if (!isMountedRef.current) return;
+          if (requestId !== playRequestIdRef.current) return;
+
+          const error = AudioPlayerError.playbackStalled();
+          setError(error.getUserMessage());
+          setIsPlaying(false);
+          prevIsPlayingRef.current = false;
+          setIsLoading(false);
+        }, PLAYBACK_VERIFY_DELAY_MS);
+      }
     } catch (err) {
       if (requestId !== playRequestIdRef.current) return;
 
@@ -198,6 +260,10 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
     }
   };
 
+  const play = async (track: DeezerTrack): Promise<void> => {
+    await playInternal(track);
+  };
+
   const pause = async (): Promise<void> => {
     if (!isMountedRef.current) return;
     try {
@@ -232,6 +298,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
 
   const stop = async (): Promise<void> => {
     if (!isMountedRef.current) return;
+    cancelVerification();
     try {
       lastActionTimeRef.current = Date.now();
       player.pause();
