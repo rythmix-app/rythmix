@@ -24,6 +24,9 @@ interface AudioPlayerActions {
 
 export type UseAudioPlayerReturn = AudioPlayerState & AudioPlayerActions;
 
+const POLL_INTERVAL_MS = 250;
+const ACTION_GRACE_PERIOD_MS = 1000;
+
 export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const player = useExpoAudioPlayer();
 
@@ -37,6 +40,35 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isMountedRef = useRef(true);
   const playRequestIdRef = useRef(0);
+  const lastActionTimeRef = useRef(0);
+  const prevPositionRef = useRef(0);
+  const prevDurationRef = useRef(0);
+  const prevIsPlayingRef = useRef(false);
+
+  // Sécuriser player.remove() contre NativeSharedObjectNotFoundException.
+  // expo-audio appelle remove() en interne au démontage, mais l'objet natif
+  // peut déjà être libéré lors d'une navigation rapide entre tabs.
+  useEffect(() => {
+    const remove = player.remove as { __patched?: boolean };
+    if (remove.__patched) return;
+    const originalRemove = player.remove.bind(player);
+    const patched = (() => {
+      try {
+        originalRemove();
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.includes("NativeSharedObject")) {
+          return;
+        }
+        if (__DEV__) {
+          console.error("Unexpected error in player.remove():", err);
+        }
+        throw err;
+      }
+    }) as typeof player.remove & { __patched?: boolean };
+    patched.__patched = true;
+    player.remove = patched;
+  }, [player]);
 
   // Configurer le mode audio au montage
   useEffect(() => {
@@ -52,9 +84,6 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
 
     configureAudio();
 
-    // Cleanup au démontage
-    // Ne pas appeler player.remove() ici : useExpoAudioPlayer gère déjà le cycle
-    // de vie natif. Un double remove provoquerait NativeSharedObjectNotFoundException.
     return () => {
       isMountedRef.current = false;
       if (updateIntervalRef.current) {
@@ -73,13 +102,28 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
     updateIntervalRef.current = setInterval(() => {
       if (!isMountedRef.current) return;
       try {
-        setIsPlaying(player.playing);
-        setPosition(player.currentTime);
-        setDuration(player.duration || 0);
+        const msSinceAction = Date.now() - lastActionTimeRef.current;
+        if (
+          msSinceAction > ACTION_GRACE_PERIOD_MS &&
+          player.playing !== prevIsPlayingRef.current
+        ) {
+          prevIsPlayingRef.current = player.playing;
+          setIsPlaying(player.playing);
+        }
+        const newPosition = player.currentTime;
+        if (newPosition !== prevPositionRef.current) {
+          prevPositionRef.current = newPosition;
+          setPosition(newPosition);
+        }
+        const newDuration = player.duration || 0;
+        if (newDuration !== prevDurationRef.current) {
+          prevDurationRef.current = newDuration;
+          setDuration(newDuration);
+        }
       } catch {
         // Ignorer les erreurs de lecture des propriétés
       }
-    }, 250);
+    }, POLL_INTERVAL_MS);
 
     return () => {
       if (updateIntervalRef.current) {
@@ -110,11 +154,13 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
 
       player.replace({ uri: track.preview });
       player.play();
+      lastActionTimeRef.current = Date.now();
 
       if (requestId !== playRequestIdRef.current) return;
 
       setCurrentTrack(track);
       setIsPlaying(true);
+      prevIsPlayingRef.current = true;
       setIsLoading(false);
     } catch (err) {
       if (requestId !== playRequestIdRef.current) return;
@@ -147,6 +193,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
       setError(error.getUserMessage());
       setIsLoading(false);
       setIsPlaying(false);
+      prevIsPlayingRef.current = false;
       console.error("Error playing track:", error);
     }
   };
@@ -154,8 +201,10 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const pause = async (): Promise<void> => {
     if (!isMountedRef.current) return;
     try {
+      lastActionTimeRef.current = Date.now();
       player.pause();
       setIsPlaying(false);
+      prevIsPlayingRef.current = false;
     } catch (err) {
       const error = AudioPlayerError.playbackError(
         "Impossible de mettre en pause",
@@ -168,8 +217,10 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const resume = async (): Promise<void> => {
     if (!isMountedRef.current) return;
     try {
+      lastActionTimeRef.current = Date.now();
       player.play();
       setIsPlaying(true);
+      prevIsPlayingRef.current = true;
     } catch (err) {
       const error = AudioPlayerError.playbackError(
         "Impossible de reprendre la lecture",
@@ -182,10 +233,13 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const stop = async (): Promise<void> => {
     if (!isMountedRef.current) return;
     try {
+      lastActionTimeRef.current = Date.now();
       player.pause();
       player.seekTo(0);
       setIsPlaying(false);
+      prevIsPlayingRef.current = false;
       setPosition(0);
+      setError(null);
     } catch (err) {
       const error = AudioPlayerError.playbackError(
         "Impossible d'arrêter la lecture",
