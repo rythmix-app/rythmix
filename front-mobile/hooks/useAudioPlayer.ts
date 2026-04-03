@@ -153,7 +153,9 @@ export const useAudioPlayer = (
 
   const playInternal = async (
     track: DeezerTrack,
-    { verify }: { verify: boolean } = { verify: true },
+    { verify, allowRetry = true }: { verify: boolean; allowRetry?: boolean } = {
+      verify: true,
+    },
   ): Promise<void> => {
     if (!isMountedRef.current) return;
     const requestId = ++playRequestIdRef.current;
@@ -198,7 +200,7 @@ export const useAudioPlayer = (
 
           // Playback stalled — tenter un retry avec une URL fraîche
           const onRetry = onRetryRef.current;
-          if (onRetry) {
+          if (allowRetry && onRetry) {
             try {
               const freshTrack = await onRetry(track);
               if (
@@ -206,7 +208,11 @@ export const useAudioPlayer = (
                 isMountedRef.current &&
                 requestId === playRequestIdRef.current
               ) {
-                await playInternal(freshTrack, { verify: false });
+                // La 2e tentative est vérifiée mais ne déclenchera plus de retry
+                await playInternal(freshTrack, {
+                  verify: true,
+                  allowRetry: false,
+                });
                 return;
               }
             } catch {
@@ -266,6 +272,7 @@ export const useAudioPlayer = (
 
   const pause = async (): Promise<void> => {
     if (!isMountedRef.current) return;
+    cancelVerification();
     try {
       lastActionTimeRef.current = Date.now();
       player.pause();

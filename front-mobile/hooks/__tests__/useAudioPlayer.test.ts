@@ -702,6 +702,68 @@ describe("useAudioPlayer", () => {
       expect(result.current.isPlaying).toBe(false);
     });
 
+    it("should show error when retry also stalls", async () => {
+      mockPlayer.playing = false;
+      mockPlayer.currentTime = 0;
+
+      const freshTrack: DeezerTrack = {
+        ...mockTrack,
+        preview: "https://cdns-preview.dzcdn.net/stream/fresh.mp3",
+      };
+      // onRetry returns a fresh track but player remains stalled
+      const onRetry = jest.fn().mockResolvedValue(freshTrack);
+
+      const { result } = renderHook(() => useAudioPlayer({ onRetry }));
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      // First verification detects stall → triggers retry
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(2000);
+      });
+
+      expect(onRetry).toHaveBeenCalledTimes(1);
+
+      // Second verification detects stall again → should show error (no more retry)
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(2000);
+      });
+
+      expect(onRetry).toHaveBeenCalledTimes(1); // Not called again
+      expect(result.current.error).toContain("démarrer");
+      expect(result.current.isPlaying).toBe(false);
+    });
+
+    it("should cancel verification when user pauses before delay", async () => {
+      mockPlayer.playing = false;
+      mockPlayer.currentTime = 0;
+
+      const onRetry = jest.fn().mockResolvedValue(null);
+
+      const { result } = renderHook(() => useAudioPlayer({ onRetry }));
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      // Pause before the verification delay fires
+      await act(async () => {
+        await result.current.pause();
+      });
+
+      // Advance past the verification delay
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+
+      // Should not show stall error or call onRetry
+      expect(result.current.error).toBeNull();
+      expect(onRetry).not.toHaveBeenCalled();
+      expect(result.current.isPlaying).toBe(false);
+    });
+
     it("should cancel verification on new play call", async () => {
       mockPlayer.playing = false;
       mockPlayer.currentTime = 0;
