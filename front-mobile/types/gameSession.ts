@@ -52,6 +52,17 @@ export interface GetMyGameSessionsResponse {
   gameSessions: GameSession[];
 }
 
+export interface GetMyGameHistoryResponse {
+  meta: {
+    total: number;
+    perPage: number;
+    currentPage: number;
+    lastPage: number;
+    firstPage: number;
+  };
+  data: GameSession[];
+}
+
 export interface GetMyActiveGameSessionResponse {
   gameSession: GameSession | null;
 }
