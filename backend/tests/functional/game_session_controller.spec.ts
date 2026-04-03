@@ -216,6 +216,63 @@ test.group('GameSessionsController - Functional', (group) => {
     assert.exists(res.body().gameSessions.find((s: any) => s.id === session2.id))
   })
 
+  test('POST /api/game-sessions returns 409 when active session exists for same user and game', async ({
+    client,
+  }) => {
+    const { token } = await createAuthenticatedUser('post409active')
+    const game = await createGame('conflict-active')
+    const userId = `user-conflict-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const res = await client
+      .post('/api/game-sessions')
+      .bearerToken(token)
+      .json({
+        gameId: game.id,
+        status: 'active',
+        players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+        gameData: {},
+      })
+
+    res.assertStatus(409)
+    res.assertBodyContains({ message: 'An active session already exists for this game' })
+  })
+
+  test('POST /api/game-sessions allows creation when existing session is completed or canceled', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser('post_completed')
+    const game = await createGame('completed-allowed')
+    const userId = `user-done-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 100, expGained: 50, rank: 1 }],
+      gameData: {},
+    })
+
+    const res = await client
+      .post('/api/game-sessions')
+      .bearerToken(token)
+      .json({
+        gameId: game.id,
+        status: 'active',
+        players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+        gameData: {},
+      })
+
+    res.assertStatus(201)
+    assert.equal(res.body().gameSession.gameId, game.id)
+  })
+
   test('POST /api/game-sessions returns 404 for non-existent game', async ({ client }) => {
     const { token } = await createAuthenticatedUser('post404')
     const payload = {

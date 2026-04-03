@@ -16,6 +16,25 @@ export class GameSessionService {
     players: any
     gameData: any
   }) {
+    const playerIds: string[] = Array.isArray(payload.players)
+      ? payload.players.map((p: any) => p.userId).filter(Boolean)
+      : []
+
+    for (const userId of playerIds) {
+      const existing = await GameSession.query()
+        .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+        .where('game_id', payload.gameId)
+        .where('status', GameSessionStatus.Active)
+        .first()
+
+      if (existing) {
+        return {
+          error: 'An active session already exists for this game',
+          status: 409,
+        }
+      }
+    }
+
     try {
       const gameSession = await GameSession.create(payload)
       await gameSession.load('game')

@@ -40,16 +40,48 @@ export default class GameSessionsController {
     required: true,
     schema: {
       type: 'object',
-      required: ['gameId'],
+      required: ['gameId', 'status', 'players', 'gameData'],
       properties: {
-        gameId: { type: 'integer', example: 1 },
+        gameId: { type: 'integer', example: 558 },
         status: {
           type: 'string',
           enum: Object.values(GameSessionStatus),
-          example: GameSessionStatus.Pending,
+          example: GameSessionStatus.Active,
         },
-        players: { type: 'object', example: { player1: 'John', player2: 'Jane' } },
-        gameData: { type: 'object', example: { score: 0, round: 1 } },
+        players: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['userId'],
+            properties: {
+              userId: {
+                type: 'string',
+                example: '46a42728-1fe2-4b3a-afd1-1fb9b0fe84f8',
+              },
+            },
+          },
+          example: [{ userId: '46a42728-1fe2-4b3a-afd1-1fb9b0fe84f8' }],
+        },
+        gameData: {
+          type: 'object',
+          example: {
+            album: {
+              id: 657848951,
+              title: 'BDLM VOL.1',
+              coverUrl:
+                'https://cdn-images.dzcdn.net/images/cover/af056d5fa6167cfd1917dc0e08c11083/1000x1000-000000-80-0-0.jpg',
+              artistName: 'Tiakola',
+              totalTracks: 18,
+            },
+            genre: { id: 116, name: 'Rap/Hip Hop' },
+            score: 0,
+            answers: [],
+            maxScore: 18,
+            startedAt: '2026-03-17T21:05:27.989Z',
+            completedAt: null,
+            timeElapsed: 0,
+          },
+        },
       },
     },
   })
