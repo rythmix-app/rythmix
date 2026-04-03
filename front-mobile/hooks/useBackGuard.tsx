@@ -5,7 +5,6 @@ import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 interface UseBackGuardOptions {
   enabled: boolean;
   onSave?: () => void;
-  onAbandon?: () => void;
 }
 
 interface UseBackGuardResult {
@@ -16,39 +15,32 @@ interface UseBackGuardResult {
 export function useBackGuard({
   enabled,
   onSave,
-  onAbandon,
 }: UseBackGuardOptions): UseBackGuardResult {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const navigate = () => {
+  const navigateBack = () => {
     if (router.canGoBack()) {
       router.back();
     }
   };
 
-  const handleSave = () => {
+  const handleSaveAndQuit = () => {
     setIsModalVisible(false);
     if (onSave) {
       onSave();
-    } else {
-      navigate();
     }
+    navigateBack();
   };
 
-  const handleAbandon = () => {
+  const handleCancel = () => {
     setIsModalVisible(false);
-    if (onAbandon) {
-      onAbandon();
-    } else {
-      navigate();
-    }
   };
 
   const onBack = () => {
     if (enabled) {
       setIsModalVisible(true);
     } else {
-      navigate();
+      navigateBack();
     }
   };
 
@@ -57,27 +49,27 @@ export function useBackGuard({
       animationType="fade"
       transparent={true}
       visible={isModalVisible}
-      onRequestClose={() => setIsModalVisible(false)}
+      onRequestClose={handleCancel}
     >
       <View style={styles.overlay}>
         <View style={styles.modalCard}>
           <Text style={styles.modalTitle}>Quitter la partie ?</Text>
           <Text style={styles.modalText}>
-            Vous pouvez sauvegarder et reprendre plus tard, ou abandonner
-            définitivement.
+            Souhaitez-vous sauvegarder votre progression pour reprendre plus
+            tard ?
           </Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity
               style={[styles.btn, styles.btnSave]}
-              onPress={handleSave}
+              onPress={handleSaveAndQuit}
             >
               <Text style={styles.btnLabel}>Sauvegarder</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.btn, styles.btnAbandon]}
-              onPress={handleAbandon}
+              style={[styles.btn, styles.btnCancel]}
+              onPress={handleCancel}
             >
-              <Text style={styles.btnLabel}>Abandonner</Text>
+              <Text style={styles.btnLabel}>Annuler</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -127,7 +119,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   btn: {
-    paddingHorizontal: 20,
+    flex: 1,
     height: 50,
     borderRadius: 25,
     justifyContent: "center",
@@ -136,7 +128,7 @@ const styles = StyleSheet.create({
   btnSave: {
     backgroundColor: "#0D7377",
   },
-  btnAbandon: {
+  btnCancel: {
     backgroundColor: "#323232",
   },
   btnLabel: {
