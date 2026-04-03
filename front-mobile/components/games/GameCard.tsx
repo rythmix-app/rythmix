@@ -17,25 +17,32 @@ import Animated, {
 import { Game } from "@/types/games";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { getGameIcon } from "@/utils/games";
+import { Colors } from "@/constants/Colors";
 
 export interface GameCardProps {
   game: Game;
   onPress: (game: Game) => void;
   onToggleFavorite: (game: Game) => void;
+  hasSavedGame?: boolean;
 }
 
-export function GameCard({ game, onPress, onToggleFavorite }: GameCardProps) {
+export function GameCard({
+  game,
+  onPress,
+  onToggleFavorite,
+  hasSavedGame,
+}: GameCardProps) {
   const { width } = useWindowDimensions();
   const cardScale = useSharedValue(1);
   const favoriteScale = useSharedValue(1);
   const gameIcon = getGameIcon(game.name);
 
   const cardWidth = useMemo(() => {
-    const horizontalPadding = 20 * 2; // Parent container padding
-    const gutter = 12; // Gap between cards
+    const horizontalPadding = 20 * 2;
+    const gutter = 12;
     const available = width - horizontalPadding - gutter;
     const calculatedWidth = available / 2;
-    return Math.max(calculatedWidth, 150); // Minimum 150px, no maximum limit
+    return Math.max(calculatedWidth, 150);
   }, [width]);
 
   const cardAnimatedStyle = useAnimatedStyle(() => ({
@@ -90,30 +97,39 @@ export function GameCard({ game, onPress, onToggleFavorite }: GameCardProps) {
           )}
         </View>
 
-        {game.isEnabled && (
-          <Pressable
-            onPress={handleToggleFavorite}
-            hitSlop={10}
-            style={[styles.favoriteButton]}
-          >
-            <MaskedView
-              style={{ flex: 1, flexDirection: "row", top: 7, left: 7 }}
-              maskElement={
-                <Animated.View style={favoriteAnimatedStyle}>
-                  <FontAwesome
-                    name={game.isFavorite ? "heart" : "heart-o"}
-                    size={22}
-                  />
-                </Animated.View>
-              }
+        <View style={styles.topActionsContainer}>
+          {game.isEnabled && (
+            <Pressable
+              onPress={handleToggleFavorite}
+              hitSlop={10}
+              style={styles.favoriteButton}
             >
-              <LinearGradient
-                colors={["#40D400", "#216E00", "#216E00"]}
-                style={{ flex: 1 }}
-              />
-            </MaskedView>
-          </Pressable>
-        )}
+              <MaskedView
+                style={{ flex: 1, flexDirection: "row", top: 7, left: 7 }}
+                maskElement={
+                  <Animated.View style={favoriteAnimatedStyle}>
+                    <FontAwesome
+                      name={game.isFavorite ? "heart" : "heart-o"}
+                      size={22}
+                    />
+                  </Animated.View>
+                }
+              >
+                <LinearGradient
+                  colors={["#40D400", "#216E00", "#216E00"]}
+                  style={{ flex: 1 }}
+                />
+              </MaskedView>
+            </Pressable>
+          )}
+
+          {hasSavedGame && (
+            <View style={styles.badge}>
+              <MaterialIcons name="history" size={12} color="#121212" />
+              <Text style={styles.badgeText}>En cours</Text>
+            </View>
+          )}
+        </View>
 
         <Text numberOfLines={2} style={styles.title}>
           {game.name}
@@ -139,6 +155,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    position: "relative",
   },
   media: {
     height: 94,
@@ -167,17 +184,36 @@ const styles = StyleSheet.create({
     fontFamily: "Bold",
     textTransform: "uppercase",
   },
-  favoriteButton: {
+  topActionsContainer: {
     position: "absolute",
     top: 10,
+    left: 10,
     right: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: 36,
+  },
+  favoriteButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
     backgroundColor: "rgba(0,0,0,0.28)",
   },
-  favoriteWithBadge: {
-    top: 52,
+  badge: {
+    backgroundColor: Colors.primary.survol,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  badgeText: {
+    color: "#121212",
+    fontSize: 10,
+    fontFamily: "Bold",
+    textTransform: "uppercase",
   },
   title: {
     color: "#FFFFFF",

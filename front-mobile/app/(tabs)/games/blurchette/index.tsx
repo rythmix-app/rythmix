@@ -1,21 +1,40 @@
-import { useEffect, useState } from "react";
-import { router } from "expo-router";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
 import Header from "@/components/Header";
+import ConfirmationModal from "@/components/ConfirmationModal";
 import { Colors } from "@/constants/Colors";
 import { getAllGames } from "@/services/gameService";
+import { hasGameState } from "@/services/gameStorageService";
+import {
+  getMyActiveSession,
+  updateGameSession,
+} from "@/services/gameSessionService";
+import { GameSession } from "@/types/gameSession";
+import * as Haptics from "expo-haptics";
 
 export default function BlurchetteIndexScreen() {
   const [gameId, setGameId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [hasSavedGame, setHasSavedGame] = useState(false);
+  const [activeSession, setActiveSession] = useState<GameSession | null>(null);
+  const [isResumeModalVisible, setIsResumeModalVisible] = useState(false);
 
-  useEffect(() => {
-    loadGameId();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadGameId();
+    }, []),
+  );
 
   const loadGameId = async () => {
     try {
@@ -25,6 +44,8 @@ export default function BlurchetteIndexScreen() {
       );
       if (blurchette) {
         setGameId(blurchette.id);
+        const savedStateExists = await hasGameState(blurchette.id.toString());
+        setHasSavedGame(savedStateExists);
       } else {
         setError(true);
       }
@@ -36,17 +57,66 @@ export default function BlurchetteIndexScreen() {
     }
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = async (resume: boolean = false) => {
+    if (!gameId) return;
+
+    if (resume) {
+      Haptics.selectionAsync().catch(() => {});
+      navigateToGame(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const session = await getMyActiveSession(gameId);
+
+      if (session && session.status === "active") {
+        setActiveSession(session);
+        setIsResumeModalVisible(true);
+      } else {
+        navigateToGame(false);
+      }
+    } catch (err) {
+      console.error("Error checking active session:", err);
+      navigateToGame(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmResume = () => {
+    setIsResumeModalVisible(false);
+    navigateToGame(true);
+  };
+
+  const handleStartNewGame = async () => {
+    setIsResumeModalVisible(false);
+    if (activeSession) {
+      setLoading(true);
+      try {
+        await updateGameSession(activeSession.id, { status: "canceled" });
+      } catch (e) {
+        console.error("Failed to cancel session:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    navigateToGame(false);
+  };
+
+  const navigateToGame = (resume: boolean) => {
     if (gameId) {
       router.push({
         pathname: "/games/blurchette/game",
-        params: { gameId: gameId.toString() },
+        params: {
+          gameId: gameId.toString(),
+          resume: resume.toString(),
+        },
       });
     }
   };
 
-  // Show loading state
-  if (loading) {
+  if (loading && !gameId) {
     return (
       <>
         <Header title="Blurchette" variant="withBack" />
@@ -58,7 +128,6 @@ export default function BlurchetteIndexScreen() {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <>
@@ -80,6 +149,7 @@ export default function BlurchetteIndexScreen() {
       </>
     );
   }
+
   return (
     <>
       <Header title="Blurchette" variant="withBack" />
@@ -97,9 +167,33 @@ export default function BlurchetteIndexScreen() {
             Blurchette
           </ThemedText>
           <ThemedText style={styles.subtitle}>
-            Devinez les pochettes d&#39;albums floues !
+            Devinez les pochettes d&apos;albums floues !
           </ThemedText>
         </View>
+
+        {hasSavedGame && (
+          <TouchableOpacity
+            style={styles.resumeCard}
+            onPress={() => handleStartGame(true)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.resumeInfo}>
+              <MaterialIcons
+                name="history"
+                size={24}
+                color={Colors.primary.survol}
+              />
+              <ThemedText style={styles.resumeText}>
+                Vous avez une partie en cours
+              </ThemedText>
+            </View>
+            <View style={styles.resumeBadge}>
+              <ThemedText style={styles.resumeBadgeText}>
+                Partie en cours
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -113,7 +207,7 @@ export default function BlurchetteIndexScreen() {
             </ThemedText>
           </View>
           <ThemedText style={styles.text}>
-            Devinez quelle pochette d&#39;album est affichée alors qu&#39;elle
+            Devinez quelle pochette d&apos;album est affichée alors qu&apos;elle
             est floue. Plus vous trouvez tôt (avec un flou élevé), plus vous
             gagnez de points !
           </ThemedText>
@@ -146,7 +240,7 @@ export default function BlurchetteIndexScreen() {
             <View style={styles.listItem}>
               <ThemedText style={styles.listNumber}>3.</ThemedText>
               <ThemedText style={styles.listText}>
-                Une pochette d&#39;album très floue apparaît
+                Une pochette d&apos;album très floue apparaît
               </ThemedText>
             </View>
             <View style={styles.listItem}>
@@ -158,134 +252,49 @@ export default function BlurchetteIndexScreen() {
             <View style={styles.listItem}>
               <ThemedText style={styles.listNumber}>5.</ThemedText>
               <ThemedText style={styles.listText}>
-                Devinez l&#39;album et l&#39;artiste le plus tôt possible
+                Devinez l&apos;album et l&apos;artiste le plus tôt possible
               </ThemedText>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="rule"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Règles
-            </ThemedText>
-          </View>
-          <View style={styles.ruleCard}>
-            <MaterialIcons
-              name="blur-circular"
-              size={20}
-              color={Colors.primary.survol}
-            />
-            <ThemedText style={styles.ruleText}>
-              <ThemedText style={styles.ruleBold}>5 niveaux de flou</ThemedText>
-              {"\n"}Du plus flou (niveau 1) au plus net (niveau 5)
-            </ThemedText>
-          </View>
-          <View style={styles.ruleCard}>
-            <MaterialIcons
-              name="emoji-events"
-              size={20}
-              color={Colors.primary.survol}
-            />
-            <ThemedText style={styles.ruleText}>
-              <ThemedText style={styles.ruleBold}>
-                Plus de points en début
-              </ThemedText>
-              {"\n"}Trouvez au niveau 1 = maximum de points
-            </ThemedText>
-          </View>
-          <View style={styles.ruleCard}>
-            <MaterialIcons
-              name="timer"
-              size={20}
-              color={Colors.primary.survol}
-            />
-            <ThemedText style={styles.ruleText}>
-              <ThemedText style={styles.ruleBold}>Temps limité</ThemedText>
-              {"\n"}Chaque niveau a un temps de réponse limité
-            </ThemedText>
-          </View>
-          <View style={styles.ruleCard}>
-            <MaterialIcons
-              name="check-circle"
-              size={20}
-              color={Colors.primary.survol}
-            />
-            <ThemedText style={styles.ruleText}>
-              <ThemedText style={styles.ruleBold}>
-                Une réponse par niveau
-              </ThemedText>
-              {"\n"}Réfléchissez bien avant de soumettre !
-            </ThemedText>
-          </View>
-          <View style={styles.ruleCard}>
-            <MaterialIcons
-              name="speed"
-              size={20}
-              color={Colors.primary.survol}
-            />
-            <ThemedText style={styles.ruleText}>
-              <ThemedText style={styles.ruleBold}>
-                Départage par rapidité
-              </ThemedText>
-              {"\n"}En cas d&#39;égalité, le plus rapide gagne
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="bar-chart"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Points
-            </ThemedText>
-          </View>
-          <View style={styles.pointsGrid}>
-            <View style={styles.pointCard}>
-              <ThemedText style={styles.pointLevel}>Niveau 1</ThemedText>
-              <ThemedText style={styles.pointValue}>500 pts</ThemedText>
-              <ThemedText style={styles.pointLabel}>Très flou</ThemedText>
-            </View>
-            <View style={styles.pointCard}>
-              <ThemedText style={styles.pointLevel}>Niveau 2</ThemedText>
-              <ThemedText style={styles.pointValue}>400 pts</ThemedText>
-              <ThemedText style={styles.pointLabel}>Flou</ThemedText>
-            </View>
-            <View style={styles.pointCard}>
-              <ThemedText style={styles.pointLevel}>Niveau 3</ThemedText>
-              <ThemedText style={styles.pointValue}>300 pts</ThemedText>
-              <ThemedText style={styles.pointLabel}>Moyen</ThemedText>
-            </View>
-            <View style={styles.pointCard}>
-              <ThemedText style={styles.pointLevel}>Niveau 4</ThemedText>
-              <ThemedText style={styles.pointValue}>200 pts</ThemedText>
-              <ThemedText style={styles.pointLabel}>Léger</ThemedText>
-            </View>
-            <View style={styles.pointCard}>
-              <ThemedText style={styles.pointLevel}>Niveau 5</ThemedText>
-              <ThemedText style={styles.pointValue}>100 pts</ThemedText>
-              <ThemedText style={styles.pointLabel}>Net</ThemedText>
             </View>
           </View>
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
-            title="Commencer à jouer"
-            onPress={handleStartGame}
-            style={styles.playButton}
-          />
+          {hasSavedGame ? (
+            <>
+              <Button
+                title="Reprendre la partie"
+                onPress={() => handleStartGame(true)}
+                style={styles.playButton}
+              />
+              <Button
+                title="Nouvelle partie"
+                variant="outline"
+                onPress={() => handleStartGame(false)}
+                style={styles.newGameButton}
+              />
+            </>
+          ) : (
+            <Button
+              title="Commencer à jouer"
+              onPress={() => handleStartGame(false)}
+              style={styles.playButton}
+            />
+          )}
         </View>
       </ScrollView>
+
+      <ConfirmationModal
+        visible={isResumeModalVisible}
+        title="Partie en cours"
+        message="Vous avez déjà une partie entamée. Souhaitez-vous la reprendre ou en commencer une nouvelle ?"
+        confirmLabel="Reprendre la partie"
+        secondaryLabel="Nouvelle partie"
+        onSecondary={handleStartNewGame}
+        cancelLabel="Annuler"
+        onConfirm={handleConfirmResume}
+        onCancel={() => setIsResumeModalVisible(false)}
+        variant="danger"
+      />
     </>
   );
 }
@@ -313,6 +322,39 @@ const styles = StyleSheet.create({
     color: "#999",
     textAlign: "center",
     fontSize: 16,
+  },
+  resumeCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  resumeInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  resumeText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  resumeBadge: {
+    backgroundColor: Colors.primary.survol,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  resumeBadgeText: {
+    color: Colors.primary.fondPremier,
+    fontSize: 10,
+    fontWeight: "bold",
+    textTransform: "uppercase",
   },
   section: {
     marginBottom: 30,
@@ -351,63 +393,14 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 22,
   },
-  ruleCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.primary.survol,
-  },
-  ruleText: {
-    color: "#CCC",
-    fontSize: 14,
-    flex: 1,
-    lineHeight: 20,
-  },
-  ruleBold: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-  pointsGrid: {
-    gap: 10,
-  },
-  pointCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    padding: 15,
-    borderRadius: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.primary.survol,
-  },
-  pointLevel: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-    flex: 1,
-  },
-  pointValue: {
-    color: Colors.primary.survol,
-    fontSize: 20,
-    fontWeight: "bold",
-    marginRight: 15,
-  },
-  pointLabel: {
-    color: "#999",
-    fontSize: 14,
-    width: 80,
-    textAlign: "right",
-  },
   buttonContainer: {
     marginTop: 20,
+    gap: 12,
   },
   playButton: {
+    paddingVertical: 16,
+  },
+  newGameButton: {
     paddingVertical: 16,
   },
   loadingContainer: {

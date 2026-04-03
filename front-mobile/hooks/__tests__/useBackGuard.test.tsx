@@ -19,16 +19,13 @@ jest.mock("expo-router", () => ({
 function BackGuardWrapper({
   enabled,
   onSave,
-  onAbandon,
 }: {
   enabled: boolean;
   onSave?: () => void;
-  onAbandon?: () => void;
 }) {
   const { onBack, backGuardModal } = useBackGuard({
     enabled,
     onSave,
-    onAbandon,
   });
   return (
     <>
@@ -86,22 +83,6 @@ describe("useBackGuard", () => {
       expect(router.back).not.toHaveBeenCalled();
     });
 
-    it("should not call onSave or onAbandon on direct back press", () => {
-      const onSave = jest.fn();
-      const onAbandon = jest.fn();
-      const { result } = renderHook(() =>
-        useBackGuard({ enabled: true, onSave, onAbandon }),
-      );
-
-      act(() => {
-        result.current.onBack();
-      });
-
-      expect(onSave).not.toHaveBeenCalled();
-      expect(onAbandon).not.toHaveBeenCalled();
-      expect(router.back).not.toHaveBeenCalled();
-    });
-
     it("should show modal when onBack is pressed", () => {
       const { getByTestId, getByText } = render(
         <BackGuardWrapper enabled={true} />,
@@ -110,7 +91,7 @@ describe("useBackGuard", () => {
       expect(getByText("Quitter la partie ?")).toBeTruthy();
     });
 
-    it("should call onSave and not navigate when pressing Sauvegarder with onSave provided", () => {
+    it("should call onSave and navigate when pressing Sauvegarder", () => {
       const onSave = jest.fn();
       const { getByTestId, getByText } = render(
         <BackGuardWrapper enabled={true} onSave={onSave} />,
@@ -118,7 +99,7 @@ describe("useBackGuard", () => {
       fireEvent.press(getByTestId("back-button"));
       fireEvent.press(getByText("Sauvegarder"));
       expect(onSave).toHaveBeenCalledTimes(1);
-      expect(router.back).not.toHaveBeenCalled();
+      expect(router.back).toHaveBeenCalledTimes(1);
     });
 
     it("should navigate when pressing Sauvegarder without onSave", () => {
@@ -130,24 +111,15 @@ describe("useBackGuard", () => {
       expect(router.back).toHaveBeenCalledTimes(1);
     });
 
-    it("should call onAbandon and not navigate when pressing Abandonner with onAbandon provided", () => {
-      const onAbandon = jest.fn();
-      const { getByTestId, getByText } = render(
-        <BackGuardWrapper enabled={true} onAbandon={onAbandon} />,
-      );
-      fireEvent.press(getByTestId("back-button"));
-      fireEvent.press(getByText("Abandonner"));
-      expect(onAbandon).toHaveBeenCalledTimes(1);
-      expect(router.back).not.toHaveBeenCalled();
-    });
-
-    it("should navigate when pressing Abandonner without onAbandon", () => {
+    it("should not navigate when pressing Annuler", () => {
       const { getByTestId, getByText } = render(
         <BackGuardWrapper enabled={true} />,
       );
       fireEvent.press(getByTestId("back-button"));
-      fireEvent.press(getByText("Abandonner"));
-      expect(router.back).toHaveBeenCalledTimes(1);
+      fireEvent.press(getByText("Annuler"));
+      expect(router.back).not.toHaveBeenCalled();
+      // The modal should be closed (or at least hidden)
+      // Note: testing visibility might be tricky depending on how Modal is mocked
     });
   });
 });

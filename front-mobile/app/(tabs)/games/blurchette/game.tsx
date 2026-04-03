@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   Keyboard,
@@ -29,6 +30,11 @@ import {
   getMyActiveSession,
   updateGameSession,
 } from "@/services/gameSessionService";
+import {
+  saveGameState,
+  getGameState,
+  deleteGameState,
+} from "@/services/gameStorageService";
 import { BlurchetteGameData, GameSession } from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
@@ -42,6 +48,22 @@ interface GameTrack {
   isAlbum: boolean;
 }
 
+interface BlurchetteSaveState {
+  gameState: GameState;
+  selectedGenre: DeezerGenre | null;
+  currentTrack: GameTrack | null;
+  blurLevel: BlurLevel;
+  currentAttempts: {
+    answer: string;
+    isCorrect: boolean;
+    blurLevel: number;
+    timestamp: string;
+  }[];
+  sessionId: string | null;
+  foundCorrect: boolean;
+  hasAnswered: boolean;
+}
+
 export default function BlurchetteGameScreen() {
   const [gameState, setGameState] = useState<GameState>("genreSelection");
   const [genres, setGenres] = useState<DeezerGenre[]>([]);
@@ -49,6 +71,7 @@ export default function BlurchetteGameScreen() {
   const [loadingTrack, setLoadingTrack] = useState(false);
 
   const [currentTrack, setCurrentTrack] = useState<GameTrack | null>(null);
+  const [selectedGenre, setSelectedGenre] = useState<DeezerGenre | null>(null);
 
   const [blurLevel, setBlurLevel] = useState<BlurLevel>(1);
   const [answer, setAnswer] = useState("");
@@ -57,7 +80,6 @@ export default function BlurchetteGameScreen() {
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState(false);
-  // MIX-255: used to offer "Resume" or "New game" when an active session exists
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeSession, setActiveSession] = useState<GameSession | null>(null);
   const [currentAttempts, setCurrentAttempts] = useState<
@@ -111,30 +133,17 @@ export default function BlurchetteGameScreen() {
     };
   }, [keyboardAnim]);
 
-  const { gameId } = useLocalSearchParams<{ gameId: string }>();
+  const { gameId, resume } = useLocalSearchParams<{
+    gameId: string;
+    resume?: string;
+  }>();
   const user = useAuthStore((state) => state.user);
   const { errorAnimationsEnabled } = useSettingsStore();
   const { show } = useToast();
   const { shakeAnimation, borderOpacity, errorMessage, triggerError } =
     useErrorFeedback(errorAnimationsEnabled);
 
-  useEffect(() => {
-    loadGenres();
-    if (gameId) {
-      const timeout = new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), 5000),
-      );
-      Promise.race([getMyActiveSession(Number(gameId)), timeout])
-        .then((session) => {
-          console.log("[MIX-267] Blurchette active session:", session);
-          setActiveSession(session);
-        })
-        .catch(() => {});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadGenres = async () => {
+  const loadGenres = useCallback(async () => {
     try {
       const response = await deezerAPI.getGenres();
       const filteredGenres = response.data.filter((g) => g.id !== 0);
@@ -148,10 +157,87 @@ export default function BlurchetteGameScreen() {
     } finally {
       setLoadingGenres(false);
     }
-  };
+  }, [show]);
+
+  const loadSavedState = useCallback(async () => {
+    if (!gameId) return;
+    setLoadingTrack(true);
+    try {
+      const saved = await getGameState<BlurchetteSaveState>(gameId);
+      if (saved) {
+        setGameState(saved.gameState);
+        setSelectedGenre(saved.selectedGenre);
+        setCurrentTrack(saved.currentTrack);
+        setBlurLevel(saved.blurLevel);
+        setCurrentAttempts(saved.currentAttempts);
+        setSessionId(saved.sessionId);
+        setFoundCorrect(saved.foundCorrect);
+        setHasAnswered(saved.hasAnswered);
+      }
+    } catch (error) {
+      console.error("Failed to load saved state:", error);
+      show({ type: "error", message: "Impossible de reprendre la partie" });
+    } finally {
+      setLoadingTrack(false);
+    }
+  }, [gameId, show]);
+
+  useEffect(() => {
+    loadGenres();
+
+    if (gameId) {
+      if (resume === "true") {
+        void loadSavedState();
+      } else {
+        void deleteGameState(gameId);
+        const timeout = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 5000),
+        );
+        Promise.race([getMyActiveSession(Number(gameId)), timeout])
+          .then((session) => {
+            setActiveSession(session);
+          })
+          .catch(() => {});
+      }
+    }
+  }, [gameId, resume, loadGenres, loadSavedState]);
+
+  const autoSave = useCallback(async () => {
+    if (!gameId || gameState === "result") return;
+
+    const saveState: BlurchetteSaveState = {
+      gameState,
+      selectedGenre,
+      currentTrack,
+      blurLevel,
+      currentAttempts,
+      sessionId,
+      foundCorrect,
+      hasAnswered,
+    };
+
+    await saveGameState(gameId, saveState);
+  }, [
+    gameId,
+    gameState,
+    selectedGenre,
+    currentTrack,
+    blurLevel,
+    currentAttempts,
+    sessionId,
+    foundCorrect,
+    hasAnswered,
+  ]);
+
+  useEffect(() => {
+    if (gameState !== "result" && gameState !== "genreSelection" && gameId) {
+      void autoSave();
+    }
+  }, [gameState, gameId, autoSave]);
 
   const startGame = async (genre: DeezerGenre) => {
     setLoadingTrack(true);
+    setSelectedGenre(genre);
 
     try {
       const response = await deezerAPI.getGenreTracks(genre.id, 50);
@@ -179,45 +265,35 @@ export default function BlurchetteGameScreen() {
         return;
       }
 
-      try {
-        const gameData: BlurchetteGameData = {
-          genre: {
-            id: genre.id,
-            name: genre.name,
-          },
-          track: {
-            id: randomTrack.id,
-            title: randomTrack.title,
-            artistId: randomTrack.artist.id,
-            artistName: randomTrack.artist.name,
-            albumId: randomTrack.album.id,
-            albumTitle: randomTrack.album.title,
-            coverUrl: randomTrack.album.cover_xl,
-          },
-          isAlbum: gameTrack.isAlbum,
-          currentBlurLevel: 1,
-          attempts: [],
-          foundCorrect: null,
-          finalBlurLevel: null,
-          startedAt: new Date().toISOString(),
-          completedAt: null,
-        };
+      const gameData: BlurchetteGameData = {
+        genre: { id: genre.id, name: genre.name },
+        track: {
+          id: randomTrack.id,
+          title: randomTrack.title,
+          artistId: randomTrack.artist.id,
+          artistName: randomTrack.artist.name,
+          albumId: randomTrack.album.id,
+          albumTitle: randomTrack.album.title,
+          coverUrl: randomTrack.album.cover_xl,
+        },
+        isAlbum: gameTrack.isAlbum,
+        currentBlurLevel: 1,
+        attempts: [],
+        foundCorrect: null,
+        finalBlurLevel: null,
+        startedAt: new Date().toISOString(),
+        completedAt: null,
+      };
 
-        const session = await createGameSession({
-          gameId: parseInt(gameId, 10),
-          status: "active",
-          players: [{ userId: user.id }],
-          gameData: gameData as unknown as Record<string, unknown>,
-        });
+      const session = await createGameSession({
+        gameId: parseInt(gameId, 10),
+        status: "active",
+        players: [{ userId: user.id }],
+        gameData: gameData as unknown as Record<string, unknown>,
+      });
 
-        setSessionId(session.id);
-        setCurrentAttempts([]);
-      } catch (sessionErr) {
-        console.error("Failed to create game session:", sessionErr);
-        setSessionError(true);
-        return;
-      }
-
+      setSessionId(session.id);
+      setCurrentAttempts([]);
       setCurrentTrack(gameTrack);
       setBlurLevel(1);
       setAnswer("");
@@ -225,8 +301,8 @@ export default function BlurchetteGameScreen() {
       setFoundCorrect(false);
       setGameState("playing");
     } catch (error) {
-      console.error("Failed to load tracks:", error);
-      show({ type: "error", message: "Impossible de charger les musiques" });
+      console.error("Failed to start game:", error);
+      show({ type: "error", message: "Impossible de démarrer la partie" });
     } finally {
       setLoadingTrack(false);
     }
@@ -239,16 +315,11 @@ export default function BlurchetteGameScreen() {
     const artistName = currentTrack.track.artist.name;
     const trackTitle = currentTrack.track.title;
 
-    let isCorrect = false;
-
-    if (currentTrack.isAlbum) {
-      isCorrect = fuzzyMatch(answer, albumTitle);
-    } else {
-      isCorrect = fuzzyMatch(answer, trackTitle);
-    }
-
+    let isCorrect = fuzzyMatch(answer, artistName);
     if (!isCorrect) {
-      isCorrect = fuzzyMatch(answer, artistName);
+      isCorrect = currentTrack.isAlbum
+        ? fuzzyMatch(answer, albumTitle)
+        : fuzzyMatch(answer, trackTitle);
     }
 
     const newAttempt = {
@@ -278,6 +349,8 @@ export default function BlurchetteGameScreen() {
             status: "completed",
             gameData: updateData as unknown as Record<string, unknown>,
           });
+
+          if (gameId) void deleteGameState(gameId);
         } else {
           await updateGameSession(sessionId, {
             gameData: updateData as unknown as Record<string, unknown>,
@@ -285,7 +358,6 @@ export default function BlurchetteGameScreen() {
         }
       } catch (err) {
         console.error("Failed to update session:", err);
-        // Continuer le jeu même si la mise à jour échoue
       }
     }
 
@@ -306,13 +378,48 @@ export default function BlurchetteGameScreen() {
     }
   };
 
+  const handleAbandon = () => {
+    Alert.alert(
+      "Abandonner",
+      "Êtes-vous sûr de vouloir abandonner cette partie ?",
+      [
+        { text: "Non", style: "cancel" },
+        {
+          text: "Oui",
+          style: "destructive",
+          onPress: async () => {
+            if (sessionId) {
+              await updateGameSession(sessionId, {
+                status: "completed",
+                gameData: {
+                  foundCorrect: false,
+                  finalBlurLevel: blurLevel,
+                  completedAt: new Date().toISOString(),
+                  attempts: currentAttempts,
+                } as unknown as Record<string, unknown>,
+              });
+            }
+            if (gameId) await deleteGameState(gameId);
+            setFoundCorrect(false);
+            setHasAnswered(true);
+            setGameState("result");
+          },
+        },
+      ],
+    );
+  };
+
   const resetGame = () => {
+    if (gameId) void deleteGameState(gameId);
     setGameState("genreSelection");
     setCurrentTrack(null);
+    setSelectedGenre(null);
     setBlurLevel(1);
     setAnswer("");
     setHasAnswered(false);
     setFoundCorrect(false);
+    setCurrentAttempts([]);
+    setSessionId(null);
   };
 
   const getBlurRadius = (level: BlurLevel): number => {
@@ -344,7 +451,7 @@ export default function BlurchetteGameScreen() {
 
   if (gameState === "genreSelection") {
     return (
-      <GameLayout title="Blurchette" sessionId={sessionId}>
+      <GameLayout title="Blurchette" sessionId={sessionId} onSave={autoSave}>
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -406,7 +513,7 @@ export default function BlurchetteGameScreen() {
         errorMessage={errorMessage}
         animationsEnabled={errorAnimationsEnabled}
       >
-        <GameLayout title="Blurchette" sessionId={sessionId}>
+        <GameLayout title="Blurchette" sessionId={sessionId} onSave={autoSave}>
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -424,6 +531,9 @@ export default function BlurchetteGameScreen() {
                     ? "🎵 Trouvez l'album"
                     : "🎤 Trouvez le single"}
                 </ThemedText>
+                <TouchableOpacity onPress={handleAbandon}>
+                  <MaterialIcons name="close" size={24} color="#ff6b6b" />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -516,6 +626,11 @@ export default function BlurchetteGameScreen() {
                 onPress={resetGame}
                 style={styles.replayButton}
               />
+              <Button
+                title="Retour aux jeux"
+                variant="outline"
+                onPress={() => router.push("/games")}
+              />
             </View>
           </View>
         </View>
@@ -595,23 +710,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     gap: 12,
   },
-  objectiveText: {
-    color: "white",
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  gameInfo: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  genreText: {
-    color: "#999",
-    fontSize: 14,
-  },
   levelInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -647,19 +745,10 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  hintContainer: {
-    marginTop: 20,
-    alignItems: "center",
-  },
   hintText: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
-  },
-  hintSubtext: {
-    color: "#999",
-    fontSize: 14,
-    marginTop: 5,
   },
   answerSection: {
     padding: 20,
