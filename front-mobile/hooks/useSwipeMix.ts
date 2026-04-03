@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
+import { cacheManager } from "@/services/cache-manager";
 import { MusicCardData } from "@/components/swipe";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { useAudioPlayer } from "./useAudioPlayer";
@@ -25,7 +26,25 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   // Verrou synchrone pour éviter les appels concurrents à loadTracks
   const isLoadingRef = useRef(false);
 
-  const audioPlayer = useAudioPlayer();
+  const handleRetry = useCallback(
+    async (track: DeezerTrack): Promise<DeezerTrack | null> => {
+      try {
+        await cacheManager.remove(`track:${track.id}`);
+        const freshTrack = await deezerAPI.getTrack(track.id);
+        setTracks((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(freshTrack.id.toString(), freshTrack);
+          return newMap;
+        });
+        return freshTrack;
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
+
+  const audioPlayer = useAudioPlayer({ onRetry: handleRetry });
 
   // Charger les musiques initiales
   const loadTracks = useCallback(
