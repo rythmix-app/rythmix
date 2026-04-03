@@ -7,13 +7,10 @@ import { useAudioPlayer } from "./useAudioPlayer";
 
 interface UseSwipeMixOptions {
   initialLimit?: number;
-  autoPlayOnSwipe?: boolean;
 }
 
 export function useSwipeMix(options: UseSwipeMixOptions = {}) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { initialLimit = 10, autoPlayOnSwipe: _autoPlayOnSwipe = false } =
-    options;
+  const { initialLimit = 10 } = options;
 
   const [cards, setCards] = useState<MusicCardData[]>([]);
   const [tracks, setTracks] = useState<Map<string, DeezerTrack>>(new Map());
@@ -58,17 +55,8 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         // Utiliser l'index actuel pour la pagination
         const indexToUse = append ? currentPageIndexRef.current : 0;
 
-        console.log(
-          "loadTracks: Loading with index:",
-          indexToUse,
-          "append:",
-          append,
-        );
-
         // Récupérer les morceaux tendances
         const response = await deezerAPI.getTopTracks(initialLimit, indexToUse);
-
-        console.log("loadTracks: Received", response.data.length, "tracks");
 
         // Convertir en cartes
         const newCards = deezerTracksToCardData(response.data);
@@ -78,16 +66,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
 
         if (append) {
           // Ajouter les nouvelles cartes à la fin
-          setCards((prev) => {
-            console.log(
-              "loadTracks: Appending",
-              newCards.length,
-              "cards to",
-              prev.length,
-              "existing cards",
-            );
-            return [...prev, ...newCards];
-          });
+          setCards((prev) => [...prev, ...newCards]);
 
           // Ajouter les nouvelles tracks à la map existante
           setTracks((prev) => {
@@ -100,10 +79,6 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
 
           // Incrémenter l'index pour la prochaine page
           currentPageIndexRef.current += initialLimit;
-          console.log(
-            "loadTracks: Updated currentPageIndex to",
-            currentPageIndexRef.current,
-          );
         } else {
           // Remplacer complètement les cartes et tracks
           const trackMap = new Map<string, DeezerTrack>();
@@ -114,10 +89,6 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
           setCards(newCards);
           setTracks(trackMap);
           currentPageIndexRef.current = initialLimit;
-          console.log(
-            "loadTracks: Initial load, set currentPageIndex to",
-            currentPageIndexRef.current,
-          );
         }
       } catch (err) {
         setError(
@@ -125,7 +96,6 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
             ? err.message
             : "Erreur lors du chargement des musiques",
         );
-        console.error("Error loading tracks:", err);
       } finally {
         isLoadingRef.current = false;
         setIsLoadingCards(false);
@@ -142,8 +112,6 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   // Handler pour swipe left (skip/dislike)
   const handleSwipeLeft = useCallback(
     (card: MusicCardData) => {
-      console.log("Swiped left:", card.title);
-
       // TODO: Enregistrer le dislike dans le backend
       // TODO: Utiliser pour améliorer les recommandations
 
@@ -158,8 +126,6 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   // Handler pour swipe right (like/save)
   const handleSwipeRight = useCallback(
     async (card: MusicCardData) => {
-      console.log("Swiped right:", card.title);
-
       // TODO: Enregistrer le like dans le backend
       // TODO: Ajouter à la playlist de l'utilisateur
 
@@ -211,16 +177,12 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
     async (card: MusicCardData) => {
       // Ne pas rejouer si c'est déjà la carte en cours
       if (audioPlayer.currentTrack?.id.toString() === card.id) {
-        console.log("Card already playing, skipping:", card.id);
         return;
       }
 
       const track = tracks.get(card.id);
       if (track) {
-        console.log("Playing new card:", card.id, track.title);
         await audioPlayer.play(track);
-      } else {
-        console.warn("Track not found for card:", card.id);
       }
     },
     [tracks, audioPlayer],

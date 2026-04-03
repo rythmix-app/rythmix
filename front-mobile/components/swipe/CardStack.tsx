@@ -59,10 +59,6 @@ export default function CardStack({
       onCardAppear &&
       currentCard.id !== lastPlayedCardIdRef.current
     ) {
-      console.log(
-        "CardStack: New card detected, calling onCardAppear for:",
-        currentCard.id,
-      );
       lastPlayedCardIdRef.current = currentCard.id;
       onCardAppear(currentCard);
     }
@@ -82,9 +78,6 @@ export default function CardStack({
       onLoadMoreRef.current &&
       !hasLoadedMoreRef.current
     ) {
-      console.log(
-        `CardStack: Only ${cardsRemaining} cards remaining, loading more...`,
-      );
       hasLoadedMoreRef.current = true;
       onLoadMoreRef.current();
     }

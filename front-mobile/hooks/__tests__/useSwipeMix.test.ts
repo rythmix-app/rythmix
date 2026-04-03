@@ -193,8 +193,6 @@ describe("useSwipeMix", () => {
 
       const firstCard = result.current.cards[0];
       result.current.handlers.onSwipeLeft(firstCard);
-
-      expect(console.log).toHaveBeenCalledWith("Swiped left:", "Track 1");
     });
 
     it("should stop audio on swipe left if current track", async () => {
@@ -221,8 +219,6 @@ describe("useSwipeMix", () => {
 
       const firstCard = result.current.cards[0];
       await result.current.handlers.onSwipeRight(firstCard);
-
-      expect(console.log).toHaveBeenCalledWith("Swiped right:", "Track 1");
     });
 
     it("should stop audio on swipe right if current track", async () => {
@@ -344,10 +340,6 @@ describe("useSwipeMix", () => {
       await result.current.handlers.onCardAppear(firstCard);
 
       expect(mockAudioPlayer.play).not.toHaveBeenCalled();
-      expect(console.log).toHaveBeenCalledWith(
-        "Card already playing, skipping:",
-        "1",
-      );
     });
 
     it("should warn if track not found", async () => {
@@ -372,10 +364,6 @@ describe("useSwipeMix", () => {
 
       await result.current.handlers.onCardAppear(unknownCard);
 
-      expect(console.warn).toHaveBeenCalledWith(
-        "Track not found for card:",
-        "999",
-      );
       expect(mockAudioPlayer.play).not.toHaveBeenCalled();
     });
   });
