@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   ActivityIndicator,
@@ -80,6 +80,7 @@ export default function BlurchetteGameScreen() {
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeSession, setActiveSession] = useState<GameSession | null>(null);
   const [currentAttempts, setCurrentAttempts] = useState<
     {
@@ -142,43 +143,23 @@ export default function BlurchetteGameScreen() {
   const { shakeAnimation, borderOpacity, errorMessage, triggerError } =
     useErrorFeedback(errorAnimationsEnabled);
 
-  useEffect(() => {
-    loadGenres();
-
-    if (gameId) {
-      if (resume === "true") {
-        void loadSavedState();
-      } else {
-        void deleteGameState(gameId);
-        const timeout = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 5000),
-        );
-        Promise.race([getMyActiveSession(Number(gameId)), timeout])
-          .then((session) => {
-            setActiveSession(session);
-          })
-          .catch(() => {});
-      }
+  const loadGenres = useCallback(async () => {
+    try {
+      const response = await deezerAPI.getGenres();
+      const filteredGenres = response.data.filter((g) => g.id !== 0);
+      setGenres(filteredGenres);
+    } catch (error) {
+      console.error("Failed to load genres:", error);
+      show({
+        type: "error",
+        message: "Impossible de charger les genres musicaux",
+      });
+    } finally {
+      setLoadingGenres(false);
     }
-  }, [gameId, resume]);
+  }, [show]);
 
-  useEffect(() => {
-    if (gameState !== "result" && gameState !== "genreSelection" && gameId) {
-      void autoSave();
-    }
-  }, [
-    gameState,
-    blurLevel,
-    currentAttempts,
-    sessionId,
-    foundCorrect,
-    hasAnswered,
-    currentTrack,
-    selectedGenre,
-    gameId,
-  ]);
-
-  const loadSavedState = async () => {
+  const loadSavedState = useCallback(async () => {
     if (!gameId) return;
     setLoadingTrack(true);
     try {
@@ -199,9 +180,29 @@ export default function BlurchetteGameScreen() {
     } finally {
       setLoadingTrack(false);
     }
-  };
+  }, [gameId, show]);
 
-  const autoSave = async () => {
+  useEffect(() => {
+    loadGenres();
+
+    if (gameId) {
+      if (resume === "true") {
+        void loadSavedState();
+      } else {
+        void deleteGameState(gameId);
+        const timeout = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 5000),
+        );
+        Promise.race([getMyActiveSession(Number(gameId)), timeout])
+          .then((session) => {
+            setActiveSession(session);
+          })
+          .catch(() => {});
+      }
+    }
+  }, [gameId, resume, loadGenres, loadSavedState]);
+
+  const autoSave = useCallback(async () => {
     if (!gameId || gameState === "result") return;
 
     const saveState: BlurchetteSaveState = {
@@ -216,23 +217,23 @@ export default function BlurchetteGameScreen() {
     };
 
     await saveGameState(gameId, saveState);
-  };
+  }, [
+    gameId,
+    gameState,
+    selectedGenre,
+    currentTrack,
+    blurLevel,
+    currentAttempts,
+    sessionId,
+    foundCorrect,
+    hasAnswered,
+  ]);
 
-  const loadGenres = async () => {
-    try {
-      const response = await deezerAPI.getGenres();
-      const filteredGenres = response.data.filter((g) => g.id !== 0);
-      setGenres(filteredGenres);
-    } catch (error) {
-      console.error("Failed to load genres:", error);
-      show({
-        type: "error",
-        message: "Impossible de charger les genres musicaux",
-      });
-    } finally {
-      setLoadingGenres(false);
+  useEffect(() => {
+    if (gameState !== "result" && gameState !== "genreSelection" && gameId) {
+      void autoSave();
     }
-  };
+  }, [gameState, gameId, autoSave]);
 
   const startGame = async (genre: DeezerGenre) => {
     setLoadingTrack(true);

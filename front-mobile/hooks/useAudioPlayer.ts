@@ -61,7 +61,6 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
         clearInterval(updateIntervalRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Mettre à jour la position et la durée toutes les 250ms

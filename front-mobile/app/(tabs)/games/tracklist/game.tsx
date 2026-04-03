@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -125,82 +125,23 @@ export default function TracklistGameScreen() {
     errorAnimationsEnabled,
   );
 
-  useEffect(() => {
-    loadGenres();
-
-    if (gameId) {
-      if (resume === "true") {
-        void loadSavedState();
-      } else {
-        void deleteGameState(gameId);
-
-        const timeout = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 5000),
-        );
-        Promise.race([getMyActiveSession(Number(gameId)), timeout])
-          .then((session) => {
-            setActiveSession(session);
-          })
-          .catch(() => {});
-      }
+  const loadGenres = useCallback(async () => {
+    try {
+      const response = await deezerAPI.getGenres();
+      const filteredGenres = response.data.filter((g) => g.id !== 0);
+      setGenres(filteredGenres);
+    } catch (error) {
+      console.error("Failed to load genres:", error);
+      show({
+        type: "error",
+        message: "Impossible de charger les genres musicaux",
+      });
+    } finally {
+      setLoadingGenres(false);
     }
-  }, [gameId, resume]);
+  }, [show]);
 
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (isTimerRunning && timeRemaining > 0) {
-      interval = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            setIsTimerRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning, timeRemaining]);
-
-  useEffect(() => {
-    if (gameState !== "result" && gameState !== "genreSelection" && gameId) {
-      void autoSave();
-    }
-  }, [
-    gameState,
-    foundTrackIds,
-    sessionId,
-    timeRemaining,
-    selectedGenre,
-    selectedArtist,
-    candidateArtists,
-    candidateAlbums,
-    currentAlbum,
-    validatedAnswers,
-    gameId,
-  ]);
-
-  useEffect(() => {
-    if (timeRemaining === 0 && !isTimerRunning && gameState === "playing") {
-      void submitAnswers();
-    }
-  }, [timeRemaining, isTimerRunning, gameState]);
-
-  useEffect(() => {
-    return () => {
-      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (gameState !== "playing" && feedbackTimeoutRef.current) {
-      clearTimeout(feedbackTimeoutRef.current);
-      feedbackTimeoutRef.current = null;
-      setAnswerFeedback(null);
-    }
-  }, [gameState]);
-
-  const loadSavedState = async () => {
+  const loadSavedState = useCallback(async () => {
     if (!gameId) return;
     setLoadingAlbum(true);
     try {
@@ -227,9 +168,46 @@ export default function TracklistGameScreen() {
     } finally {
       setLoadingAlbum(false);
     }
-  };
+  }, [gameId, show]);
 
-  const autoSave = async () => {
+  useEffect(() => {
+    loadGenres();
+
+    if (gameId) {
+      if (resume === "true") {
+        void loadSavedState();
+      } else {
+        void deleteGameState(gameId);
+
+        const timeout = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 5000),
+        );
+        Promise.race([getMyActiveSession(Number(gameId)), timeout])
+          .then((session) => {
+            setActiveSession(session);
+          })
+          .catch(() => {});
+      }
+    }
+  }, [gameId, resume, loadGenres, loadSavedState]);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isTimerRunning && timeRemaining > 0) {
+      interval = setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            setIsTimerRunning(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timeRemaining]);
+
+  const autoSave = useCallback(async () => {
     if (!gameId || gameState === "result") return;
 
     const saveState: TracklistSaveState = {
@@ -246,23 +224,93 @@ export default function TracklistGameScreen() {
     };
 
     await saveGameState(gameId, saveState);
-  };
+  }, [
+    gameId,
+    gameState,
+    selectedGenre,
+    selectedArtist,
+    candidateArtists,
+    candidateAlbums,
+    currentAlbum,
+    foundTrackIds,
+    timeRemaining,
+    validatedAnswers,
+    sessionId,
+  ]);
 
-  const loadGenres = async () => {
-    try {
-      const response = await deezerAPI.getGenres();
-      const filteredGenres = response.data.filter((g) => g.id !== 0);
-      setGenres(filteredGenres);
-    } catch (error) {
-      console.error("Failed to load genres:", error);
-      show({
-        type: "error",
-        message: "Impossible de charger les genres musicaux",
-      });
-    } finally {
-      setLoadingGenres(false);
+  useEffect(() => {
+    if (gameState !== "result" && gameState !== "genreSelection" && gameId) {
+      void autoSave();
     }
-  };
+  }, [gameState, gameId, autoSave]);
+
+  const submitAnswers = useCallback(
+    async (finalFoundIds?: Set<number>, finalAnswers?: TrackAnswer[]) => {
+      if (!currentAlbum || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+
+      try {
+        setIsTimerRunning(false);
+        const usedFoundIds = finalFoundIds ?? foundTrackIds;
+        const usedAnswers = finalAnswers ?? validatedAnswers;
+        const score = usedFoundIds.size;
+
+        if (sessionId) {
+          try {
+            const finalData: Partial<TracklistGameData> = {
+              answers: usedAnswers,
+              score,
+              timeElapsed: GAME_DURATION - timeRemaining,
+              completedAt: new Date().toISOString(),
+            };
+
+            await updateGameSession(sessionId, {
+              status: "completed",
+              gameData: finalData as unknown as Record<string, unknown>,
+            });
+          } catch (err) {
+            console.error("Failed to update session:", err);
+          }
+        }
+
+        if (gameId) {
+          void deleteGameState(gameId);
+        }
+
+        setGameState("result");
+      } finally {
+        isSubmittingRef.current = false;
+      }
+    },
+    [
+      currentAlbum,
+      foundTrackIds,
+      validatedAnswers,
+      sessionId,
+      timeRemaining,
+      gameId,
+    ],
+  );
+
+  useEffect(() => {
+    if (timeRemaining === 0 && !isTimerRunning && gameState === "playing") {
+      void submitAnswers();
+    }
+  }, [timeRemaining, isTimerRunning, gameState, submitAnswers]);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (gameState !== "playing" && feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+      feedbackTimeoutRef.current = null;
+      setAnswerFeedback(null);
+    }
+  }, [gameState]);
 
   const handleSelectGenre = async (genre: DeezerGenre) => {
     setLoadingAlbum(true);
@@ -434,47 +482,6 @@ export default function TracklistGameScreen() {
     }
 
     isProcessingAnswerRef.current = false;
-  };
-
-  const submitAnswers = async (
-    finalFoundIds?: Set<number>,
-    finalAnswers?: TrackAnswer[],
-  ) => {
-    if (!currentAlbum || isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-
-    try {
-      setIsTimerRunning(false);
-      const usedFoundIds = finalFoundIds ?? foundTrackIds;
-      const usedAnswers = finalAnswers ?? validatedAnswers;
-      const score = usedFoundIds.size;
-
-      if (sessionId) {
-        try {
-          const finalData: Partial<TracklistGameData> = {
-            answers: usedAnswers,
-            score,
-            timeElapsed: GAME_DURATION - timeRemaining,
-            completedAt: new Date().toISOString(),
-          };
-
-          await updateGameSession(sessionId, {
-            status: "completed",
-            gameData: finalData as unknown as Record<string, unknown>,
-          });
-        } catch (err) {
-          console.error("Failed to update session:", err);
-        }
-      }
-
-      if (gameId) {
-        void deleteGameState(gameId);
-      }
-
-      setGameState("result");
-    } finally {
-      isSubmittingRef.current = false;
-    }
   };
 
   const handleAbandon = () => {
@@ -699,7 +706,7 @@ export default function TracklistGameScreen() {
               <View style={styles.loadingOverlay}>
                 <ActivityIndicator size="large" color={Colors.primary.survol} />
                 <ThemedText style={styles.loadingText}>
-                  Chargement de l'album...
+                  Chargement de l&apos;album...
                 </ThemedText>
               </View>
             )}
@@ -914,7 +921,7 @@ export default function TracklistGameScreen() {
 
           <View style={styles.comparisonSection}>
             <ThemedText style={styles.comparisonTitle}>
-              Titres de l'album
+              Titres de l&apos;album
             </ThemedText>
             <View style={styles.trackResultList}>
               {currentAlbum.tracks.map((track, index) => {
