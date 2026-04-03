@@ -220,8 +220,6 @@ export default function TracklistGameScreen() {
         if (saved.gameState === "playing") {
           setIsTimerRunning(true);
         }
-
-        show({ type: "success", message: "Partie reprise !" });
       }
     } catch (error) {
       console.error("Failed to load saved state:", error);
