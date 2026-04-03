@@ -342,7 +342,10 @@ describe("useSwipeMix", () => {
       expect(mockAudioPlayer.play).not.toHaveBeenCalled();
     });
 
-    it("should warn if track not found", async () => {
+    it("should refetch track if not found in map", async () => {
+      const fetchedTrack = createMockTrack(999);
+      mockDeezerAPI.getTrack = jest.fn().mockResolvedValue(fetchedTrack);
+
       const { result } = renderHook(() => useSwipeMix());
 
       await waitFor(() => {
@@ -364,7 +367,8 @@ describe("useSwipeMix", () => {
 
       await result.current.handlers.onCardAppear(unknownCard);
 
-      expect(mockAudioPlayer.play).not.toHaveBeenCalled();
+      expect(mockDeezerAPI.getTrack).toHaveBeenCalledWith(999);
+      expect(mockAudioPlayer.play).toHaveBeenCalledWith(fetchedTrack);
     });
   });
 

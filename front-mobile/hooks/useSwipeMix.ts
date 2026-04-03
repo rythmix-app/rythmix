@@ -183,9 +183,26 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
       const track = tracks.get(card.id);
       if (track) {
         await audioPlayer.play(track);
+        return;
+      }
+
+      // Track absente de la map — tenter un refetch individuel
+      try {
+        const fetchedTrack = await deezerAPI.getTrack(Number(card.id));
+        if (fetchedTrack) {
+          setTracks((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(fetchedTrack.id.toString(), fetchedTrack);
+            return newMap;
+          });
+          await audioPlayer.play(fetchedTrack);
+        }
+      } catch {
+        // Refetch échoué — recharger le lot complet
+        await loadTracks();
       }
     },
-    [tracks, audioPlayer],
+    [tracks, audioPlayer, loadTracks],
   );
 
   return {
