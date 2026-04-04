@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
+import GameLayout from "@/components/GameLayout";
 import Header from "@/components/Header";
 import { GameErrorFeedback } from "@/components/GameErrorFeedback";
 import { Colors } from "@/constants/Colors";
@@ -36,12 +37,18 @@ import {
   updateGameSession,
 } from "@/services/gameSessionService";
 import {
+  saveGameState,
+  getGameState,
+  deleteGameState,
+} from "@/services/gameStorageService";
+import {
   GameSession,
   TracklistGameData,
   TrackAnswer,
 } from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
+import { fuzzyMatch } from "@/utils/stringUtils";
 
 type GameState =
   | "genreSelection"
@@ -60,87 +67,21 @@ interface AnswerFeedback {
   message: string;
 }
 
-const GAME_DURATION = 300; // 5 minutes in seconds
-const MIN_SIMILARITY_THRESHOLD = 0.75; // Seuil de similarité pour le fuzzy matching (0–1) : plus proche de 1 = plus strict
-const ALBUM_CHOICES = 6; // Number of albums proposed in the selection screen
+interface TracklistSaveState {
+  gameState: GameState;
+  selectedGenre: DeezerGenre | null;
+  selectedArtist: DeezerArtist | null;
+  candidateArtists: DeezerArtist[];
+  candidateAlbums: DeezerAlbum[];
+  currentAlbum: GameAlbum | null;
+  foundTrackIds: number[];
+  timeRemaining: number;
+  validatedAnswers: TrackAnswer[];
+  sessionId: string | null;
+}
 
-const normalizeString = (str: string): string => {
-  return str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-};
-
-const levenshteinDistance = (a: string, b: string): number => {
-  const lenA = a.length;
-  const lenB = b.length;
-
-  if (lenA === 0) return lenB;
-  if (lenB === 0) return lenA;
-
-  // Optimisation mémoire : conserver uniquement deux lignes au lieu de la matrice complète
-  let previousRow: number[] = new Array(lenA + 1);
-  let currentRow: number[] = new Array(lenA + 1);
-
-  for (let j = 0; j <= lenA; j++) {
-    previousRow[j] = j;
-  }
-
-  for (let i = 1; i <= lenB; i++) {
-    currentRow[0] = i;
-    const charB = b.charCodeAt(i - 1);
-
-    for (let j = 1; j <= lenA; j++) {
-      const cost = a.charCodeAt(j - 1) === charB ? 0 : 1;
-      currentRow[j] = Math.min(
-        previousRow[j] + 1,
-        currentRow[j - 1] + 1,
-        previousRow[j - 1] + cost,
-      );
-    }
-
-    const temp = previousRow;
-    previousRow = currentRow;
-    currentRow = temp;
-  }
-
-  return previousRow[lenA];
-};
-
-const fuzzyMatch = (input: string, target: string): boolean => {
-  const normalizedInput = normalizeString(input);
-  const normalizedTarget = normalizeString(target);
-
-  if (normalizedInput.length < 3) return false;
-
-  // Exact substring match first
-  if (
-    normalizedTarget.includes(normalizedInput) ||
-    normalizedInput.includes(normalizedTarget)
-  ) {
-    return true;
-  }
-
-  // Garde : rejeter les paires de longueurs trop différentes avant le calcul coûteux
-  const minLength = Math.min(normalizedInput.length, normalizedTarget.length);
-  const maxLength = Math.max(normalizedInput.length, normalizedTarget.length);
-
-  if (minLength === 0) {
-    return false;
-  }
-
-  const lengthRatio = minLength / maxLength;
-  if (lengthRatio < 0.5) {
-    return false;
-  }
-
-  // Fuzzy match with Levenshtein similarity
-  const distance = levenshteinDistance(normalizedInput, normalizedTarget);
-  return 1 - distance / maxLength >= MIN_SIMILARITY_THRESHOLD;
-};
+const GAME_DURATION = 300;
+const ALBUM_CHOICES = 6;
 
 export default function TracklistGameScreen() {
   const [showRules, setShowRules] = useState(false);
@@ -168,7 +109,6 @@ export default function TracklistGameScreen() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState(false);
   const [validatedAnswers, setValidatedAnswers] = useState<TrackAnswer[]>([]);
-  // MIX-255: used to offer "Resume" or "New game" when an active session exists
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeSession, setActiveSession] = useState<GameSession | null>(null);
 
@@ -177,7 +117,10 @@ export default function TracklistGameScreen() {
   const isProcessingAnswerRef = useRef(false);
   const isSubmittingRef = useRef(false);
 
-  const { gameId } = useLocalSearchParams<{ gameId: string }>();
+  const { gameId, resume } = useLocalSearchParams<{
+    gameId: string;
+    resume?: string;
+  }>();
   const user = useAuthStore((state) => state.user);
   const { errorAnimationsEnabled } = useSettingsStore();
   const { show } = useToast();
@@ -185,23 +128,72 @@ export default function TracklistGameScreen() {
     errorAnimationsEnabled,
   );
 
+  const loadGenres = useCallback(async () => {
+    try {
+      const response = await deezerAPI.getGenres();
+      const filteredGenres = response.data.filter((g) => g.id !== 0);
+      setGenres(filteredGenres);
+    } catch (error) {
+      console.error("Failed to load genres:", error);
+      show({
+        type: "error",
+        message: "Impossible de charger les genres musicaux",
+      });
+    } finally {
+      setLoadingGenres(false);
+    }
+  }, [show]);
+
+  const loadSavedState = useCallback(async () => {
+    if (!gameId) return;
+    setLoadingAlbum(true);
+    try {
+      const saved = await getGameState<TracklistSaveState>(gameId);
+      if (saved) {
+        setGameState(saved.gameState);
+        setSelectedGenre(saved.selectedGenre);
+        setSelectedArtist(saved.selectedArtist);
+        setCandidateArtists(saved.candidateArtists);
+        setCandidateAlbums(saved.candidateAlbums);
+        setCurrentAlbum(saved.currentAlbum);
+        setFoundTrackIds(new Set(saved.foundTrackIds));
+        setTimeRemaining(saved.timeRemaining);
+        setValidatedAnswers(saved.validatedAnswers);
+        setSessionId(saved.sessionId);
+
+        if (saved.gameState === "playing") {
+          setIsTimerRunning(true);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load saved state:", error);
+      show({ type: "error", message: "Impossible de reprendre la partie" });
+    } finally {
+      setLoadingAlbum(false);
+    }
+  }, [gameId, show]);
+
   useEffect(() => {
     loadGenres();
-    if (gameId) {
-      const timeout = new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), 5000),
-      );
-      Promise.race([getMyActiveSession(Number(gameId)), timeout])
-        .then((session) => {
-          console.log("[MIX-267] Tracklist active session:", session);
-          setActiveSession(session);
-        })
-        .catch(() => {});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  // Timer effect
+    if (gameId) {
+      if (resume === "true") {
+        void loadSavedState();
+      } else {
+        void deleteGameState(gameId);
+
+        const timeout = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 5000),
+        );
+        Promise.race([getMyActiveSession(Number(gameId)), timeout])
+          .then((session) => {
+            setActiveSession(session);
+          })
+          .catch(() => {});
+      }
+    }
+  }, [gameId, resume, loadGenres, loadSavedState]);
+
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (isTimerRunning && timeRemaining > 0) {
@@ -218,22 +210,103 @@ export default function TracklistGameScreen() {
     return () => clearInterval(interval);
   }, [isTimerRunning, timeRemaining]);
 
-  // Auto-submit when timer reaches 0
+  const autoSave = useCallback(async () => {
+    if (!gameId || gameState === "result") return;
+
+    const saveState: TracklistSaveState = {
+      gameState,
+      selectedGenre,
+      selectedArtist,
+      candidateArtists,
+      candidateAlbums,
+      currentAlbum,
+      foundTrackIds: Array.from(foundTrackIds),
+      timeRemaining,
+      validatedAnswers,
+      sessionId,
+    };
+
+    await saveGameState(gameId, saveState);
+  }, [
+    gameId,
+    gameState,
+    selectedGenre,
+    selectedArtist,
+    candidateArtists,
+    candidateAlbums,
+    currentAlbum,
+    foundTrackIds,
+    timeRemaining,
+    validatedAnswers,
+    sessionId,
+  ]);
+
+  useEffect(() => {
+    if (gameState !== "result" && gameState !== "genreSelection" && gameId) {
+      void autoSave();
+    }
+  }, [gameState, gameId, autoSave]);
+
+  const submitAnswers = useCallback(
+    async (finalFoundIds?: Set<number>, finalAnswers?: TrackAnswer[]) => {
+      if (!currentAlbum || isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+
+      try {
+        setIsTimerRunning(false);
+        const usedFoundIds = finalFoundIds ?? foundTrackIds;
+        const usedAnswers = finalAnswers ?? validatedAnswers;
+        const score = usedFoundIds.size;
+
+        if (sessionId) {
+          try {
+            const finalData: Partial<TracklistGameData> = {
+              answers: usedAnswers,
+              score,
+              timeElapsed: GAME_DURATION - timeRemaining,
+              completedAt: new Date().toISOString(),
+            };
+
+            await updateGameSession(sessionId, {
+              status: "completed",
+              gameData: finalData as unknown as Record<string, unknown>,
+            });
+          } catch (err) {
+            console.error("Failed to update session:", err);
+          }
+        }
+
+        if (gameId) {
+          void deleteGameState(gameId);
+        }
+
+        setGameState("result");
+      } finally {
+        isSubmittingRef.current = false;
+      }
+    },
+    [
+      currentAlbum,
+      foundTrackIds,
+      validatedAnswers,
+      sessionId,
+      timeRemaining,
+      gameId,
+    ],
+  );
+
   useEffect(() => {
     if (timeRemaining === 0 && !isTimerRunning && gameState === "playing") {
       void submitAnswers();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeRemaining, isTimerRunning, gameState]);
+  }, [timeRemaining, isTimerRunning, gameState, submitAnswers]);
 
-  // Cleanup feedback timeout on unmount
   useEffect(() => {
     return () => {
       if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
     };
   }, []);
 
-  // Nettoyer le feedback quand on quitte l'état "playing" (ex: transition vers "result")
   useEffect(() => {
     if (gameState !== "playing" && feedbackTimeoutRef.current) {
       clearTimeout(feedbackTimeoutRef.current);
@@ -241,22 +314,6 @@ export default function TracklistGameScreen() {
       setAnswerFeedback(null);
     }
   }, [gameState]);
-
-  const loadGenres = async () => {
-    try {
-      const response = await deezerAPI.getGenres();
-      const filteredGenres = response.data.filter((g) => g.id !== 0);
-      setGenres(filteredGenres);
-    } catch (error) {
-      console.error("Failed to load genres:", error);
-      show({
-        type: "error",
-        message: "Impossible de charger les genres musicaux",
-      });
-    } finally {
-      setLoadingGenres(false);
-    }
-  };
 
   const handleSelectGenre = async (genre: DeezerGenre) => {
     setLoadingAlbum(true);
@@ -292,7 +349,6 @@ export default function TracklistGameScreen() {
         return;
       }
 
-      // Garder uniquement les vrais albums et EPs (pas les singles/compilations)
       const albums = albumsResponse.data.filter(
         (a) => a.record_type === "album" || a.record_type === "ep",
       );
@@ -419,7 +475,6 @@ export default function TracklistGameScreen() {
       setCurrentInput("");
       showFeedback("correct", `✓ ${matchedTrack.title}`);
 
-      // Auto-submit if all tracks found
       if (newFoundIds.size === currentAlbum.tracks.length) {
         void submitAnswers(newFoundIds, newAnswers);
       }
@@ -432,43 +487,6 @@ export default function TracklistGameScreen() {
     isProcessingAnswerRef.current = false;
   };
 
-  const submitAnswers = async (
-    finalFoundIds?: Set<number>,
-    finalAnswers?: TrackAnswer[],
-  ) => {
-    if (!currentAlbum || isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-
-    try {
-      setIsTimerRunning(false);
-      const usedFoundIds = finalFoundIds ?? foundTrackIds;
-      const usedAnswers = finalAnswers ?? validatedAnswers;
-      const score = usedFoundIds.size;
-
-      if (sessionId) {
-        try {
-          const finalData: Partial<TracklistGameData> = {
-            answers: usedAnswers,
-            score,
-            timeElapsed: GAME_DURATION - timeRemaining,
-            completedAt: new Date().toISOString(),
-          };
-
-          await updateGameSession(sessionId, {
-            status: "completed",
-            gameData: finalData as unknown as Record<string, unknown>,
-          });
-        } catch (err) {
-          console.error("Failed to update session:", err);
-        }
-      }
-
-      setGameState("result");
-    } finally {
-      isSubmittingRef.current = false;
-    }
-  };
-
   const handleAbandon = () => {
     Alert.alert(
       "Abandonner",
@@ -479,7 +497,6 @@ export default function TracklistGameScreen() {
           text: "Oui",
           style: "destructive",
           onPress: () => {
-            setIsTimerRunning(false);
             void submitAnswers();
           },
         },
@@ -488,6 +505,9 @@ export default function TracklistGameScreen() {
   };
 
   const resetGame = () => {
+    if (gameId) {
+      void deleteGameState(gameId);
+    }
     setGameState("genreSelection");
     setCurrentAlbum(null);
     setCandidateArtists([]);
@@ -529,82 +549,9 @@ export default function TracklistGameScreen() {
     );
   }
 
-  // ─── Genre selection ───────────────────────────────────────────────────────
-
-  const rulesModal = (
-    <Modal
-      visible={showRules}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowRules(false)}
-    >
-      <View style={rulesStyles.overlay}>
-        <View style={rulesStyles.container}>
-          <View style={rulesStyles.header}>
-            <Text style={rulesStyles.title}>Règles — Tracklist</Text>
-            <TouchableOpacity
-              onPress={() => setShowRules(false)}
-              style={rulesStyles.closeBtn}
-            >
-              <Text style={rulesStyles.closeText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView contentContainerStyle={rulesStyles.content}>
-            {[
-              {
-                icon: "⏱",
-                bold: "5 minutes",
-                desc: "Timer visible à l'écran",
-              },
-              {
-                icon: "🔀",
-                bold: "N'importe quel ordre",
-                desc: "Pas besoin de respecter l'ordre de l'album",
-              },
-              {
-                icon: "✅",
-                bold: "1 point par titre correct",
-                desc: "Chaque titre trouvé = 1 point",
-              },
-              {
-                icon: "🔡",
-                bold: "Approximation acceptée",
-                desc: "Majuscules, accents et ponctuation non pris en compte",
-              },
-              {
-                icon: "🚫",
-                bold: "Pas de doublons",
-                desc: "Un titre répété = 0 point",
-              },
-              {
-                icon: "🏳️",
-                bold: "Possibilité d'abandonner",
-                desc: "Bouton d'abandon disponible",
-              },
-            ].map((rule, i) => (
-              <View key={i} style={rulesStyles.rule}>
-                <Text style={rulesStyles.ruleIcon}>{rule.icon}</Text>
-                <View style={rulesStyles.ruleText}>
-                  <Text style={rulesStyles.ruleBold}>{rule.bold}</Text>
-                  <Text style={rulesStyles.ruleDesc}>{rule.desc}</Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
-  );
-
   if (gameState === "genreSelection") {
     return (
-      <>
-        <Header
-          title="Tracklist"
-          variant="withBack"
-          isGame={true}
-          onInfo={() => setShowRules(true)}
-        />
+      <GameLayout title="Tracklist" sessionId={sessionId} onSave={autoSave}>
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -656,21 +603,13 @@ export default function TracklistGameScreen() {
           </View>
         </View>
         {rulesModal}
-      </>
+      </GameLayout>
     );
   }
 
-  // ─── Artist selection ──────────────────────────────────────────────────────
-
   if (gameState === "artistSelection") {
     return (
-      <>
-        <Header
-          title="Tracklist"
-          variant="withBack"
-          isGame={true}
-          onInfo={() => setShowRules(true)}
-        />
+      <GameLayout title="Tracklist" sessionId={sessionId} onSave={autoSave}>
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -716,21 +655,13 @@ export default function TracklistGameScreen() {
           </View>
         </View>
         {rulesModal}
-      </>
+      </GameLayout>
     );
   }
 
-  // ─── Album selection ───────────────────────────────────────────────────────
-
   if (gameState === "albumSelection") {
     return (
-      <>
-        <Header
-          title="Tracklist"
-          variant="withBack"
-          isGame={true}
-          onInfo={() => setShowRules(true)}
-        />
+      <GameLayout title="Tracklist" sessionId={sessionId} onSave={autoSave}>
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
@@ -787,11 +718,9 @@ export default function TracklistGameScreen() {
           </View>
         </View>
         {rulesModal}
-      </>
+      </GameLayout>
     );
   }
-
-  // ─── Playing ───────────────────────────────────────────────────────────────
 
   if (gameState === "playing" && currentAlbum) {
     const foundCount = foundTrackIds.size;
@@ -804,19 +733,12 @@ export default function TracklistGameScreen() {
         errorMessage={null}
         animationsEnabled={errorAnimationsEnabled}
       >
-        <>
-          <Header
-            title="Tracklist"
-            variant="withBack"
-            isGame={true}
-            onInfo={() => setShowRules(true)}
-          />
+        <GameLayout title="Tracklist" sessionId={sessionId} onSave={autoSave}>
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           >
-            {/* Badges compteur + chrono */}
             <View style={styles.badgeRow}>
               <View style={styles.badge}>
                 <ThemedText style={styles.badgeText}>
@@ -854,7 +776,6 @@ export default function TracklistGameScreen() {
               contentContainerStyle={styles.trackListContent}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Carte album */}
               <View style={styles.albumCard}>
                 <Image
                   source={{ uri: currentAlbum.album.cover_xl }}
@@ -873,8 +794,6 @@ export default function TracklistGameScreen() {
                   <ThemedText style={styles.abandonText}>Abandonner</ThemedText>
                 </TouchableOpacity>
               </View>
-
-              {/* Liste des titres (scrollable) */}
 
               {currentAlbum.tracks.map((track, index) => {
                 const isFound = foundTrackIds.has(track.id);
@@ -911,7 +830,6 @@ export default function TracklistGameScreen() {
               })}
             </ScrollView>
 
-            {/* Feedback réponse + champ de saisie épinglé en bas */}
             <View style={styles.inputWrapper}>
               {answerFeedback && (
                 <View
@@ -959,12 +877,10 @@ export default function TracklistGameScreen() {
             </View>
           </KeyboardAvoidingView>
           {rulesModal}
-        </>
+        </GameLayout>
       </GameErrorFeedback>
     );
   }
-
-  // ─── Result ────────────────────────────────────────────────────────────────
 
   if (gameState === "result" && currentAlbum) {
     const score = foundTrackIds.size;
@@ -1192,7 +1108,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 16,
   },
-  // Artist cards
   artistCard: {
     flex: 1,
     margin: 6,
@@ -1210,7 +1125,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
-  // Album choice cards
   albumChoiceCard: {
     flex: 1,
     margin: 8,
@@ -1237,7 +1151,6 @@ const styles = StyleSheet.create({
     color: Colors.game.textMuted,
     fontSize: 12,
   },
-  // Playing screen
   badgeRow: {
     flexDirection: "row",
     justifyContent: "center",
@@ -1298,7 +1211,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 107, 0.5)", // teinte warning semi-transparente
+    borderColor: "rgba(255, 107, 107, 0.5)",
   },
   abandonText: {
     color: Colors.game.warning,
@@ -1337,7 +1250,6 @@ const styles = StyleSheet.create({
     flex: 1,
     letterSpacing: 2,
   },
-  // Input + feedback zone
   inputWrapper: {
     backgroundColor: "rgba(0, 0, 0, 0.9)",
     borderTopWidth: 1,
@@ -1384,7 +1296,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  // Result screen
   resultContent: {
     padding: 20,
     paddingBottom: 40,
@@ -1489,10 +1400,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
     textAlign: "center",
-    color: Colors.game.warning,
+    color: "#ff6b6b",
   },
   errorText: {
-    color: Colors.game.textMuted,
+    color: "#999",
     textAlign: "center",
     fontSize: 16,
     marginBottom: 30,

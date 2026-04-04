@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import Header from "@/components/Header";
@@ -15,11 +15,13 @@ import { Game } from "@/types/games";
 import * as gameService from "@/services/gameService";
 import { GameCard } from "@/components/games/GameCard";
 import { useToast } from "@/components/Toast";
+import { hasGameState } from "@/services/gameStorageService";
 import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
 export default function GamesScreen() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savedGames, setSavedGames] = useState<Record<string, boolean>>({});
   const { show } = useToast();
   const playedGameIds = usePlayedGamesStore((state) => state.playedGameIds);
 
@@ -37,6 +39,22 @@ export default function GamesScreen() {
 
     fetchGames();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkSavedGames = async () => {
+        const status: Record<string, boolean> = {};
+        for (const game of games) {
+          status[game.id] = await hasGameState(game.id.toString());
+        }
+        setSavedGames(status);
+      };
+
+      if (games.length > 0) {
+        checkSavedGames();
+      }
+    }, [games]),
+  );
 
   const handleGamePress = (game: Game) => {
     if (game.isEnabled) {
@@ -59,21 +77,18 @@ export default function GamesScreen() {
 
   const handleToggleFavorite = async (game: Game) => {
     try {
-      // Optimistic update
       setGames((prevGames) =>
         prevGames.map((g) =>
           g.id === game.id ? { ...g, isFavorite: !g.isFavorite } : g,
         ),
       );
 
-      // API call
       if (game.isFavorite) {
         await gameService.removeFavoriteGame(game.id);
       } else {
         await gameService.addFavoriteGame(game.id);
       }
     } catch (error) {
-      // Revert on error
       setGames((prevGames) =>
         prevGames.map((g) =>
           g.id === game.id ? { ...g, isFavorite: !g.isFavorite } : g,
@@ -132,6 +147,7 @@ export default function GamesScreen() {
                   game={game}
                   onPress={handleGamePress}
                   onToggleFavorite={handleToggleFavorite}
+                  hasSavedGame={savedGames[game.id]}
                 />
               ))}
             </View>
@@ -154,6 +170,7 @@ export default function GamesScreen() {
                 game={game}
                 onPress={handleGamePress}
                 onToggleFavorite={handleToggleFavorite}
+                hasSavedGame={savedGames[game.id]}
               />
             ))}
             {soloGames.length === 0 && (
@@ -182,6 +199,7 @@ export default function GamesScreen() {
                 game={game}
                 onPress={handleGamePress}
                 onToggleFavorite={handleToggleFavorite}
+                hasSavedGame={savedGames[game.id]}
               />
             ))}
             {multiplayerGames.length === 0 && (
@@ -211,13 +229,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary.fondPremier,
     justifyContent: "center",
     alignItems: "center",
-  },
-  screenTitle: {
-    color: "white",
-    marginBottom: 30,
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: 1,
   },
   section: {
     marginBottom: 40,

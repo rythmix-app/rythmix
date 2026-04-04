@@ -1,13 +1,21 @@
 import { useState, useEffect, useRef } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import SwipeCard from "./SwipeCard";
 import { MusicCardData } from "./MusicCard";
 import SwipeButton from "@/components/swipe/SwipeButton";
+import { Colors } from "@/constants/Colors";
 
 interface CardStackProps {
   cards: MusicCardData[];
+  isLoadingCards?: boolean;
   onSwipeLeft?: (card: MusicCardData) => void;
   onSwipeRight?: (card: MusicCardData) => void;
   onEmpty?: () => void;
@@ -20,6 +28,7 @@ interface CardStackProps {
 
 export default function CardStack({
   cards: initialCards,
+  isLoadingCards = false,
   onSwipeLeft,
   onSwipeRight,
   onEmpty,
@@ -121,6 +130,13 @@ export default function CardStack({
   const visibleCards = cards.slice(currentIndex, currentIndex + 3);
 
   if (currentIndex >= cards.length) {
+    if (isLoadingCards) {
+      return (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={Colors.secondary.turquoise} />
+        </View>
+      );
+    }
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="musical-notes" size={64} color="#666" />

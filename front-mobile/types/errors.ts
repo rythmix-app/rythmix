@@ -103,7 +103,11 @@ export class DeezerAPIError extends Error {
   }
 }
 
-export type AudioPlayerErrorType = "LOAD_FAILED" | "PLAYBACK_ERROR" | "NETWORK";
+export type AudioPlayerErrorType =
+  | "LOAD_FAILED"
+  | "PLAYBACK_ERROR"
+  | "NETWORK"
+  | "PLAYBACK_STALLED";
 
 export class AudioPlayerError extends Error {
   constructor(
@@ -144,6 +148,12 @@ export class AudioPlayerError extends Error {
     return new AudioPlayerError(message, "NETWORK");
   }
 
+  static playbackStalled(
+    message: string = "Playback did not start",
+  ): AudioPlayerError {
+    return new AudioPlayerError(message, "PLAYBACK_STALLED");
+  }
+
   /**
    * Message user-friendly
    */
@@ -155,6 +165,8 @@ export class AudioPlayerError extends Error {
         return "Erreur pendant la lecture.";
       case "NETWORK":
         return "Problème de connexion lors du chargement de l'audio.";
+      case "PLAYBACK_STALLED":
+        return "L'extrait audio n'a pas pu démarrer.";
       default:
         return "Une erreur est survenue avec le lecteur audio.";
     }

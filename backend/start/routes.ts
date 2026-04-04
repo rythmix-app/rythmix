@@ -12,6 +12,7 @@ const GameSessionsController = () => import('#controllers/game_sessions_controll
 const LikedTracksController = () => import('#controllers/liked_tracks_controller')
 const FavoriteGamesController = () => import('#controllers/favorite_games_controller')
 const UserAchievementsController = () => import('#controllers/user_achievements_controller')
+const ProfileController = () => import('#controllers/profile_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -30,6 +31,7 @@ router.get('/', async ({ response }) => {
       favoriteGames: '/api/favorite-games',
       userAchievements: '/api/user-achievements',
       gameSessions: '/api/game-sessions',
+      profile: '/api/profile',
       docs: '/docs',
     },
   })
@@ -71,6 +73,12 @@ router
       .prefix('/users')
     router
       .group(() => {
+        router.get('/', [ProfileController, 'show']).use(middleware.auth())
+        router.patch('/', [ProfileController, 'update']).use(middleware.auth())
+      })
+      .prefix('/profile')
+    router
+      .group(() => {
         router.get('/', [AchievementsController, 'index'])
         router.post('/', [AchievementsController, 'create'])
         router.get('/:id', [AchievementsController, 'show'])
@@ -106,11 +114,20 @@ router
       .prefix('/game-sessions')
     router
       .group(() => {
-        router.get('/', [LikedTracksController, 'index'])
+        router.get('/', [LikedTracksController, 'index']).use(middleware.role({ roles: ['admin'] }))
+        router.get('/me', [LikedTracksController, 'myLikedTracks']).use(middleware.auth())
+        router.post('/me', [LikedTracksController, 'createMyLikedTrack']).use(middleware.auth())
+        router
+          .delete('/me/:deezerTrackId', [LikedTracksController, 'deleteMyLikedTrack'])
+          .use(middleware.auth())
         router.post('/', [LikedTracksController, 'create']).use(middleware.auth())
         router.get('/:id', [LikedTracksController, 'show'])
-        router.patch('/:id', [LikedTracksController, 'update']).use(middleware.auth())
-        router.delete('/:id', [LikedTracksController, 'delete']).use(middleware.auth())
+        router
+          .patch('/:id', [LikedTracksController, 'update'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .delete('/:id', [LikedTracksController, 'delete'])
+          .use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/liked-tracks')
     router

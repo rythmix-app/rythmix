@@ -34,7 +34,8 @@
     "#start/*": "./start/*.js",
     "#tests/*": "./tests/*.js",
     "#config/*": "./config/*.js",
-    "#enums/*": "./app/enums/*.js"
+    "#enums/*": "./app/enums/*.js",
+    "#types/*": "./app/types/*.js"
   },
   "devDependencies": {
     "@adonisjs/assembler": "^7.8.2",
@@ -49,6 +50,7 @@
     "@swc/core": "1.11.24",
     "@types/luxon": "^3.6.2",
     "@types/node": "^22.15.18",
+    "baseline-browser-mapping": "^2.10.8",
     "c8": "^10.1.3",
     "eslint": "^9.26.0",
     "hot-hook": "^0.4.0",

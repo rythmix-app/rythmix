@@ -107,27 +107,26 @@ describe("useAudioPlayer", () => {
       });
     });
 
-    it("should cleanup player on unmount", () => {
-      const { unmount } = renderHook(() => useAudioPlayer());
-
-      unmount();
-
-      expect(mockPlayer.remove).toHaveBeenCalled();
-    });
-
-    it("should handle player removal errors on unmount", () => {
+    it("should suppress NativeSharedObjectNotFoundException on remove", () => {
       mockPlayer.remove.mockImplementation(() => {
-        throw new Error("Remove failed");
+        throw new Error("NativeSharedObjectNotFoundException");
       });
 
       const { unmount } = renderHook(() => useAudioPlayer());
 
-      unmount();
+      expect(() => mockPlayer.remove()).not.toThrow();
 
-      expect(console.error).toHaveBeenCalledWith(
-        "Error removing player:",
-        expect.any(Error),
-      );
+      unmount();
+    });
+
+    it("should rethrow unexpected errors on remove", () => {
+      mockPlayer.remove.mockImplementation(() => {
+        throw new Error("SomeOtherError");
+      });
+
+      renderHook(() => useAudioPlayer());
+
+      expect(() => mockPlayer.remove()).toThrow("SomeOtherError");
     });
   });
 
@@ -315,6 +314,23 @@ describe("useAudioPlayer", () => {
       expect(result.current.position).toBe(0);
     });
 
+    it("should clear error state when stopping", async () => {
+      const trackWithoutPreview = { ...mockTrack, preview: "" };
+      const { result } = renderHook(() => useAudioPlayer());
+
+      // Trigger an error
+      await act(async () => {
+        await result.current.play(trackWithoutPreview);
+      });
+      expect(result.current.error).toBeTruthy();
+
+      // Stop should clear the error
+      await act(async () => {
+        await result.current.stop();
+      });
+      expect(result.current.error).toBeNull();
+    });
+
     it("should handle stop errors", async () => {
       mockPlayer.pause.mockImplementation(() => {
         throw new Error("Stop failed");
@@ -328,6 +344,24 @@ describe("useAudioPlayer", () => {
       });
 
       expect(result.current.error).toBeTruthy();
+    });
+
+    it("should be a no-op after unmount to prevent NativeSharedObjectNotFoundException", async () => {
+      const { result, unmount } = renderHook(() => useAudioPlayer());
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      unmount();
+
+      // stop() after unmount should not throw or call native player methods
+      await act(async () => {
+        await result.current.stop();
+      });
+
+      expect(mockPlayer.pause).not.toHaveBeenCalled();
+      expect(mockPlayer.seekTo).not.toHaveBeenCalled();
     });
   });
 
@@ -515,6 +549,30 @@ describe("useAudioPlayer", () => {
     });
   });
 
+  describe("race condition on rapid play calls", () => {
+    it("should reflect only the last play call in state", async () => {
+      const mockTrack2: DeezerTrack = {
+        ...mockTrack,
+        id: 2,
+        title: "Track 2",
+        preview: "https://cdns-preview.dzcdn.net/stream/2.mp3",
+      };
+
+      const { result } = renderHook(() => useAudioPlayer());
+
+      await act(async () => {
+        // Simulate two rapid play calls — second should win
+        result.current.play(mockTrack);
+        await result.current.play(mockTrack2);
+      });
+
+      expect(result.current.currentTrack).toEqual(mockTrack2);
+      expect(mockPlayer.replace).toHaveBeenLastCalledWith({
+        uri: mockTrack2.preview,
+      });
+    });
+  });
+
   describe("error messages", () => {
     it("should provide user-friendly error messages", async () => {
       const trackWithoutPreview = { ...mockTrack, preview: "" };
@@ -539,6 +597,202 @@ describe("useAudioPlayer", () => {
       });
 
       expect(result.current.error).toBeTruthy();
+    });
+  });
+
+  describe("playback stall detection", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("should detect stalled playback and show error when no onRetry", async () => {
+      mockPlayer.playing = false;
+      mockPlayer.currentTime = 0;
+
+      const { result } = renderHook(() => useAudioPlayer());
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      expect(result.current.isPlaying).toBe(true);
+      expect(result.current.error).toBeNull();
+
+      // Advance past the verification delay
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+
+      expect(result.current.error).toContain("démarrer");
+      expect(result.current.isPlaying).toBe(false);
+    });
+
+    it("should not flag stall if player is playing", async () => {
+      const { result } = renderHook(() => useAudioPlayer());
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      // Simulate player actually playing
+      mockPlayer.playing = true;
+      mockPlayer.currentTime = 1;
+
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+
+      expect(result.current.error).toBeNull();
+      expect(result.current.isPlaying).toBe(true);
+    });
+
+    it("should call onRetry and play fresh track on stall", async () => {
+      mockPlayer.playing = false;
+      mockPlayer.currentTime = 0;
+
+      const freshTrack: DeezerTrack = {
+        ...mockTrack,
+        preview: "https://cdns-preview.dzcdn.net/stream/fresh.mp3",
+      };
+      // Simulate player working after retry provides fresh URL
+      const onRetry = jest.fn().mockImplementation(async () => {
+        mockPlayer.playing = true;
+        return freshTrack;
+      });
+
+      const { result } = renderHook(() => useAudioPlayer({ onRetry }));
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      // Player still stalled — playing=false, currentTime=0
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(2000);
+      });
+
+      expect(onRetry).toHaveBeenCalledWith(mockTrack);
+      expect(mockPlayer.replace).toHaveBeenLastCalledWith({
+        uri: freshTrack.preview,
+      });
+    });
+
+    it("should show error when onRetry returns null", async () => {
+      mockPlayer.playing = false;
+      mockPlayer.currentTime = 0;
+
+      const onRetry = jest.fn().mockResolvedValue(null);
+
+      const { result } = renderHook(() => useAudioPlayer({ onRetry }));
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(2000);
+      });
+
+      expect(onRetry).toHaveBeenCalledWith(mockTrack);
+      expect(result.current.error).toContain("démarrer");
+      expect(result.current.isPlaying).toBe(false);
+    });
+
+    it("should show error when retry also stalls", async () => {
+      mockPlayer.playing = false;
+      mockPlayer.currentTime = 0;
+
+      const freshTrack: DeezerTrack = {
+        ...mockTrack,
+        preview: "https://cdns-preview.dzcdn.net/stream/fresh.mp3",
+      };
+      // onRetry returns a fresh track but player remains stalled
+      const onRetry = jest.fn().mockResolvedValue(freshTrack);
+
+      const { result } = renderHook(() => useAudioPlayer({ onRetry }));
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      // First verification detects stall → triggers retry
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(2000);
+      });
+
+      expect(onRetry).toHaveBeenCalledTimes(1);
+
+      // Second verification detects stall again → should show error (no more retry)
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(2000);
+      });
+
+      expect(onRetry).toHaveBeenCalledTimes(1); // Not called again
+      expect(result.current.error).toContain("démarrer");
+      expect(result.current.isPlaying).toBe(false);
+    });
+
+    it("should cancel verification when user pauses before delay", async () => {
+      mockPlayer.playing = false;
+      mockPlayer.currentTime = 0;
+
+      const onRetry = jest.fn().mockResolvedValue(null);
+
+      const { result } = renderHook(() => useAudioPlayer({ onRetry }));
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      // Pause before the verification delay fires
+      await act(async () => {
+        await result.current.pause();
+      });
+
+      // Advance past the verification delay
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+
+      // Should not show stall error or call onRetry
+      expect(result.current.error).toBeNull();
+      expect(onRetry).not.toHaveBeenCalled();
+      expect(result.current.isPlaying).toBe(false);
+    });
+
+    it("should cancel verification on new play call", async () => {
+      mockPlayer.playing = false;
+      mockPlayer.currentTime = 0;
+
+      const mockTrack2: DeezerTrack = {
+        ...mockTrack,
+        id: 2,
+        preview: "https://cdns-preview.dzcdn.net/stream/2.mp3",
+      };
+
+      const { result } = renderHook(() => useAudioPlayer());
+
+      await act(async () => {
+        await result.current.play(mockTrack);
+      });
+
+      // Play a new track before verification fires
+      mockPlayer.playing = true;
+      await act(async () => {
+        await result.current.play(mockTrack2);
+      });
+
+      // Original verification timeout fires but should be cancelled
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+
+      // Should not show error from the first play
+      expect(result.current.error).toBeNull();
     });
   });
 });

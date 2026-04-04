@@ -105,6 +105,25 @@ test.group('GameSessionsController - Functional', (group) => {
     res.assertBodyContains({ message: 'GameSession not found' })
   })
 
+  test('PATCH /api/game-sessions/:id accepts canceled status', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('cancel')
+    const game = await createGame('cancel')
+    const session = await GameSession.create({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId: 'user-1', status: 'playing', score: 50, expGained: 25, rank: 1 }],
+      gameData: { round: 2 },
+    })
+
+    const res = await client
+      .patch(`/api/game-sessions/${session.id}`)
+      .bearerToken(token)
+      .json({ status: 'canceled' })
+
+    res.assertStatus(200)
+    assert.equal(res.body().status, 'canceled')
+  })
+
   test('DELETE /api/game-sessions/:id deletes record', async ({ client }) => {
     const { token } = await createAuthenticatedUser('delete')
     const game = await createGame('delete')
@@ -195,6 +214,63 @@ test.group('GameSessionsController - Functional', (group) => {
     assert.isTrue(res.body().gameSessions.every((s: any) => s.status === 'en_cours'))
     assert.exists(res.body().gameSessions.find((s: any) => s.id === session1.id))
     assert.exists(res.body().gameSessions.find((s: any) => s.id === session2.id))
+  })
+
+  test('POST /api/game-sessions returns 409 when active session exists for same user and game', async ({
+    client,
+  }) => {
+    const { token } = await createAuthenticatedUser('post409active')
+    const game = await createGame('conflict-active')
+    const userId = `user-conflict-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const res = await client
+      .post('/api/game-sessions')
+      .bearerToken(token)
+      .json({
+        gameId: game.id,
+        status: 'active',
+        players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+        gameData: {},
+      })
+
+    res.assertStatus(409)
+    res.assertBodyContains({ message: 'An active session already exists for this game' })
+  })
+
+  test('POST /api/game-sessions allows creation when existing session is completed or canceled', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser('post_completed')
+    const game = await createGame('completed-allowed')
+    const userId = `user-done-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 100, expGained: 50, rank: 1 }],
+      gameData: {},
+    })
+
+    const res = await client
+      .post('/api/game-sessions')
+      .bearerToken(token)
+      .json({
+        gameId: game.id,
+        status: 'active',
+        players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+        gameData: {},
+      })
+
+    res.assertStatus(201)
+    assert.equal(res.body().gameSession.gameId, game.id)
   })
 
   test('POST /api/game-sessions returns 404 for non-existent game', async ({ client }) => {
