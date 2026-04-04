@@ -9,6 +9,7 @@ import {
   GetGameSessionsByGameIdResponse,
   GetGameSessionsByStatusResponse,
   GetMyActiveGameSessionResponse,
+  GetMyGameHistoryResponse,
   GetMyGameSessionsResponse,
   UpdateGameSessionRequest,
 } from "@/types/gameSession";
@@ -82,6 +83,20 @@ export const getMyGameSessions = async (
     : "/api/game-sessions/me";
   const data = await get<GetMyGameSessionsResponse>(url);
   return data.gameSessions;
+};
+
+export const getMyGameHistory = async (
+  gameId: number,
+  options?: { status?: GameSessionStatus; page?: number; limit?: number },
+): Promise<GetMyGameHistoryResponse> => {
+  const params = new URLSearchParams();
+  if (options?.status) params.append("status", options.status);
+  if (options?.page) params.append("page", String(options.page));
+  if (options?.limit) params.append("limit", String(options.limit));
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return await get<GetMyGameHistoryResponse>(
+    `/api/game-sessions/me/game/${gameId}${query}`,
+  );
 };
 
 export const getMyActiveSession = async (

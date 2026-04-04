@@ -102,6 +102,9 @@ router
         router.get('/', [GameSessionsController, 'index'])
         router.get('/me', [GameSessionsController, 'mySessions']).use(middleware.auth())
         router
+          .get('/me/game/:gameId', [GameSessionsController, 'myGameHistory'])
+          .use(middleware.auth())
+        router
           .get('/me/game/:gameId/active', [GameSessionsController, 'myActiveSession'])
           .use(middleware.auth())
         router.post('/', [GameSessionsController, 'create']).use(middleware.auth())

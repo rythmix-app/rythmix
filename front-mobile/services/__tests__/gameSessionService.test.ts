@@ -7,6 +7,7 @@ import {
   getGameSessionsByGameId,
   getGameSessionsByStatus,
   getMyGameSessions,
+  getMyGameHistory,
   getMyActiveSession,
 } from "../gameSessionService";
 
@@ -131,6 +132,48 @@ describe("getMyGameSessions", () => {
     const result = await getMyGameSessions("active");
     expect(result).toEqual([mockSession]);
     expect(mockGet).toHaveBeenCalledWith("/api/game-sessions/me?status=active");
+  });
+});
+
+describe("getMyGameHistory", () => {
+  it("should return paginated history without options", async () => {
+    const mockResponse = {
+      meta: {
+        total: 1,
+        perPage: 20,
+        currentPage: 1,
+        lastPage: 1,
+        firstPage: 1,
+      },
+      data: [mockSession],
+    };
+    mockGet.mockResolvedValueOnce(mockResponse);
+    const result = await getMyGameHistory(1);
+    expect(result).toEqual(mockResponse);
+    expect(mockGet).toHaveBeenCalledWith("/api/game-sessions/me/game/1");
+  });
+
+  it("should append query params when options are provided", async () => {
+    const mockResponse = {
+      meta: {
+        total: 1,
+        perPage: 10,
+        currentPage: 2,
+        lastPage: 3,
+        firstPage: 1,
+      },
+      data: [mockSession],
+    };
+    mockGet.mockResolvedValueOnce(mockResponse);
+    const result = await getMyGameHistory(1, {
+      status: "completed",
+      page: 2,
+      limit: 10,
+    });
+    expect(result).toEqual(mockResponse);
+    expect(mockGet).toHaveBeenCalledWith(
+      "/api/game-sessions/me/game/1?status=completed&page=2&limit=10",
+    );
   });
 });
 
