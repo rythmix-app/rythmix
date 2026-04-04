@@ -1,5 +1,3 @@
-import { useCallback, useState } from "react";
-import { router, useFocusEffect } from "expo-router";
 import {
   ActivityIndicator,
   ScrollView,
@@ -7,112 +5,30 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
 import Header from "@/components/Header";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { Colors } from "@/constants/Colors";
-import { getAllGames } from "@/services/gameService";
-import { hasGameState } from "@/services/gameStorageService";
-import {
-  getMyActiveSession,
-  updateGameSession,
-} from "@/services/gameSessionService";
-import { GameSession } from "@/types/gameSession";
-import * as Haptics from "expo-haptics";
+import { useGameIndex } from "@/hooks/useGameIndex";
 
 export default function TracklistIndexScreen() {
-  const [gameId, setGameId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [hasSavedGame, setHasSavedGame] = useState(false);
-  const [activeSession, setActiveSession] = useState<GameSession | null>(null);
-  const [isResumeModalVisible, setIsResumeModalVisible] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadGameId();
-    }, []),
-  );
-
-  const loadGameId = async () => {
-    try {
-      const games = await getAllGames();
-      const tracklist = games.find((g) => g.name.toLowerCase() === "tracklist");
-      if (tracklist) {
-        setGameId(tracklist.id);
-        const savedStateExists = await hasGameState(tracklist.id.toString());
-        setHasSavedGame(savedStateExists);
-      } else {
-        setError(true);
-      }
-    } catch (err) {
-      console.error("Failed to load game ID:", err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStartGame = async (resume: boolean = false) => {
-    if (!gameId) return;
-
-    if (resume) {
-      Haptics.selectionAsync().catch(() => {});
-      navigateToGame(true);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const session = await getMyActiveSession(gameId);
-
-      if (session && session.status === "active") {
-        setActiveSession(session);
-        setIsResumeModalVisible(true);
-      } else {
-        navigateToGame(false);
-      }
-    } catch (err) {
-      console.error("Error checking active session:", err);
-      navigateToGame(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirmResume = () => {
-    setIsResumeModalVisible(false);
-    navigateToGame(true);
-  };
-
-  const handleStartNewGame = async () => {
-    setIsResumeModalVisible(false);
-    if (activeSession) {
-      setLoading(true);
-      try {
-        await updateGameSession(activeSession.id, { status: "canceled" });
-      } catch (e) {
-        console.error("Failed to cancel session:", e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    navigateToGame(false);
-  };
-
-  const navigateToGame = (resume: boolean) => {
-    if (gameId) {
-      router.push({
-        pathname: "/games/tracklist/game",
-        params: {
-          gameId: gameId.toString(),
-          resume: resume.toString(),
-        },
-      });
-    }
-  };
+  const {
+    gameId,
+    loading,
+    error,
+    hasSavedGame,
+    isResumeModalVisible,
+    setIsResumeModalVisible,
+    handleStartGame,
+    handleConfirmResume,
+    handleStartNewGame,
+  } = useGameIndex({
+    gameName: "tracklist",
+    gamePath: "/games/tracklist/game",
+  });
 
   if (loading && !gameId) {
     return (
