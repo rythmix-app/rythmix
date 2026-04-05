@@ -20,6 +20,7 @@ export default function TracklistIndexScreen() {
     loading,
     error,
     hasSavedGame,
+    hasPlayedBefore,
     isResumeModalVisible,
     setIsResumeModalVisible,
     handleStartGame,
@@ -109,68 +110,72 @@ export default function TracklistIndexScreen() {
           </TouchableOpacity>
         )}
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="info"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Objectif
-            </ThemedText>
-          </View>
-          <ThemedText style={styles.text}>
-            Listez tous les titres d&apos;un album, mixtape ou EP dans
-            n&apos;importe quel ordre. Plus vous trouvez de titres, plus vous
-            gagnez de points !
-          </ThemedText>
-        </View>
+        {!hasPlayedBefore && (
+          <>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons
+                  name="info"
+                  size={24}
+                  color={Colors.primary.survol}
+                />
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Objectif
+                </ThemedText>
+              </View>
+              <ThemedText style={styles.text}>
+                Listez tous les titres d&apos;un album, mixtape ou EP dans
+                n&apos;importe quel ordre. Plus vous trouvez de titres, plus
+                vous gagnez de points !
+              </ThemedText>
+            </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="sports-esports"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Comment jouer
-            </ThemedText>
-          </View>
-          <View style={styles.list}>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>1.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Cliquez sur &quot;Commencer à jouer&quot;
-              </ThemedText>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons
+                  name="sports-esports"
+                  size={24}
+                  color={Colors.primary.survol}
+                />
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Comment jouer
+                </ThemedText>
+              </View>
+              <View style={styles.list}>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>1.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Cliquez sur &quot;Commencer à jouer&quot;
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>2.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Choisissez un genre musical
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>3.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Un album s&apos;affiche avec sa pochette et son nom
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>4.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Listez tous les titres dans les champs de texte
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>5.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Vous avez 5 minutes pour compléter la liste
+                  </ThemedText>
+                </View>
+              </View>
             </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>2.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Choisissez un genre musical
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>3.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Un album s&apos;affiche avec sa pochette et son nom
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>4.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Listez tous les titres dans les champs de texte
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>5.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Vous avez 5 minutes pour compléter la liste
-              </ThemedText>
-            </View>
-          </View>
-        </View>
+          </>
+        )}
 
         <View style={styles.buttonContainer}>
           {hasSavedGame ? (

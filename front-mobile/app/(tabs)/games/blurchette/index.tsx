@@ -20,6 +20,7 @@ export default function BlurchetteIndexScreen() {
     loading,
     error,
     hasSavedGame,
+    hasPlayedBefore,
     isResumeModalVisible,
     setIsResumeModalVisible,
     handleStartGame,
@@ -109,68 +110,72 @@ export default function BlurchetteIndexScreen() {
           </TouchableOpacity>
         )}
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="info"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Objectif
-            </ThemedText>
-          </View>
-          <ThemedText style={styles.text}>
-            Devinez quelle pochette d&apos;album est affichée alors qu&apos;elle
-            est floue. Plus vous trouvez tôt (avec un flou élevé), plus vous
-            gagnez de points !
-          </ThemedText>
-        </View>
+        {!hasPlayedBefore && (
+          <>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons
+                  name="info"
+                  size={24}
+                  color={Colors.primary.survol}
+                />
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Objectif
+                </ThemedText>
+              </View>
+              <ThemedText style={styles.text}>
+                Devinez quelle pochette d&apos;album est affichée alors
+                qu&apos;elle est floue. Plus vous trouvez tôt (avec un flou
+                élevé), plus vous gagnez de points !
+              </ThemedText>
+            </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="sports-esports"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Comment jouer
-            </ThemedText>
-          </View>
-          <View style={styles.list}>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>1.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Un joueur crée une partie et devient maître du jeu
-              </ThemedText>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons
+                  name="sports-esports"
+                  size={24}
+                  color={Colors.primary.survol}
+                />
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Comment jouer
+                </ThemedText>
+              </View>
+              <View style={styles.list}>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>1.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Un joueur crée une partie et devient maître du jeu
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>2.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Les autres joueurs rejoignent via un code ou QR code
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>3.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Une pochette d&apos;album très floue apparaît
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>4.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Le flou diminue progressivement en 5 niveaux
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>5.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Devinez l&apos;album et l&apos;artiste le plus tôt possible
+                  </ThemedText>
+                </View>
+              </View>
             </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>2.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Les autres joueurs rejoignent via un code ou QR code
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>3.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Une pochette d&apos;album très floue apparaît
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>4.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Le flou diminue progressivement en 5 niveaux
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>5.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Devinez l&apos;album et l&apos;artiste le plus tôt possible
-              </ThemedText>
-            </View>
-          </View>
-        </View>
+          </>
+        )}
 
         <View style={styles.buttonContainer}>
           {hasSavedGame ? (

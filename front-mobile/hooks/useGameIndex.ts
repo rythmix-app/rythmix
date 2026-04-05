@@ -4,6 +4,7 @@ import { getAllGames } from "@/services/gameService";
 import { hasGameState } from "@/services/gameStorageService";
 import {
   getMyActiveSession,
+  getMyGameHistory,
   updateGameSession,
 } from "@/services/gameSessionService";
 import { GameSession } from "@/types/gameSession";
@@ -19,6 +20,7 @@ export function useGameIndex({ gameName, gamePath }: UseGameIndexOptions) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [hasSavedGame, setHasSavedGame] = useState(false);
+  const [hasPlayedBefore, setHasPlayedBefore] = useState(false);
   const [activeSession, setActiveSession] = useState<GameSession | null>(null);
   const [isResumeModalVisible, setIsResumeModalVisible] = useState(false);
 
@@ -36,8 +38,12 @@ export function useGameIndex({ gameName, gamePath }: UseGameIndexOptions) {
       );
       if (game) {
         setGameId(game.id);
-        const savedStateExists = await hasGameState(game.id.toString());
+        const [savedStateExists, history] = await Promise.all([
+          hasGameState(game.id.toString()),
+          getMyGameHistory(game.id, { limit: 1 }),
+        ]);
         setHasSavedGame(savedStateExists);
+        setHasPlayedBefore(history.meta.total > 0);
       } else {
         setError(true);
       }
@@ -123,6 +129,7 @@ export function useGameIndex({ gameName, gamePath }: UseGameIndexOptions) {
     loading,
     error,
     hasSavedGame,
+    hasPlayedBefore,
     isResumeModalVisible,
     setIsResumeModalVisible,
     handleStartGame,
