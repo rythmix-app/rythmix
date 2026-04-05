@@ -210,11 +210,7 @@ export default function BlurchetteIndexScreen() {
             onPress={() => setIsRulesModalVisible(true)}
             activeOpacity={0.7}
           >
-            <MaterialIcons
-              name="help-outline"
-              size={18}
-              color="#999"
-            />
+            <MaterialIcons name="help-outline" size={18} color="#999" />
             <ThemedText style={styles.rulesButtonText}>
               Voir les règles
             </ThemedText>
