@@ -20,9 +20,10 @@ export function useGameIndex({ gameName, gamePath }: UseGameIndexOptions) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [hasSavedGame, setHasSavedGame] = useState(false);
-  const [hasPlayedBefore, setHasPlayedBefore] = useState(false);
+  const [hasPlayedBefore, setHasPlayedBefore] = useState<boolean | null>(null);
   const [activeSession, setActiveSession] = useState<GameSession | null>(null);
   const [isResumeModalVisible, setIsResumeModalVisible] = useState(false);
+  const [isRulesModalVisible, setIsRulesModalVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -132,6 +133,8 @@ export function useGameIndex({ gameName, gamePath }: UseGameIndexOptions) {
     hasPlayedBefore,
     isResumeModalVisible,
     setIsResumeModalVisible,
+    isRulesModalVisible,
+    setIsRulesModalVisible,
     handleStartGame,
     handleConfirmResume,
     handleStartNewGame,
