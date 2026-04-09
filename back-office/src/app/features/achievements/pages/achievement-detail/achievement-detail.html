@@ -1,0 +1,184 @@
+<div class="achievement-detail-page">
+  <div class="page-header">
+    <button class="back-btn" (click)="onCancel()">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <h1 class="page-title">{{ title }}</h1>
+  </div>
+
+  <div class="page-content">
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+      </div>
+    }
+
+    @if (!isLoading) {
+      <div class="form-container">
+        <form [formGroup]="achievementForm" (ngSubmit)="onSubmit()">
+          @if (mode === "view" && achievement) {
+            <div class="achievement-header-card">
+              <span class="achievement-icon-large">{{
+                achievement.icon || "🏅"
+              }}</span>
+              <div class="achievement-header-info">
+                <h2 class="achievement-title-name">{{ achievement.name }}</h2>
+                <span class="badge badge-type">{{ achievement.type }}</span>
+              </div>
+            </div>
+          }
+
+          <div class="form-section">
+            <h2 class="section-title">Informations</h2>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="name" class="field-label">
+                  Titre <span class="required">*</span>
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  formControlName="name"
+                  class="field-input"
+                  placeholder="Ex: Première victoire"
+                  [class.error]="
+                    achievementForm.get('name')?.invalid &&
+                    achievementForm.get('name')?.touched
+                  "
+                />
+                @if (
+                  achievementForm.get("name")?.hasError("required") &&
+                  achievementForm.get("name")?.touched
+                ) {
+                  <span class="field-error">Le titre est requis</span>
+                }
+                @if (
+                  achievementForm.get("name")?.hasError("minlength") &&
+                  achievementForm.get("name")?.touched
+                ) {
+                  <span class="field-error">Au moins 2 caractères</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field half">
+                <label for="type" class="field-label">
+                  Type <span class="required">*</span>
+                </label>
+                <div class="select-wrapper">
+                  <select
+                    id="type"
+                    formControlName="type"
+                    class="field-select"
+                    [class.error]="
+                      achievementForm.get('type')?.invalid &&
+                      achievementForm.get('type')?.touched
+                    "
+                  >
+                    <option value="">Sélectionner un type</option>
+                    @for (type of achievementTypes; track type.value) {
+                      <option [value]="type.value">{{ type.label }}</option>
+                    }
+                  </select>
+                  <span class="select-arrow">▼</span>
+                </div>
+                @if (
+                  achievementForm.get("type")?.hasError("required") &&
+                  achievementForm.get("type")?.touched
+                ) {
+                  <span class="field-error">Le type est requis</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label for="description" class="field-label">Description</label>
+                <textarea
+                  id="description"
+                  formControlName="description"
+                  class="field-textarea"
+                  rows="3"
+                  placeholder="Description du succès..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          @if (mode === "view" && achievement) {
+            <div class="info-section">
+              <h2 class="section-title">Informations système</h2>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">ID</span>
+                  <span class="info-value">{{ achievement.id }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Dates</span>
+                  <div class="info-dates">
+                    <div class="date-row">
+                      <span class="date-label">Création:</span>
+                      <span class="info-value">{{
+                        achievement.createdAt | date: "dd/MM/yyyy HH:mm"
+                      }}</span>
+                    </div>
+                    @if (achievement.updatedAt) {
+                      <div class="date-row">
+                        <span class="date-label">Modification:</span>
+                        <span class="info-value">{{
+                          achievement.updatedAt | date: "dd/MM/yyyy HH:mm"
+                        }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (mode !== "view") {
+            <div class="form-actions">
+              <button
+                type="button"
+                (click)="onCancel()"
+                [disabled]="isSubmitting"
+                class="btn-cancel"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                [disabled]="isSubmitting || achievementForm.invalid"
+                class="btn-submit"
+              >
+                @if (isSubmitting) {
+                  <i class="fas fa-spinner fa-spin"></i>
+                }
+                @if (!isSubmitting) {
+                  <i class="fas fa-check"></i>
+                }
+                <span>{{ mode === "create" ? "Créer" : "Enregistrer" }}</span>
+              </button>
+            </div>
+          }
+
+          @if (mode === "view") {
+            <div class="form-actions">
+              <button
+                type="button"
+                (click)="
+                  router.navigate(['/achievements', achievementId, 'edit'])
+                "
+                class="btn-edit"
+              >
+                Modifier
+              </button>
+            </div>
+          }
+        </form>
+      </div>
+    }
+  </div>
+</div>

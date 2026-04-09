@@ -23,4 +23,12 @@ export const routes: Routes = [
       import('./features/users/users-module').then((m) => m.UsersModule),
     canActivate: [authGuard],
   },
+  {
+    path: 'achievements',
+    loadChildren: () =>
+      import('./features/achievements/achievements-module').then(
+        (m) => m.AchievementsModule,
+      ),
+    canActivate: [authGuard],
+  },
 ];

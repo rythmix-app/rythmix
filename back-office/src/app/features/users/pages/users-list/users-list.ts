@@ -25,9 +25,8 @@ export class UsersList implements OnInit {
   router = inject(Router);
 
   currentPage = 0;
-  pageSize = 10;
+  pageSize = 11;
   totalPages = 0;
-  pageSizeOptions = [10, 25, 50, 100];
 
   sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';

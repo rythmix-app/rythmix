@@ -144,22 +144,35 @@
                   </td>
                   <td class="actions-cell">
                     @if (!isUserDeleted(user)) {
-                      <button class="action-link" (click)="viewUser(user)">
-                        <i class="fas fa-eye"></i> Consulter
-                      </button>
-                      <button class="action-link" (click)="editUser(user)">
-                        <i class="fas fa-edit"></i> Modifier
+                      <button
+                        class="action-btn"
+                        title="Consulter"
+                        (click)="viewUser(user)"
+                      >
+                        <i class="fas fa-eye"></i>
                       </button>
                       <button
-                        class="action-link danger"
+                        class="action-btn"
+                        title="Modifier"
+                        (click)="editUser(user)"
+                      >
+                        <i class="fas fa-pen"></i>
+                      </button>
+                      <button
+                        class="action-btn danger"
+                        title="Supprimer"
                         (click)="deleteUser(user)"
                       >
-                        <i class="fas fa-trash"></i> Supprimer
+                        <i class="fas fa-trash" style="color: #e05555"></i>
                       </button>
                     }
                     @if (isUserDeleted(user)) {
-                      <button class="action-link" (click)="restoreUser(user)">
-                        <i class="fas fa-undo"></i> Restaurer
+                      <button
+                        class="action-btn"
+                        title="Restaurer"
+                        (click)="restoreUser(user)"
+                      >
+                        <i class="fas fa-undo"></i>
                       </button>
                     }
                   </td>
@@ -176,18 +189,6 @@
         <div class="pagination-wrapper">
           <div class="pagination-info">
             <span>{{ getPaginationInfo() }}</span>
-          </div>
-
-          <div class="pagination-size">
-            <label>
-              Éléments par page:
-              <select [(ngModel)]="pageSize" (change)="onPageSizeChange()">
-                <option [value]="10">10</option>
-                <option [value]="25">25</option>
-                <option [value]="50">50</option>
-                <option [value]="100">100</option>
-              </select>
-            </label>
           </div>
 
           <div class="pagination-controls">

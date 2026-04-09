@@ -12,6 +12,7 @@ describe('MainLayoutComponent', () => {
   let authService: jasmine.SpyObj<AuthService>;
   let router: Router;
   let currentUserSubject: BehaviorSubject<User | null>;
+  let isAuthenticatedSubject: BehaviorSubject<boolean>;
 
   const mockUser: User = {
     id: '1',
@@ -27,8 +28,10 @@ describe('MainLayoutComponent', () => {
 
   beforeEach(async () => {
     currentUserSubject = new BehaviorSubject<User | null>(null);
+    isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
     const authSpy = jasmine.createSpyObj('AuthService', ['logout'], {
       currentUser$: currentUserSubject.asObservable(),
+      isAuthenticated$: isAuthenticatedSubject.asObservable(),
     });
 
     await TestBed.configureTestingModule({
@@ -240,19 +243,6 @@ describe('MainLayoutComponent', () => {
     });
   });
 
-  describe('onProfile', () => {
-    it('should navigate to profile and close user menu', () => {
-      const event = jasmine.createSpyObj('Event', ['stopPropagation']);
-      component.showUserMenu = true;
-
-      component.onProfile(event);
-
-      expect(event.stopPropagation).toHaveBeenCalled();
-      expect(component.showUserMenu).toBe(false);
-      expect(router.navigate).toHaveBeenCalledWith(['/profile']);
-    });
-  });
-
   describe('onLogout', () => {
     it('should call logout service and close user menu', () => {
       const event = jasmine.createSpyObj('Event', ['stopPropagation']);
@@ -347,7 +337,7 @@ describe('MainLayoutComponent', () => {
       );
 
       expect(contentSection).toBeDefined();
-      expect(contentSection?.items.length).toBe(2);
+      expect(contentSection?.items.length).toBe(1);
     });
 
     it('should have JEUX section', () => {

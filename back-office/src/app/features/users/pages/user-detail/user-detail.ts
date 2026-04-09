@@ -6,7 +6,9 @@ import {
   CreateUserDto,
   UpdateUserDto,
 } from '../../../../core/models/user.model';
+import { LikedTrack } from '../../../../core/models/liked-track.model';
 import { UserService } from '../../../../core/services/user.service';
+import { LikedTrackService } from '../../../../core/services/liked-track.service';
 
 @Component({
   standalone: false,
@@ -19,12 +21,14 @@ export class UserDetail implements OnInit {
   mode: 'view' | 'edit' | 'create' = 'view';
   userId?: string;
   user?: User;
+  likedTracks: LikedTrack[] = [];
   isLoading = false;
   isSubmitting = false;
   route = inject(ActivatedRoute);
   router = inject(Router);
   fb = inject(FormBuilder);
   userService = inject(UserService);
+  likedTrackService = inject(LikedTrackService);
   private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
@@ -73,6 +77,7 @@ export class UserDetail implements OnInit {
           role: user.role || 'user',
         });
         this.isLoading = false;
+        this.loadLikedTracks(user.id);
       },
       error: (error) => {
         console.error('Error loading user:', error);
@@ -83,6 +88,25 @@ export class UserDetail implements OnInit {
         this.isLoading = false;
         this.router.navigate(['/users']);
       },
+    });
+  }
+
+  loadLikedTracks(userId: string): void {
+    this.likedTrackService.getByUserId(userId).subscribe({
+      next: (tracks) => (this.likedTracks = tracks),
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      error: () => {},
+    });
+  }
+
+  deleteLikedTrack(track: LikedTrack): void {
+    if (!confirm(`Supprimer "${track.title || track.deezerTrackId}" ?`)) return;
+    this.likedTrackService.deleteLikedTrack(track.id).subscribe({
+      next: () => {
+        this.likedTracks = this.likedTracks.filter((t) => t.id !== track.id);
+        this.showSnackbar('Track supprimé', 'success');
+      },
+      error: () => this.showSnackbar('Erreur lors de la suppression', 'error'),
     });
   }
 

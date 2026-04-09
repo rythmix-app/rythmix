@@ -2,7 +2,7 @@ $row-height: 62px;
 $thead-height: 42px;
 $pagination-height: 52px;
 
-.users-page {
+.achievements-page {
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -98,55 +98,6 @@ $pagination-height: 52px;
         pointer-events: none;
       }
     }
-
-    .toggle-deleted {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      cursor: pointer;
-      user-select: none;
-
-      .toggle-input {
-        display: none;
-      }
-
-      .toggle-slider {
-        position: relative;
-        width: 34px;
-        height: 18px;
-        background: var(--border);
-        border-radius: 18px;
-        transition: background 0.2s;
-
-        &::after {
-          content: "";
-          position: absolute;
-          width: 12px;
-          height: 12px;
-          left: 3px;
-          top: 3px;
-          background: var(--text-secondary);
-          border-radius: 50%;
-          transition:
-            transform 0.2s,
-            background 0.2s;
-        }
-      }
-
-      .toggle-input:checked ~ .toggle-slider {
-        background: var(--accent);
-        &::after {
-          transform: translateX(16px);
-          background: #fff;
-        }
-      }
-
-      .toggle-label {
-        color: var(--text-secondary);
-        font-size: 13px;
-        white-space: nowrap;
-      }
-    }
   }
 
   .loading-container {
@@ -183,31 +134,29 @@ $pagination-height: 52px;
 
     .table-container {
       flex: 1;
-      overflow: hidden; // pas de scroll horizontal
+      overflow: hidden;
     }
 
     .data-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13.5px;
-      table-layout: fixed; // largeurs fixes, pas de scroll
+      table-layout: fixed;
 
-      // Colonnes : total = 100%
-      // username: auto | email: auto | role: 100px | date: 148px | statut: 90px | actions: 110px
       thead th:nth-child(1) {
-        width: 17%;
+        width: 52px;
       }
       thead th:nth-child(2) {
-        width: auto;
+        width: 22%;
       }
       thead th:nth-child(3) {
-        width: 95px;
+        width: 18%;
       }
       thead th:nth-child(4) {
-        width: 145px;
+        width: auto;
       }
       thead th:nth-child(5) {
-        width: 85px;
+        width: 145px;
       }
       thead th:nth-child(6) {
         width: 130px;
@@ -270,28 +219,10 @@ $pagination-height: 52px;
         }
       }
 
-      .user-cell {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 3px;
-        overflow: hidden;
-
-        span {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .fullname {
-          font-size: 11.5px;
-          color: var(--text-secondary);
-        }
-
-        .deleted {
-          text-decoration: line-through;
-          color: var(--text-secondary);
-        }
+      .icon-cell {
+        text-align: center;
+        font-size: 20px;
+        padding: 0 8px;
       }
 
       .badge {
@@ -304,34 +235,17 @@ $pagination-height: 52px;
         text-transform: uppercase;
         letter-spacing: 0.3px;
 
-        &.badge-admin {
+        &.badge-type {
           background: var(--accent-dim);
           color: var(--accent);
           border: 1px solid rgba(25, 179, 189, 0.25);
-        }
-
-        &.badge-user {
-          background: var(--surface-2);
-          color: var(--text-secondary);
-          border: 1px solid var(--border);
-        }
-
-        &.badge-active {
-          background: var(--success-dim);
-          color: var(--success);
-          border: 1px solid rgba(61, 158, 106, 0.25);
-        }
-
-        &.badge-deleted {
-          background: transparent;
-          color: var(--text-secondary);
-          border: 1px solid var(--border);
         }
       }
 
       .actions-cell {
         text-align: right;
         white-space: nowrap;
+        padding-right: 12px;
 
         .action-btn {
           display: inline-flex;
@@ -432,7 +346,7 @@ $pagination-height: 52px;
 }
 
 @media (max-width: 768px) {
-  .users-page {
+  .achievements-page {
     height: auto;
     min-height: 100vh;
     overflow: visible;

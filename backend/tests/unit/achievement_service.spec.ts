@@ -15,6 +15,7 @@ test.group('AchievementService - CRUD Operations', (group) => {
 
   test('createAchievement should create a new achievement', async ({ assert }) => {
     const result = await achievementService.createAchievement({
+      name: 'First Achievement',
       type: 'gold' as AchievementType,
       description: 'First achievement',
     })
@@ -94,6 +95,7 @@ test.group('AchievementService - CRUD Operations', (group) => {
 
     try {
       const result = await achievementService.createAchievement({
+        name: 'Dup Achievement',
         type: 'gold' as AchievementType,
         description: 'dup',
       })
@@ -117,6 +119,7 @@ test.group('AchievementService - CRUD Operations', (group) => {
 
     try {
       const result = await achievementService.createAchievement({
+        name: 'Big Achievement',
         type: 'x'.repeat(300) as AchievementType,
         description: 'big',
       })
@@ -187,6 +190,7 @@ test.group('AchievementService - CRUD Operations', (group) => {
     try {
       try {
         await achievementService.createAchievement({
+          name: 'Unknown Achievement',
           type: 'x' as AchievementType,
           description: 'y',
         })
@@ -231,6 +235,7 @@ test.group('AchievementService - CRUD Operations', (group) => {
 
     try {
       const result = await achievementService.createAchievement({
+        name: 'Mocked Achievement',
         type: 'mocked' as AchievementType,
         description: 'mock',
       })
