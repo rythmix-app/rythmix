@@ -10,12 +10,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { UserDetail } from './user-detail';
 import { UserService } from '../../../../core/services/user.service';
+import { LikedTrackService } from '../../../../core/services/liked-track.service';
 import { User } from '../../../../core/models/user.model';
+import { LikedTrack } from '../../../../core/models/liked-track.model';
 
 describe('UserDetail', () => {
   let component: UserDetail;
   let fixture: ComponentFixture<UserDetail>;
   let userService: jasmine.SpyObj<UserService>;
+  let likedTrackService: jasmine.SpyObj<LikedTrackService>;
   let router: jasmine.SpyObj<Router>;
   let activatedRoute: {
     snapshot: {
@@ -42,6 +45,10 @@ describe('UserDetail', () => {
       'createUser',
       'updateUser',
     ]);
+    const likedTrackServiceSpy = jasmine.createSpyObj('LikedTrackService', [
+      'getByUserId',
+      'deleteLikedTrack',
+    ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     activatedRoute = {
@@ -58,6 +65,7 @@ describe('UserDetail', () => {
       imports: [ReactiveFormsModule],
       providers: [
         { provide: UserService, useValue: userServiceSpy },
+        { provide: LikedTrackService, useValue: likedTrackServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: activatedRoute },
       ],
@@ -66,10 +74,14 @@ describe('UserDetail', () => {
     fixture = TestBed.createComponent(UserDetail);
     component = fixture.componentInstance;
     userService = TestBed.inject(UserService) as jasmine.SpyObj<UserService>;
+    likedTrackService = TestBed.inject(
+      LikedTrackService,
+    ) as jasmine.SpyObj<LikedTrackService>;
     router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
 
-    // Set default mock return value to prevent errors in tests
+    // Set default mock return values to prevent errors in tests
     userService.getUserById.and.returnValue(of(mockUser));
+    likedTrackService.getByUserId.and.returnValue(of([]));
   });
 
   afterEach(() => {
@@ -476,6 +488,118 @@ describe('UserDetail', () => {
       component.onSubmit();
 
       expect(component.isSubmitting).toBe(true);
+    });
+  });
+
+  describe('loadLikedTracks', () => {
+    const mockTracks: LikedTrack[] = [
+      {
+        id: 1,
+        userId: '1',
+        deezerTrackId: '123456',
+        title: 'Test Track',
+        artist: 'Test Artist',
+        type: 'track',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    it('should load liked tracks for a user', () => {
+      likedTrackService.getByUserId.and.returnValue(of(mockTracks));
+
+      component.loadLikedTracks('1');
+
+      expect(likedTrackService.getByUserId).toHaveBeenCalledWith('1');
+      expect(component.likedTracks).toEqual(mockTracks);
+    });
+
+    it('should initialize likedTracks to empty array on error', () => {
+      likedTrackService.getByUserId.and.returnValue(
+        throwError(() => new Error('Error')),
+      );
+
+      component.loadLikedTracks('1');
+
+      expect(component.likedTracks).toEqual([]);
+    });
+
+    it('should be called after loadUser succeeds', () => {
+      userService.getUserById.and.returnValue(of(mockUser));
+      likedTrackService.getByUserId.and.returnValue(of(mockTracks));
+      component.userId = '1';
+      component.mode = 'view';
+      component.initForm();
+
+      component.loadUser();
+
+      expect(likedTrackService.getByUserId).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('deleteLikedTrack', () => {
+    const mockTrack: LikedTrack = {
+      id: 1,
+      userId: '1',
+      deezerTrackId: '123456',
+      title: 'Test Track',
+      artist: 'Test Artist',
+      type: 'track',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeEach(() => {
+      component.likedTracks = [mockTrack];
+    });
+
+    it('should delete track when confirmed', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      spyOn(component as never, 'showSnackbar');
+      likedTrackService.deleteLikedTrack.and.returnValue(of(undefined));
+
+      component.deleteLikedTrack(mockTrack);
+
+      expect(likedTrackService.deleteLikedTrack).toHaveBeenCalledWith(1);
+      expect(component.likedTracks.length).toBe(0);
+      expect(component['showSnackbar']).toHaveBeenCalledWith(
+        'Track supprimé',
+        'success',
+      );
+    });
+
+    it('should not delete track when cancelled', () => {
+      spyOn(window, 'confirm').and.returnValue(false);
+
+      component.deleteLikedTrack(mockTrack);
+
+      expect(likedTrackService.deleteLikedTrack).not.toHaveBeenCalled();
+      expect(component.likedTracks.length).toBe(1);
+    });
+
+    it('should handle delete error', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      spyOn(component as never, 'showSnackbar');
+      likedTrackService.deleteLikedTrack.and.returnValue(
+        throwError(() => new Error('Error')),
+      );
+
+      component.deleteLikedTrack(mockTrack);
+
+      expect(component['showSnackbar']).toHaveBeenCalledWith(
+        'Erreur lors de la suppression',
+        'error',
+      );
+      expect(component.likedTracks.length).toBe(1);
+    });
+
+    it('should use deezerTrackId in confirm when title is null', () => {
+      spyOn(window, 'confirm').and.returnValue(false);
+      const trackNoTitle = { ...mockTrack, title: null };
+
+      component.deleteLikedTrack(trackNoTitle);
+
+      expect(window.confirm).toHaveBeenCalledWith('Supprimer "123456" ?');
     });
   });
 });

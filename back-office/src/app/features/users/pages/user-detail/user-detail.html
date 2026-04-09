@@ -1,11 +1,9 @@
 <div class="user-detail-page">
   <div class="page-header">
-    <div class="header-left">
-      <button class="back-btn" (click)="onCancel()">
-        <i class="fas fa-arrow-left"></i>
-      </button>
-      <h1 class="page-title">{{ title }}</h1>
-    </div>
+    <button class="back-btn" (click)="onCancel()">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <h1 class="page-title">{{ title }}</h1>
   </div>
 
   <div class="page-content">
@@ -207,6 +205,41 @@
                   </span>
                 </div>
               </div>
+            </div>
+          }
+
+          @if (mode !== "create") {
+            <div class="liked-tracks-section">
+              <h2 class="section-title">Tracks likés</h2>
+              @if (likedTracks.length === 0) {
+                <p class="empty-tracks">Aucun track liké</p>
+              }
+              @if (likedTracks.length > 0) {
+                <div class="tracks-list">
+                  @for (track of likedTracks; track track.id) {
+                    <div class="track-item">
+                      <div class="track-info">
+                        <span class="track-title">{{
+                          track.title || "—"
+                        }}</span>
+                        <span class="track-artist">{{
+                          track.artist || "—"
+                        }}</span>
+                      </div>
+                      <span class="track-id">{{ track.deezerTrackId }}</span>
+                      @if (mode === "view") {
+                        <button
+                          class="track-delete"
+                          title="Supprimer"
+                          (click)="deleteLikedTrack(track)"
+                        >
+                          <i class="fas fa-trash" style="color: #e05555"></i>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
             </div>
           }
 

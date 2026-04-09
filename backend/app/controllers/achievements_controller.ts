@@ -45,7 +45,7 @@ export default class AchievementsController {
   public async create({ request, response }: HttpContext) {
     try {
       const result = await this.achievementService.createAchievement(
-        request.only(['description', 'type'])
+        request.only(['name', 'description', 'type'])
       )
 
       if (!(result instanceof Achievement)) {
@@ -103,7 +103,7 @@ export default class AchievementsController {
     try {
       const result = await this.achievementService.updateAchievement(
         params.id,
-        request.only(['description', 'type'])
+        request.only(['name', 'description', 'type'])
       )
 
       if (!(result instanceof Achievement)) {

@@ -1,4 +1,4 @@
-.user-detail-page {
+.achievement-detail-page {
   background: var(--bg);
   min-height: 100vh;
   padding: 28px 32px;
@@ -70,6 +70,58 @@
     flex-direction: column;
     gap: 0;
 
+    .achievement-header-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+
+      .achievement-icon-large {
+        font-size: 36px;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .achievement-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+
+        .achievement-title-name {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 3px 9px;
+          border-radius: 5px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          width: fit-content;
+
+          &.badge-type {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(25, 179, 189, 0.25);
+          }
+        }
+      }
+    }
+
     .form-section {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -102,6 +154,10 @@
           display: flex;
           flex-direction: column;
           gap: 5px;
+
+          &.half {
+            flex: 1;
+          }
 
           .field-label {
             font-size: 12.5px;
@@ -140,6 +196,35 @@
             }
             &.error {
               border-color: var(--danger);
+            }
+          }
+
+          .field-textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 9px 12px;
+            color: var(--text-primary);
+            font-size: 13.5px;
+            outline: none;
+            transition: border-color 0.15s;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: inherit;
+            min-height: 72px;
+
+            &::placeholder {
+              color: var(--text-secondary);
+              opacity: 0.6;
+            }
+            &:focus {
+              border-color: var(--accent);
+            }
+            &:disabled {
+              opacity: 0.4;
+              cursor: not-allowed;
+              background: var(--surface-2);
             }
           }
 
@@ -266,121 +351,6 @@
           }
         }
       }
-
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 3px 10px;
-        border-radius: 5px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-
-        &.badge-active {
-          background: var(--success-dim);
-          color: var(--success);
-          border: 1px solid rgba(61, 158, 106, 0.25);
-        }
-
-        &.badge-deleted {
-          background: transparent;
-          color: var(--danger);
-          border: 1px solid rgba(224, 85, 85, 0.3);
-        }
-      }
-    }
-
-    .liked-tracks-section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 20px 24px;
-      margin-bottom: 16px;
-
-      .section-title {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text-secondary);
-        margin: 0 0 16px 0;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .empty-tracks {
-        color: var(--text-secondary);
-        font-size: 13px;
-        margin: 0;
-      }
-
-      .tracks-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-
-        .track-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px 12px;
-          background: var(--bg);
-          border: 1px solid var(--border);
-          border-radius: 7px;
-
-          .track-info {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0;
-
-            .track-title {
-              font-size: 13px;
-              font-weight: 500;
-              color: var(--text-primary);
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-
-            .track-artist {
-              font-size: 11.5px;
-              color: var(--text-secondary);
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-          }
-
-          .track-id {
-            font-size: 11px;
-            color: var(--text-secondary);
-            font-family: monospace;
-            flex-shrink: 0;
-          }
-
-          .track-delete {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            flex-shrink: 0;
-            transition: border-color 0.15s;
-
-            &:hover {
-              border-color: var(--danger);
-            }
-          }
-        }
-      }
     }
 
     .form-actions {
@@ -434,15 +404,6 @@
           opacity: 0.4;
           cursor: not-allowed;
         }
-
-        .btn-spinner {
-          width: 14px;
-          height: 14px;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-top-color: #fff;
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-        }
       }
 
       .btn-edit {
@@ -469,7 +430,7 @@
 }
 
 @media (max-width: 768px) {
-  .user-detail-page {
+  .achievement-detail-page {
     padding: 20px;
 
     .form-container form {

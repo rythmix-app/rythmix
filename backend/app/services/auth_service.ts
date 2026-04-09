@@ -22,6 +22,8 @@ export class AuthService {
       password: data.password,
       firstName: data.firstName,
       lastName: data.lastName,
+      // edit mail in "admin" for dev mode (back office)
+      // role: 'admin',
       role: data.role,
     })
 
@@ -46,6 +48,11 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new Error('Invalid credentials')
     }
+
+    // make this check optional for dev mode
+    // if (!user.emailVerifiedAt) {
+    //   throw new Error('Email not verified')
+    // }
 
     if (!user.emailVerifiedAt) {
       throw new Error('Email not verified')

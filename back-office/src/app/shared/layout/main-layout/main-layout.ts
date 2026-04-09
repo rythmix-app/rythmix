@@ -32,6 +32,7 @@ export class MainLayoutComponent implements OnInit {
   showUserMenu = false;
   isDarkMode = true;
   currentUser: User | null = null;
+  isAuthenticated = false;
 
   router = inject(Router);
   authService = inject(AuthService);
@@ -49,7 +50,6 @@ export class MainLayoutComponent implements OnInit {
       title: 'CONTENU',
       icon: 'fa-music',
       items: [
-        { label: 'Tracks', route: '/tracks', icon: 'fa-compact-disc' },
         { label: 'Achievements', route: '/achievements', icon: 'fa-trophy' },
       ],
     },
@@ -70,6 +70,10 @@ export class MainLayoutComponent implements OnInit {
 
     this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
+    });
+
+    this.authService.isAuthenticated$.subscribe((auth) => {
+      this.isAuthenticated = auth;
     });
   }
 
@@ -104,12 +108,6 @@ export class MainLayoutComponent implements OnInit {
 
   toggleUserMenu(): void {
     this.showUserMenu = !this.showUserMenu;
-  }
-
-  onProfile(event: Event): void {
-    event.stopPropagation();
-    this.showUserMenu = false;
-    this.router.navigate(['/profile']);
   }
 
   onLogout(event: Event): void {
