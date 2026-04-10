@@ -225,6 +225,46 @@ export default class GameSessionsController {
   }
 
   @ApiOperation({
+    summary: 'Get my game history for a specific game',
+    description:
+      'Retrieve completed and canceled game sessions of the authenticated user for a specific game, sorted by most recent first. Supports optional status filter and pagination.',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiParam({ name: 'gameId', description: 'Game ID', required: true })
+  @ApiResponse({ status: 200, description: 'Game session history retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Error while fetching game session history' })
+  public async myGameHistory({ auth, params, request, response }: HttpContext) {
+    try {
+      const userId = auth.user!.id
+      const gameId = Number(params.gameId)
+      const status = request.qs().status as string | undefined
+      if (
+        status &&
+        ![GameSessionStatus.Completed, GameSessionStatus.Canceled].includes(
+          status as GameSessionStatus
+        )
+      ) {
+        return response
+          .status(400)
+          .json({ message: 'Invalid status filter. Allowed values: completed, canceled' })
+      }
+      const page = Math.max(1, Number(request.qs().page) || 1)
+      const limit = Math.min(100, Math.max(1, Number(request.qs().limit) || 20))
+      const gameSessions = await this.gameSessionService.getMyGameHistory(
+        userId,
+        gameId,
+        status,
+        page,
+        limit
+      )
+      return response.json(gameSessions)
+    } catch (error) {
+      return response.status(500).json({ message: 'Error while fetching game session history' })
+    }
+  }
+
+  @ApiOperation({
     summary: 'Get my active session for a game',
     description:
       'Retrieve the active game session of the authenticated user for a specific game, or null if none exists. If multiple active sessions exist, returns the most recent one.',

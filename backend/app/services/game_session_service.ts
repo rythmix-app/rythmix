@@ -130,6 +130,29 @@ export class GameSessionService {
     return query.orderBy('created_at', 'desc')
   }
 
+  public async getMyGameHistory(
+    userId: string,
+    gameId: number,
+    status?: string,
+    page: number = 1,
+    limit: number = 20
+  ) {
+    const allowedStatuses = [GameSessionStatus.Completed, GameSessionStatus.Canceled]
+    const query = GameSession.query()
+      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+      .where('game_id', gameId)
+      .preload('game')
+      .orderBy('created_at', 'desc')
+
+    if (status) {
+      query.where('status', status)
+    } else {
+      query.whereIn('status', allowedStatuses)
+    }
+
+    return query.paginate(page, limit)
+  }
+
   public async getMyActiveSessionByGameId(userId: string, gameId: number) {
     return GameSession.query()
       .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])

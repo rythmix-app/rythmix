@@ -1,5 +1,3 @@
-import { useCallback, useState } from "react";
-import { router, useFocusEffect } from "expo-router";
 import {
   ActivityIndicator,
   ScrollView,
@@ -7,117 +5,35 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
 import Header from "@/components/Header";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import RulesModal from "@/components/games/RulesModal";
 import { Colors } from "@/constants/Colors";
-import { getAllGames } from "@/services/gameService";
-import { hasGameState } from "@/services/gameStorageService";
-import {
-  getMyActiveSession,
-  updateGameSession,
-} from "@/services/gameSessionService";
-import { GameSession } from "@/types/gameSession";
-import * as Haptics from "expo-haptics";
+import { useGameIndex } from "@/hooks/useGameIndex";
 import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
 export default function BlurchetteIndexScreen() {
-  const [gameId, setGameId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [hasSavedGame, setHasSavedGame] = useState(false);
-  const [activeSession, setActiveSession] = useState<GameSession | null>(null);
-  const [isResumeModalVisible, setIsResumeModalVisible] = useState(false);
-  const { markGameAsPlayed } = usePlayedGamesStore();
-
-  useFocusEffect(
-    useCallback(() => {
-      loadGameId();
-    }, []),
-  );
-
-  const loadGameId = async () => {
-    try {
-      const games = await getAllGames();
-      const blurchette = games.find(
-        (g) => g.name.toLowerCase() === "blurchette",
-      );
-      if (blurchette) {
-        setGameId(blurchette.id);
-        const savedStateExists = await hasGameState(blurchette.id.toString());
-        setHasSavedGame(savedStateExists);
-      } else {
-        setError(true);
-      }
-    } catch (err) {
-      console.error("Failed to load game ID:", err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStartGame = async (resume: boolean = false) => {
-    if (!gameId) return;
-
-    if (resume) {
-      Haptics.selectionAsync().catch(() => {});
-      navigateToGame(true);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const session = await getMyActiveSession(gameId);
-
-      if (session && session.status === "active") {
-        setActiveSession(session);
-        setIsResumeModalVisible(true);
-      } else {
-        navigateToGame(false);
-      }
-    } catch (err) {
-      console.error("Error checking active session:", err);
-      navigateToGame(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirmResume = () => {
-    setIsResumeModalVisible(false);
-    navigateToGame(true);
-  };
-
-  const handleStartNewGame = async () => {
-    setIsResumeModalVisible(false);
-    if (activeSession) {
-      setLoading(true);
-      try {
-        await updateGameSession(activeSession.id, { status: "canceled" });
-      } catch (e) {
-        console.error("Failed to cancel session:", e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    navigateToGame(false);
-  };
-
-  const navigateToGame = (resume: boolean) => {
-    if (gameId) {
-      markGameAsPlayed(gameId);
-      router.push({
-        pathname: "/games/blurchette/game",
-        params: {
-          gameId: gameId.toString(),
-          resume: resume.toString(),
-        },
-      });
-    }
-  };
+  const {
+    gameId,
+    loading,
+    error,
+    hasSavedGame,
+    hasPlayedBefore,
+    isResumeModalVisible,
+    setIsResumeModalVisible,
+    isRulesModalVisible,
+    setIsRulesModalVisible,
+    handleStartGame,
+    handleConfirmResume,
+    handleStartNewGame,
+  } = useGameIndex({
+    gameName: "blurchette",
+    gamePath: "/games/blurchette/game",
+  });
 
   if (loading && !gameId) {
     return (
@@ -198,68 +114,72 @@ export default function BlurchetteIndexScreen() {
           </TouchableOpacity>
         )}
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="info"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Objectif
-            </ThemedText>
-          </View>
-          <ThemedText style={styles.text}>
-            Devinez quelle pochette d&apos;album est affichée alors qu&apos;elle
-            est floue. Plus vous trouvez tôt (avec un flou élevé), plus vous
-            gagnez de points !
-          </ThemedText>
-        </View>
+        {hasPlayedBefore === false && (
+          <>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons
+                  name="info"
+                  size={24}
+                  color={Colors.primary.survol}
+                />
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Objectif
+                </ThemedText>
+              </View>
+              <ThemedText style={styles.text}>
+                Devinez quelle pochette d&apos;album est affichée alors
+                qu&apos;elle est floue. Plus vous trouvez tôt (avec un flou
+                élevé), plus vous gagnez de points !
+              </ThemedText>
+            </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="sports-esports"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Comment jouer
-            </ThemedText>
-          </View>
-          <View style={styles.list}>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>1.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Un joueur crée une partie et devient maître du jeu
-              </ThemedText>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons
+                  name="sports-esports"
+                  size={24}
+                  color={Colors.primary.survol}
+                />
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Comment jouer
+                </ThemedText>
+              </View>
+              <View style={styles.list}>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>1.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Un joueur crée une partie et devient maître du jeu
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>2.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Les autres joueurs rejoignent via un code ou QR code
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>3.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Une pochette d&apos;album très floue apparaît
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>4.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Le flou diminue progressivement en 5 niveaux
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>5.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Devinez l&apos;album et l&apos;artiste le plus tôt possible
+                  </ThemedText>
+                </View>
+              </View>
             </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>2.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Les autres joueurs rejoignent via un code ou QR code
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>3.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Une pochette d&apos;album très floue apparaît
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>4.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Le flou diminue progressivement en 5 niveaux
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>5.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Devinez l&apos;album et l&apos;artiste le plus tôt possible
-              </ThemedText>
-            </View>
-          </View>
-        </View>
+          </>
+        )}
 
         <View style={styles.buttonContainer}>
           {hasSavedGame ? (
@@ -284,7 +204,34 @@ export default function BlurchetteIndexScreen() {
             />
           )}
         </View>
+
+        {hasPlayedBefore && (
+          <TouchableOpacity
+            style={styles.rulesButton}
+            onPress={() => setIsRulesModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="help-outline" size={18} color="#999" />
+            <ThemedText style={styles.rulesButtonText}>
+              Voir les règles
+            </ThemedText>
+          </TouchableOpacity>
+        )}
       </ScrollView>
+
+      <RulesModal
+        visible={isRulesModalVisible}
+        onClose={() => setIsRulesModalVisible(false)}
+        title="Règles — Blurchette"
+        objective="Devinez quelle pochette d'album est affichée alors qu'elle est floue. Plus vous trouvez tôt (avec un flou élevé), plus vous gagnez de points !"
+        steps={[
+          { text: "Un joueur crée une partie et devient maître du jeu" },
+          { text: "Les autres joueurs rejoignent via un code ou QR code" },
+          { text: "Une pochette d'album très floue apparaît" },
+          { text: "Le flou diminue progressivement en 5 niveaux" },
+          { text: "Devinez l'album et l'artiste le plus tôt possible" },
+        ]}
+      />
 
       <ConfirmationModal
         visible={isResumeModalVisible}
@@ -438,5 +385,17 @@ const styles = StyleSheet.create({
   },
   errorButton: {
     paddingHorizontal: 40,
+  },
+  rulesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  rulesButtonText: {
+    color: "#999",
+    fontSize: 14,
   },
 });
