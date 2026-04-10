@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Modal,
+  Animated,
+  BackHandler,
+  Dimensions,
+  Easing,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -22,6 +25,8 @@ interface RulesModalProps {
   steps: RulesStep[];
 }
 
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+
 export default function RulesModal({
   visible,
   onClose,
@@ -29,74 +34,142 @@ export default function RulesModal({
   objective,
   steps,
 }: RulesModalProps) {
+  const [mounted, setMounted] = useState(false);
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (visible && !mounted) {
+      animationRef.current?.stop();
+      overlayOpacity.setValue(0);
+      translateY.setValue(SCREEN_HEIGHT);
+      setMounted(true);
+      animationRef.current = Animated.sequence([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 480,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]);
+      animationRef.current.start();
+    } else if (!visible && mounted) {
+      animationRef.current?.stop();
+      animationRef.current = Animated.sequence([
+        Animated.timing(translateY, {
+          toValue: SCREEN_HEIGHT,
+          duration: 320,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 180,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]);
+      animationRef.current.start(({ finished }) => {
+        if (finished) setMounted(false);
+      });
+    }
+  }, [visible, mounted, overlayOpacity, translateY]);
+
+  useEffect(() => {
+    return () => {
+      animationRef.current?.stop();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [mounted, onClose]);
+
+  if (!mounted) return null;
+
   return (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
+    <Animated.View
+      style={[styles.overlay, { opacity: overlayOpacity }]}
+      pointerEvents="box-none"
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalCard}>
-          <View style={styles.header}>
-            <ThemedText type="subtitle" style={styles.title}>
-              {title}
-            </ThemedText>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <MaterialIcons name="close" size={24} color="#999" />
-            </TouchableOpacity>
+      <TouchableOpacity
+        style={StyleSheet.absoluteFill}
+        activeOpacity={1}
+        onPress={onClose}
+      />
+      <Animated.View
+        style={[styles.modalCard, { transform: [{ translateY }] }]}
+      >
+        <View style={styles.header}>
+          <ThemedText type="subtitle" style={styles.title}>
+            {title}
+          </ThemedText>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <MaterialIcons name="close" size={24} color="#999" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+        >
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons
+                name="info"
+                size={20}
+                color={Colors.primary.survol}
+              />
+              <ThemedText style={styles.sectionTitle}>Objectif</ThemedText>
+            </View>
+            <ThemedText style={styles.text}>{objective}</ThemedText>
           </View>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.content}
-          >
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <MaterialIcons
-                  name="info"
-                  size={20}
-                  color={Colors.primary.survol}
-                />
-                <ThemedText style={styles.sectionTitle}>Objectif</ThemedText>
-              </View>
-              <ThemedText style={styles.text}>{objective}</ThemedText>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons
+                name="sports-esports"
+                size={20}
+                color={Colors.primary.survol}
+              />
+              <ThemedText style={styles.sectionTitle}>Comment jouer</ThemedText>
             </View>
-
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <MaterialIcons
-                  name="sports-esports"
-                  size={20}
-                  color={Colors.primary.survol}
-                />
-                <ThemedText style={styles.sectionTitle}>
-                  Comment jouer
-                </ThemedText>
-              </View>
-              <View style={styles.list}>
-                {steps.map((step, index) => (
-                  <View key={index} style={styles.listItem}>
-                    <ThemedText style={styles.listNumber}>
-                      {index + 1}.
-                    </ThemedText>
-                    <ThemedText style={styles.listText}>{step.text}</ThemedText>
-                  </View>
-                ))}
-              </View>
+            <View style={styles.list}>
+              {steps.map((step, index) => (
+                <View key={index} style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>
+                    {index + 1}.
+                  </ThemedText>
+                  <ThemedText style={styles.listText}>{step.text}</ThemedText>
+                </View>
+              ))}
             </View>
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+          </View>
+        </ScrollView>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.8)",
     justifyContent: "flex-end",
+    zIndex: 1000,
+    elevation: 1000,
   },
   modalCard: {
     backgroundColor: "#121212",
@@ -104,8 +177,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 24,
     maxHeight: "80%",
-    borderTopWidth: 0.2,
-    borderColor: Colors.primary.survol,
   },
   header: {
     flexDirection: "row",
