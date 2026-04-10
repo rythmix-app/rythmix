@@ -38,10 +38,15 @@ export default function RulesModal({
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const visibleRef = useRef(visible);
+  const hasBeenVisibleRef = useRef(false);
 
   useEffect(() => {
-    if (visible && !mounted) {
-      animationRef.current?.stop();
+    visibleRef.current = visible;
+    animationRef.current?.stop();
+
+    if (visible) {
+      hasBeenVisibleRef.current = true;
       overlayOpacity.setValue(0);
       translateY.setValue(SCREEN_HEIGHT);
       setMounted(true);
@@ -60,8 +65,7 @@ export default function RulesModal({
         }),
       ]);
       animationRef.current.start();
-    } else if (!visible && mounted) {
-      animationRef.current?.stop();
+    } else if (hasBeenVisibleRef.current) {
       animationRef.current = Animated.sequence([
         Animated.timing(translateY, {
           toValue: SCREEN_HEIGHT,
@@ -77,10 +81,10 @@ export default function RulesModal({
         }),
       ]);
       animationRef.current.start(({ finished }) => {
-        if (finished) setMounted(false);
+        if (finished && !visibleRef.current) setMounted(false);
       });
     }
-  }, [visible, mounted, overlayOpacity, translateY]);
+  }, [visible, overlayOpacity, translateY]);
 
   useEffect(() => {
     return () => {
