@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   BackHandler,
-  Dimensions,
   Easing,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -25,8 +25,6 @@ interface RulesModalProps {
   steps: RulesStep[];
 }
 
-const SCREEN_HEIGHT = Dimensions.get("window").height;
-
 export default function RulesModal({
   visible,
   onClose,
@@ -34,9 +32,10 @@ export default function RulesModal({
   objective,
   steps,
 }: RulesModalProps) {
+  const { height: screenHeight } = useWindowDimensions();
   const [mounted, setMounted] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const translateY = useRef(new Animated.Value(screenHeight)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
   const visibleRef = useRef(visible);
   const hasBeenVisibleRef = useRef(false);
@@ -48,7 +47,7 @@ export default function RulesModal({
     if (visible) {
       hasBeenVisibleRef.current = true;
       overlayOpacity.setValue(0);
-      translateY.setValue(SCREEN_HEIGHT);
+      translateY.setValue(screenHeight);
       setMounted(true);
       animationRef.current = Animated.sequence([
         Animated.timing(overlayOpacity, {
@@ -68,7 +67,7 @@ export default function RulesModal({
     } else if (hasBeenVisibleRef.current) {
       animationRef.current = Animated.sequence([
         Animated.timing(translateY, {
-          toValue: SCREEN_HEIGHT,
+          toValue: screenHeight,
           duration: 320,
           easing: Easing.in(Easing.cubic),
           useNativeDriver: true,
@@ -84,7 +83,7 @@ export default function RulesModal({
         if (finished && !visibleRef.current) setMounted(false);
       });
     }
-  }, [visible, overlayOpacity, translateY]);
+  }, [visible, overlayOpacity, translateY, screenHeight]);
 
   useEffect(() => {
     return () => {

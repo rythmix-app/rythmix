@@ -86,4 +86,32 @@ describe("useGenres", () => {
     expect(result.current.genres).toHaveLength(2);
     expect(mockDeezerAPI.getGenres).toHaveBeenCalledTimes(2);
   });
+
+  it("flips loadingGenres back to true at the start of a reload", async () => {
+    mockDeezerAPI.getGenres.mockResolvedValueOnce({
+      data: [buildGenre(132, "Pop")],
+    });
+
+    const { result } = renderHook(() => useGenres());
+    await waitFor(() => expect(result.current.loadingGenres).toBe(false));
+
+    let resolveReload: (value: { data: DeezerGenre[] }) => void = () => {};
+    mockDeezerAPI.getGenres.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveReload = resolve;
+      }),
+    );
+
+    act(() => {
+      void result.current.reloadGenres();
+    });
+
+    await waitFor(() => expect(result.current.loadingGenres).toBe(true));
+
+    await act(async () => {
+      resolveReload({ data: [buildGenre(152, "Rock")] });
+    });
+
+    await waitFor(() => expect(result.current.loadingGenres).toBe(false));
+  });
 });
