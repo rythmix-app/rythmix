@@ -157,6 +157,34 @@ describe("DeezerAPI", () => {
     });
   });
 
+  describe("searchArtists", () => {
+    it("should search for artists successfully", async () => {
+      const mockArtist = {
+        id: 1,
+        name: "Artist",
+        picture: "https://api.deezer.com/artist/1/image",
+        type: "artist",
+      };
+      const mockResponse = {
+        data: [mockArtist],
+        total: 1,
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await deezerAPI.searchArtists("test");
+
+      expect(result).toEqual(mockResponse);
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/search/artist?q=test"),
+        {},
+      );
+    });
+  });
+
   describe("getTopTracks", () => {
     it("should fetch top tracks successfully", async () => {
       const mockResponse = {
