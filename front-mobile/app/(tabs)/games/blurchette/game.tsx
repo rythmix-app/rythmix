@@ -41,6 +41,7 @@ import {
 import { BlurchetteGameData, GameSession } from "@/types/gameSession";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
+import { useGenres } from "@/hooks/useGenres";
 import { fuzzyMatch } from "@/utils/stringUtils";
 
 type GameState = "genreSelection" | "playing" | "result";
@@ -70,8 +71,7 @@ interface BlurchetteSaveState {
 export default function BlurchetteGameScreen() {
   const [showRules, setShowRules] = useState(false);
   const [gameState, setGameState] = useState<GameState>("genreSelection");
-  const [genres, setGenres] = useState<DeezerGenre[]>([]);
-  const [loadingGenres, setLoadingGenres] = useState(true);
+  const { genres, loadingGenres } = useGenres();
   const [loadingTrack, setLoadingTrack] = useState(false);
 
   const [currentTrack, setCurrentTrack] = useState<GameTrack | null>(null);
@@ -147,22 +147,6 @@ export default function BlurchetteGameScreen() {
   const { shakeAnimation, borderOpacity, errorMessage, triggerError } =
     useErrorFeedback(errorAnimationsEnabled);
 
-  const loadGenres = useCallback(async () => {
-    try {
-      const response = await deezerAPI.getGenres();
-      const filteredGenres = response.data.filter((g) => g.id !== 0);
-      setGenres(filteredGenres);
-    } catch (error) {
-      console.error("Failed to load genres:", error);
-      show({
-        type: "error",
-        message: "Impossible de charger les genres musicaux",
-      });
-    } finally {
-      setLoadingGenres(false);
-    }
-  }, [show]);
-
   const loadSavedState = useCallback(async () => {
     if (!gameId) return;
     setLoadingTrack(true);
@@ -187,8 +171,6 @@ export default function BlurchetteGameScreen() {
   }, [gameId, show]);
 
   useEffect(() => {
-    loadGenres();
-
     if (gameId) {
       if (resume === "true") {
         void loadSavedState();
@@ -204,7 +186,7 @@ export default function BlurchetteGameScreen() {
           .catch(() => {});
       }
     }
-  }, [gameId, resume, loadGenres, loadSavedState]);
+  }, [gameId, resume, loadSavedState]);
 
   const autoSave = useCallback(async () => {
     if (!gameId || gameState === "result") return;
