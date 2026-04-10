@@ -72,7 +72,22 @@ export class GameSessionService {
       }
     }
 
-    gameSession.merge(payload)
+    // Shallow JSON merge on gameData so partial updates from clients don't wipe
+    // existing top-level keys (e.g. album, genre, startedAt set at creation time).
+    const mergedPayload = { ...payload }
+    if (
+      payload.gameData !== undefined &&
+      payload.gameData !== null &&
+      gameSession.gameData &&
+      typeof gameSession.gameData === 'object' &&
+      !Array.isArray(gameSession.gameData) &&
+      typeof payload.gameData === 'object' &&
+      !Array.isArray(payload.gameData)
+    ) {
+      mergedPayload.gameData = { ...gameSession.gameData, ...payload.gameData }
+    }
+
+    gameSession.merge(mergedPayload)
     try {
       await gameSession.save()
       await gameSession.load('game')
