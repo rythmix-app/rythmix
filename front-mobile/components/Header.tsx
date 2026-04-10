@@ -115,20 +115,20 @@ export default function Header({
               accessibilityLabel="Ouvrir les paramètres"
             >
               <Ionicons name="settings-sharp" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            )}
-            {!hasSettings && onInfo && (
-              <TouchableOpacity
-                onPress={onInfo}
-                activeOpacity={0.8}
-                style={styles.iconButton}
-                accessibilityLabel="Voir les règles"
-              >
-                <Ionicons
-                  name="information-circle-outline"
-                  size={22}
-                  color="#FFFFFF"
-                />
+            </TouchableOpacity>
+          )}
+          {!hasSettings && onInfo && (
+            <TouchableOpacity
+              onPress={onInfo}
+              activeOpacity={0.8}
+              style={styles.iconButton}
+              accessibilityLabel="Voir les règles"
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={22}
+                color="#FFFFFF"
+              />
             </TouchableOpacity>
           )}
         </View>
