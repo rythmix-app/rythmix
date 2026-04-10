@@ -120,6 +120,7 @@ export default function CardStack({
   const handleReload = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     lastPlayedCardIdRef.current = null; // Reset pour permettre de rejouer la première carte
+    swipeDirectionsRef.current = {};
     setCurrentIndex(0);
   };
 
@@ -185,7 +186,7 @@ export default function CardStack({
           }}
         />
         <SwipeButton
-          type={"replay"}
+          type={"previous"}
           onPress={handlePrevious}
           size={"small"}
           disabled={currentIndex === 0}

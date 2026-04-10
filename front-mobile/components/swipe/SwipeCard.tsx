@@ -50,18 +50,19 @@ export default function SwipeCard({
   onTogglePlay,
   entryDirection,
 }: SwipeCardProps) {
-  const initialTranslateX =
+  const initialEntryOffset =
     entryDirection === "right"
       ? SCREEN_WIDTH * 1.5
       : entryDirection === "left"
         ? -SCREEN_WIDTH * 1.5
         : 0;
-  const translateX = useSharedValue(initialTranslateX);
+  const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const entryOffset = useSharedValue(initialEntryOffset);
 
   useEffect(() => {
-    if (initialTranslateX !== 0) {
-      translateX.value = withSpring(0, SWIPE_CONFIG.springConfig);
+    if (initialEntryOffset !== 0) {
+      entryOffset.value = withSpring(0, SWIPE_CONFIG.springConfig);
     }
     // Entry animation runs once on mount; subsequent prop changes are ignored intentionally.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -138,7 +139,7 @@ export default function SwipeCard({
 
     return {
       transform: [
-        { translateX: translateX.value },
+        { translateX: translateX.value + entryOffset.value },
         { translateY: translateY.value },
         { rotate: `${rotation}deg` },
       ],
