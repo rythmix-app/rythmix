@@ -24,15 +24,11 @@ export class LikedTrackService {
     type?: string | null
   }): Promise<LikedTrack | ServiceError> {
     try {
-      return await LikedTrack.create(payload)
+      return await LikedTrack.firstOrCreate(
+        { userId: payload.userId, deezerTrackId: payload.deezerTrackId },
+        { title: payload.title, artist: payload.artist, type: payload.type }
+      )
     } catch (error: any) {
-      // Handle unique / truncation DB errors similarly to other services
-      if (error.code === '23505') {
-        return {
-          error: 'Conflict when creating liked track',
-          status: 409,
-        }
-      }
       if (error.code === '22001') {
         return {
           error: 'One or more fields exceed maximum length',

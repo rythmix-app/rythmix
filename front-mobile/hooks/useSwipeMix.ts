@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { cacheManager } from "@/services/cache-manager";
+import { createMyLikedTrack } from "@/services/likedTrackService";
 import { MusicCardData } from "@/components/swipe";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { useAudioPlayer } from "./useAudioPlayer";
@@ -126,8 +127,15 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   // Handler pour swipe right (like/save)
   const handleSwipeRight = useCallback(
     async (card: MusicCardData) => {
-      // TODO: Enregistrer le like dans le backend
-      // TODO: Ajouter à la playlist de l'utilisateur
+      // Persister le like en arrière-plan sans bloquer l'UX
+      createMyLikedTrack({
+        deezerTrackId: card.id,
+        title: card.title,
+        artist: card.artist,
+        type: "track",
+      }).catch(() => {
+        // Erreurs réseau et 409 (déjà liké) ignorées silencieusement
+      });
 
       // Arrêter la lecture pour passer à la carte suivante
       // (la nouvelle carte démarrera automatiquement via onCardAppear)

@@ -3,12 +3,14 @@ import { useSwipeMix } from "../useSwipeMix";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { useAudioPlayer } from "../useAudioPlayer";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
+import { createMyLikedTrack } from "@/services/likedTrackService";
 import { MusicCardData } from "@/components/swipe";
 
 // Mock des dépendances
 jest.mock("@/services/deezer-api");
 jest.mock("../useAudioPlayer");
 jest.mock("@/utils/deezer-adapter");
+jest.mock("@/services/likedTrackService");
 
 const mockDeezerAPI = deezerAPI as jest.Mocked<typeof deezerAPI>;
 const mockUseAudioPlayer = useAudioPlayer as jest.MockedFunction<
@@ -16,6 +18,9 @@ const mockUseAudioPlayer = useAudioPlayer as jest.MockedFunction<
 >;
 const mockDeezerTracksToCardData =
   deezerTracksToCardData as jest.MockedFunction<typeof deezerTracksToCardData>;
+const mockCreateMyLikedTrack = createMyLikedTrack as jest.MockedFunction<
+  typeof createMyLikedTrack
+>;
 
 describe("useSwipeMix", () => {
   // Helper function to create mock tracks
@@ -125,6 +130,14 @@ describe("useSwipeMix", () => {
       data: mockTracks,
       total: mockTracks.length,
     });
+    mockCreateMyLikedTrack.mockResolvedValue({
+      id: "liked-track-uuid",
+      userId: "user-1",
+      deezerTrackId: "1",
+      title: "Track 1",
+      artist: "Artist 1",
+      type: "track",
+    });
   });
 
   describe("initialization", () => {
@@ -210,7 +223,7 @@ describe("useSwipeMix", () => {
       expect(mockAudioPlayer.stop).toHaveBeenCalled();
     });
 
-    it("should handle swipe right", async () => {
+    it("should handle swipe right and call createMyLikedTrack", async () => {
       const { result } = renderHook(() => useSwipeMix());
 
       await waitFor(() => {
@@ -219,6 +232,29 @@ describe("useSwipeMix", () => {
 
       const firstCard = result.current.cards[0];
       await result.current.handlers.onSwipeRight(firstCard);
+
+      expect(mockCreateMyLikedTrack).toHaveBeenCalledWith({
+        deezerTrackId: firstCard.id,
+        title: firstCard.title,
+        artist: firstCard.artist,
+        type: "track",
+      });
+    });
+
+    it("should not block swipe right on API error", async () => {
+      mockCreateMyLikedTrack.mockRejectedValueOnce(new Error("Network error"));
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      const firstCard = result.current.cards[0];
+      // Should not throw
+      await result.current.handlers.onSwipeRight(firstCard);
+
+      expect(mockCreateMyLikedTrack).toHaveBeenCalled();
     });
 
     it("should stop audio on swipe right if current track", async () => {
