@@ -188,35 +188,35 @@ export function useTracklistGame() {
   }, [gameId, show]);
 
   useEffect(() => {
-    if (gameId) {
-      if (resume === "true") {
-        void loadSavedState();
-      } else {
-        void deleteGameState(gameId);
-
-        const timeout = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 5000),
-        );
-        Promise.race([getMyActiveSession(Number(gameId)), timeout]).catch(
-          () => {},
-        );
-      }
+    if (!gameId) return;
+    if (resume === "true") {
+      void loadSavedState();
+      return;
     }
+    void deleteGameState(gameId);
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<null>((resolve) => {
+      timeoutId = setTimeout(() => resolve(null), 5000);
+    });
+    Promise.race([getMyActiveSession(Number(gameId)), timeoutPromise])
+      .catch(() => {})
+      .finally(() => {
+        if (timeoutId) clearTimeout(timeoutId);
+      });
   }, [gameId, resume, loadSavedState]);
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (isTimerRunning && timeRemaining > 0) {
-      interval = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            setIsTimerRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    if (!isTimerRunning || timeRemaining <= 0) return;
+    const interval = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          setIsTimerRunning(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
     return () => clearInterval(interval);
   }, [isTimerRunning, timeRemaining]);
 
