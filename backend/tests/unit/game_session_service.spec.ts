@@ -145,6 +145,45 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     }
   })
 
+  test('updateGameSession merges gameData instead of replacing it', async ({ assert }) => {
+    const game = await createTestGame('merge_gamedata')
+    const session = await GameSession.create({
+      gameId: game.id,
+      status: 'en_cours',
+      players: [{ userId: 'user-1', status: 'actif', score: 0, expGained: 0, rank: 1 }],
+      gameData: {
+        album: { id: 42, title: 'Greatest Hits' },
+        genre: { id: 132, name: 'Pop' },
+        startedAt: '2026-04-10T12:00:00.000Z',
+        maxScore: 10,
+        score: 0,
+        answers: [],
+      },
+    })
+
+    const updated = await service.updateGameSession(session.id, {
+      status: 'terminee',
+      gameData: {
+        score: 7,
+        answers: [{ userInput: 'Track 1', isCorrect: true, matchedTrackId: 1 }],
+        completedAt: '2026-04-10T12:05:00.000Z',
+        timeElapsed: 300,
+      },
+    } as any)
+
+    assert.instanceOf(updated, GameSession)
+    if (updated instanceof GameSession) {
+      assert.deepEqual(updated.gameData.album, { id: 42, title: 'Greatest Hits' })
+      assert.deepEqual(updated.gameData.genre, { id: 132, name: 'Pop' })
+      assert.equal(updated.gameData.startedAt, '2026-04-10T12:00:00.000Z')
+      assert.equal(updated.gameData.maxScore, 10)
+      assert.equal(updated.gameData.score, 7)
+      assert.equal(updated.gameData.timeElapsed, 300)
+      assert.equal(updated.gameData.completedAt, '2026-04-10T12:05:00.000Z')
+      assert.lengthOf(updated.gameData.answers, 1)
+    }
+  })
+
   test('updateGameSession returns 404 when not found', async ({ assert }) => {
     const result = await service.updateGameSession('non-existent-id', { status: 'terminee' } as any)
     assert.notInstanceOf(result, GameSession)
