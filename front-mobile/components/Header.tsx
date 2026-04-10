@@ -17,6 +17,7 @@ export interface HeaderProps {
   showBack?: boolean;
   onBack?: () => void;
   onSettings?: () => void;
+  onInfo?: () => void;
   variant?: "simple" | "withMenu" | "withBack";
   style?: ViewStyle;
   titleStyle?: TextStyle;
@@ -28,6 +29,7 @@ export default function Header({
   showBack,
   onBack,
   onSettings,
+  onInfo,
   variant = "simple",
   style,
   titleStyle,
@@ -98,7 +100,7 @@ export default function Header({
         <View
           style={[
             styles.sideSlot,
-            hasSettings
+            hasSettings || onInfo
               ? undefined
               : wantsCenteredTitle
                 ? styles.slotPlaceholder
@@ -113,6 +115,20 @@ export default function Header({
               accessibilityLabel="Ouvrir les paramètres"
             >
               <Ionicons name="settings-sharp" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+            {!hasSettings && onInfo && (
+              <TouchableOpacity
+                onPress={onInfo}
+                activeOpacity={0.8}
+                style={styles.iconButton}
+                accessibilityLabel="Voir les règles"
+              >
+                <Ionicons
+                  name="information-circle-outline"
+                  size={22}
+                  color="#FFFFFF"
+                />
             </TouchableOpacity>
           )}
         </View>

@@ -11,8 +11,10 @@ import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
 import Header from "@/components/Header";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import RulesModal from "@/components/games/RulesModal";
 import { Colors } from "@/constants/Colors";
 import { useGameIndex } from "@/hooks/useGameIndex";
+import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
 export default function TracklistIndexScreen() {
   const {
@@ -20,8 +22,11 @@ export default function TracklistIndexScreen() {
     loading,
     error,
     hasSavedGame,
+    hasPlayedBefore,
     isResumeModalVisible,
     setIsResumeModalVisible,
+    isRulesModalVisible,
+    setIsRulesModalVisible,
     handleStartGame,
     handleConfirmResume,
     handleStartNewGame,
@@ -109,68 +114,72 @@ export default function TracklistIndexScreen() {
           </TouchableOpacity>
         )}
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="info"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Objectif
-            </ThemedText>
-          </View>
-          <ThemedText style={styles.text}>
-            Listez tous les titres d&apos;un album, mixtape ou EP dans
-            n&apos;importe quel ordre. Plus vous trouvez de titres, plus vous
-            gagnez de points !
-          </ThemedText>
-        </View>
+        {hasPlayedBefore === false && (
+          <>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons
+                  name="info"
+                  size={24}
+                  color={Colors.primary.survol}
+                />
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Objectif
+                </ThemedText>
+              </View>
+              <ThemedText style={styles.text}>
+                Listez tous les titres d&apos;un album, mixtape ou EP dans
+                n&apos;importe quel ordre. Plus vous trouvez de titres, plus
+                vous gagnez de points !
+              </ThemedText>
+            </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <MaterialIcons
-              name="sports-esports"
-              size={24}
-              color={Colors.primary.survol}
-            />
-            <ThemedText type="subtitle" style={styles.sectionTitle}>
-              Comment jouer
-            </ThemedText>
-          </View>
-          <View style={styles.list}>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>1.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Cliquez sur &quot;Commencer à jouer&quot;
-              </ThemedText>
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <MaterialIcons
+                  name="sports-esports"
+                  size={24}
+                  color={Colors.primary.survol}
+                />
+                <ThemedText type="subtitle" style={styles.sectionTitle}>
+                  Comment jouer
+                </ThemedText>
+              </View>
+              <View style={styles.list}>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>1.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Cliquez sur &quot;Commencer à jouer&quot;
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>2.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Recherchez et sélectionnez un artiste
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>3.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Choisissez un album de cet artiste
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>4.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Listez tous les titres de l&apos;album
+                  </ThemedText>
+                </View>
+                <View style={styles.listItem}>
+                  <ThemedText style={styles.listNumber}>5.</ThemedText>
+                  <ThemedText style={styles.listText}>
+                    Vous avez 5 minutes pour compléter la liste
+                  </ThemedText>
+                </View>
+              </View>
             </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>2.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Recherchez et sélectionnez un artiste
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>3.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Choisissez un album de cet artiste
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>4.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Listez tous les titres de l&apos;album
-              </ThemedText>
-            </View>
-            <View style={styles.listItem}>
-              <ThemedText style={styles.listNumber}>5.</ThemedText>
-              <ThemedText style={styles.listText}>
-                Vous avez 5 minutes pour compléter la liste
-              </ThemedText>
-            </View>
-          </View>
-        </View>
+          </>
+        )}
 
         <View style={styles.buttonContainer}>
           {hasSavedGame ? (
@@ -195,7 +204,34 @@ export default function TracklistIndexScreen() {
             />
           )}
         </View>
+
+        {hasPlayedBefore && (
+          <TouchableOpacity
+            style={styles.rulesButton}
+            onPress={() => setIsRulesModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="help-outline" size={18} color="#999" />
+            <ThemedText style={styles.rulesButtonText}>
+              Voir les règles
+            </ThemedText>
+          </TouchableOpacity>
+        )}
       </ScrollView>
+
+      <RulesModal
+        visible={isRulesModalVisible}
+        onClose={() => setIsRulesModalVisible(false)}
+        title="Règles — Tracklist"
+        objective="Listez tous les titres d'un album, mixtape ou EP dans n'importe quel ordre. Plus vous trouvez de titres, plus vous gagnez de points !"
+        steps={[
+          { text: 'Cliquez sur "Commencer à jouer"' },
+          { text: "Choisissez un genre musical" },
+          { text: "Un album s'affiche avec sa pochette et son nom" },
+          { text: "Listez tous les titres dans les champs de texte" },
+          { text: "Vous avez 5 minutes pour compléter la liste" },
+        ]}
+      />
 
       <ConfirmationModal
         visible={isResumeModalVisible}
@@ -349,5 +385,17 @@ const styles = StyleSheet.create({
   },
   errorButton: {
     paddingHorizontal: 40,
+  },
+  rulesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  rulesButtonText: {
+    color: "#999",
+    fontSize: 14,
   },
 });

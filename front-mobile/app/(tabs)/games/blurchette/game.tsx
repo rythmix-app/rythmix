@@ -7,8 +7,11 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
@@ -65,6 +68,7 @@ interface BlurchetteSaveState {
 }
 
 export default function BlurchetteGameScreen() {
+  const [showRules, setShowRules] = useState(false);
   const [gameState, setGameState] = useState<GameState>("genreSelection");
   const [genres, setGenres] = useState<DeezerGenre[]>([]);
   const [loadingGenres, setLoadingGenres] = useState(true);
@@ -427,6 +431,66 @@ export default function BlurchetteGameScreen() {
     return blurValues[level];
   };
 
+  const rulesModal = (
+    <Modal
+      visible={showRules}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowRules(false)}
+    >
+      <View style={rulesStyles.overlay}>
+        <View style={rulesStyles.container}>
+          <View style={rulesStyles.header}>
+            <Text style={rulesStyles.title}>Règles — Blurchette</Text>
+            <TouchableOpacity
+              onPress={() => setShowRules(false)}
+              style={rulesStyles.closeBtn}
+            >
+              <Text style={rulesStyles.closeText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={rulesStyles.content}>
+            {[
+              {
+                icon: "🔵",
+                bold: "5 niveaux de flou",
+                desc: "Du plus flou (niveau 1) au plus net (niveau 5)",
+              },
+              {
+                icon: "🏆",
+                bold: "Plus de points en début",
+                desc: "Trouver au niveau 1 = 500 pts, niveau 5 = 100 pts",
+              },
+              {
+                icon: "⏱",
+                bold: "Temps limité",
+                desc: "Chaque niveau a un temps de réponse limité",
+              },
+              {
+                icon: "✅",
+                bold: "Une réponse par niveau",
+                desc: "Réfléchissez bien avant de soumettre !",
+              },
+              {
+                icon: "⚡",
+                bold: "Départage par rapidité",
+                desc: "En cas d'égalité, le plus rapide gagne",
+              },
+            ].map((rule, i) => (
+              <View key={i} style={rulesStyles.rule}>
+                <Text style={rulesStyles.ruleIcon}>{rule.icon}</Text>
+                <View style={rulesStyles.ruleText}>
+                  <Text style={rulesStyles.ruleBold}>{rule.bold}</Text>
+                  <Text style={rulesStyles.ruleDesc}>{rule.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (sessionError) {
     return (
       <>
@@ -501,6 +565,7 @@ export default function BlurchetteGameScreen() {
             )}
           </View>
         </View>
+        {rulesModal}
       </GameLayout>
     );
   }
@@ -585,6 +650,7 @@ export default function BlurchetteGameScreen() {
               </View>
             </View>
           </KeyboardAvoidingView>
+          {rulesModal}
         </GameLayout>
       </GameErrorFeedback>
     );
@@ -640,6 +706,76 @@ export default function BlurchetteGameScreen() {
 
   return null;
 }
+
+const rulesStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
+  },
+  container: {
+    backgroundColor: "#121212",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "80%",
+    borderTopWidth: 1,
+    borderColor: "#14FFEC33",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2A2A2A",
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#2A2A2A",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+  },
+  content: {
+    padding: 20,
+    gap: 14,
+  },
+  rule: {
+    flexDirection: "row",
+    gap: 14,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 12,
+    padding: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: "#14FFEC",
+  },
+  ruleIcon: {
+    fontSize: 22,
+  },
+  ruleText: {
+    flex: 1,
+    gap: 4,
+  },
+  ruleBold: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  ruleDesc: {
+    color: "#999",
+    fontSize: 13,
+  },
+});
 
 const styles = StyleSheet.create({
   container: {
