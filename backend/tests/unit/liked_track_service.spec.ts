@@ -40,36 +40,23 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
     }
   })
 
-  test('createLikedTrack maps 23505 -> 409', async ({ assert }) => {
-    const user = await createTestUser('dup')
-    const originalCreate = (LikedTrack as any).create
-    ;(LikedTrack as any).create = async () => {
-      const err: any = new Error('duplicate')
-      err.code = '23505'
-      throw err
-    }
-    const result = await service.createLikedTrack({ userId: user.id, deezerTrackId: 'dup' })
-    assert.notInstanceOf(result, LikedTrack)
-    if (isServiceError(result)) {
-      assert.equal(result.status, 409)
-    }
-    ;(LikedTrack as any).create = originalCreate
-  })
-
   test('createLikedTrack maps 22001 -> 400', async ({ assert }) => {
     const user = await createTestUser('too_long')
-    const originalCreate = (LikedTrack as any).create
-    ;(LikedTrack as any).create = async () => {
+    const originalFirstOrCreate = (LikedTrack as any).firstOrCreate
+    ;(LikedTrack as any).firstOrCreate = async () => {
       const err: any = new Error('value too long')
       err.code = '22001'
       throw err
     }
-    const result = await service.createLikedTrack({ userId: user.id, deezerTrackId: 'x' })
-    assert.notInstanceOf(result, LikedTrack)
-    if (isServiceError(result)) {
-      assert.equal(result.status, 400)
+    try {
+      const result = await service.createLikedTrack({ userId: user.id, deezerTrackId: 'x' })
+      assert.notInstanceOf(result, LikedTrack)
+      if (isServiceError(result)) {
+        assert.equal(result.status, 400)
+      }
+    } finally {
+      ;(LikedTrack as any).firstOrCreate = originalFirstOrCreate
     }
-    ;(LikedTrack as any).create = originalCreate
   })
 
   test('getAll increases after insertion', async ({ assert }) => {
@@ -146,12 +133,15 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
         },
       }),
     })
-    const result = await service.updateLikedTrack(rec.id, { deezerTrackId: 'dup' } as any)
-    assert.notInstanceOf(result, LikedTrack)
-    if (isServiceError(result)) {
-      assert.equal(result.status, 409)
+    try {
+      const result = await service.updateLikedTrack(rec.id, { deezerTrackId: 'dup' } as any)
+      assert.notInstanceOf(result, LikedTrack)
+      if (isServiceError(result)) {
+        assert.equal(result.status, 409)
+      }
+    } finally {
+      ;(LikedTrack as any).query = originalQuery
     }
-    ;(LikedTrack as any).query = originalQuery
   })
 
   test('updateLikedTrack maps 22001 -> 400', async ({ assert }) => {
@@ -170,12 +160,15 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
         },
       }),
     })
-    const result = await service.updateLikedTrack(rec.id, { title: 'Y' } as any)
-    assert.notInstanceOf(result, LikedTrack)
-    if (isServiceError(result)) {
-      assert.equal(result.status, 400)
+    try {
+      const result = await service.updateLikedTrack(rec.id, { title: 'Y' } as any)
+      assert.notInstanceOf(result, LikedTrack)
+      if (isServiceError(result)) {
+        assert.equal(result.status, 400)
+      }
+    } finally {
+      ;(LikedTrack as any).query = originalQuery
     }
-    ;(LikedTrack as any).query = originalQuery
   })
 
   test('deleteLikedTrack deletes successfully', async ({ assert }) => {
@@ -228,9 +221,9 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
 
   test('createLikedTrack rethrows on unknown DB error', async ({ assert }) => {
     const user = await createTestUser('unknown_create')
-    const originalCreate = (LikedTrack as any).create
+    const originalFirstOrCreate = (LikedTrack as any).firstOrCreate
 
-    ;(LikedTrack as any).create = async () => {
+    ;(LikedTrack as any).firstOrCreate = async () => {
       const err: any = new Error('weird db failure')
       err.code = '99999' // code non géré -> doit être relancé par le service
       throw err
@@ -243,7 +236,7 @@ test.group('LikedTrackService - Unit CRUD', (group) => {
       assert.instanceOf(e, Error)
       assert.match(String(e.message), /weird db failure/i)
     } finally {
-      ;(LikedTrack as any).create = originalCreate
+      ;(LikedTrack as any).firstOrCreate = originalFirstOrCreate
     }
   })
 
