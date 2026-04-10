@@ -12,6 +12,7 @@ type SwipeButtonProps = {
   type: "like" | "dislike" | "replay";
   size?: "medium" | "small";
   onPress?: () => void;
+  disabled?: boolean;
 };
 
 const SIZES = {
@@ -43,7 +44,7 @@ const ICONS = {
   ),
   dislike: ({ size }: { size: number }) => <Entypo name="cross" size={size} />,
   replay: ({ size }: { size: number }) => (
-    <MaterialCommunityIcons name="replay" size={size} />
+    <MaterialCommunityIcons name="skip-previous" size={size} />
   ),
 };
 
@@ -51,6 +52,7 @@ const SwipeButton: React.FC<SwipeButtonProps> = ({
   type,
   size = "medium",
   onPress,
+  disabled = false,
 }) => {
   const dimensions = SIZES[size];
   const gradientColors = GRADIENTS[type];
@@ -60,6 +62,7 @@ const SwipeButton: React.FC<SwipeButtonProps> = ({
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={({ pressed }) => [
         styles.container,
         {
@@ -70,6 +73,7 @@ const SwipeButton: React.FC<SwipeButtonProps> = ({
           borderWidth: 2,
         },
         pressed && styles.pressed,
+        disabled && styles.disabled,
       ]}
     >
       <MaskedView
@@ -102,6 +106,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  disabled: {
+    opacity: 0.5,
   },
   iconMask: {
     flex: 1,
