@@ -419,6 +419,10 @@ class DeezerAPI {
     return await this.fetchWithRetry<DeezerArtistsResponse>(url);
   }
 
+  async getTopArtists(limit: number = 20): Promise<DeezerArtistsResponse> {
+    return this.getGenreTopArtists(0, limit);
+  }
+
   async getArtistAlbums(
     artistId: number,
     limit: number = 25,
@@ -435,6 +439,24 @@ class DeezerAPI {
     }
 
     return await this.fetchWithRetry<DeezerAlbumsResponse>(url);
+  }
+
+  async searchArtists(
+    query: string,
+    limit: number = 20,
+  ): Promise<DeezerArtistsResponse> {
+    const cacheKey = `search_artist:${query}:${limit}`;
+    const url = `${this.baseUrl}/search/artist?q=${encodeURIComponent(query)}&limit=${limit}`;
+
+    if (this.enableCache) {
+      return await cacheManager.getOrSet(
+        cacheKey,
+        () => this.fetchWithRetry<DeezerArtistsResponse>(url),
+        DEFAULT_TTL.SEARCH,
+      );
+    }
+
+    return await this.fetchWithRetry<DeezerArtistsResponse>(url);
   }
 
   /**

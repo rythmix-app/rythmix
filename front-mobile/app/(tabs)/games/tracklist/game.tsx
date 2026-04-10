@@ -21,7 +21,6 @@ import { GameErrorFeedback } from "@/components/GameErrorFeedback";
 import { Colors } from "@/constants/Colors";
 import {
   deezerAPI,
-  DeezerGenre,
   DeezerAlbum,
   DeezerArtist,
   DeezerTrack,
@@ -48,12 +47,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
 import { fuzzyMatch } from "@/utils/stringUtils";
 
-type GameState =
-  | "genreSelection"
-  | "artistSelection"
-  | "albumSelection"
-  | "playing"
-  | "result";
+type GameState = "artistSearch" | "albumSelection" | "playing" | "result";
 
 interface GameAlbum {
   album: DeezerAlbum;
@@ -67,9 +61,8 @@ interface AnswerFeedback {
 
 interface TracklistSaveState {
   gameState: GameState;
-  selectedGenre: DeezerGenre | null;
+  searchQuery: string;
   selectedArtist: DeezerArtist | null;
-  candidateArtists: DeezerArtist[];
   candidateAlbums: DeezerAlbum[];
   currentAlbum: GameAlbum | null;
   foundTrackIds: number[];
@@ -82,14 +75,15 @@ const GAME_DURATION = 300;
 const ALBUM_CHOICES = 6;
 
 export default function TracklistGameScreen() {
-  const [gameState, setGameState] = useState<GameState>("genreSelection");
-  const [genres, setGenres] = useState<DeezerGenre[]>([]);
-  const [loadingGenres, setLoadingGenres] = useState(true);
+  const [gameState, setGameState] = useState<GameState>("artistSearch");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<DeezerArtist[]>([]);
+  const [topArtists, setTopArtists] = useState<DeezerArtist[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [loadingAlbum, setLoadingAlbum] = useState(false);
 
-  const [candidateArtists, setCandidateArtists] = useState<DeezerArtist[]>([]);
   const [candidateAlbums, setCandidateAlbums] = useState<DeezerAlbum[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState<DeezerGenre | null>(null);
   const [selectedArtist, setSelectedArtist] = useState<DeezerArtist | null>(
     null,
   );
@@ -111,6 +105,7 @@ export default function TracklistGameScreen() {
 
   const inputRef = useRef<TextInput>(null);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isProcessingAnswerRef = useRef(false);
   const isSubmittingRef = useRef(false);
 
@@ -125,21 +120,66 @@ export default function TracklistGameScreen() {
     errorAnimationsEnabled,
   );
 
-  const loadGenres = useCallback(async () => {
+  const fetchTopArtists = useCallback(async () => {
+    setIsInitialLoading(true);
     try {
-      const response = await deezerAPI.getGenres();
-      const filteredGenres = response.data.filter((g) => g.id !== 0);
-      setGenres(filteredGenres);
+      const response = await deezerAPI.getTopArtists(20);
+      setTopArtists(response.data);
     } catch (error) {
-      console.error("Failed to load genres:", error);
+      console.error("Failed to fetch top artists:", error);
       show({
         type: "error",
-        message: "Impossible de charger les genres musicaux",
+        message: "Impossible de charger les suggestions d'artistes",
       });
     } finally {
-      setLoadingGenres(false);
+      setIsInitialLoading(false);
     }
   }, [show]);
+
+  useEffect(() => {
+    void fetchTopArtists();
+  }, [fetchTopArtists]);
+
+  const performSearch = useCallback(
+    async (query: string) => {
+      if (query.trim().length < 3) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const response = await deezerAPI.searchArtists(query, 20);
+        setSearchResults(response.data);
+      } catch (error) {
+        console.error("Search failed:", error);
+        show({ type: "error", message: "Échec de la recherche d'artistes" });
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [show],
+  );
+
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery.trim().length >= 3) {
+      searchTimeoutRef.current = setTimeout(() => {
+        void performSearch(searchQuery);
+      }, 400);
+    } else {
+      setSearchResults([]);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, performSearch]);
 
   const loadSavedState = useCallback(async () => {
     if (!gameId) return;
@@ -148,9 +188,8 @@ export default function TracklistGameScreen() {
       const saved = await getGameState<TracklistSaveState>(gameId);
       if (saved) {
         setGameState(saved.gameState);
-        setSelectedGenre(saved.selectedGenre);
+        setSearchQuery(saved.searchQuery || "");
         setSelectedArtist(saved.selectedArtist);
-        setCandidateArtists(saved.candidateArtists);
         setCandidateAlbums(saved.candidateAlbums);
         setCurrentAlbum(saved.currentAlbum);
         setFoundTrackIds(new Set(saved.foundTrackIds));
@@ -171,8 +210,6 @@ export default function TracklistGameScreen() {
   }, [gameId, show]);
 
   useEffect(() => {
-    loadGenres();
-
     if (gameId) {
       if (resume === "true") {
         void loadSavedState();
@@ -189,7 +226,7 @@ export default function TracklistGameScreen() {
           .catch(() => {});
       }
     }
-  }, [gameId, resume, loadGenres, loadSavedState]);
+  }, [gameId, resume, loadSavedState]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -212,9 +249,8 @@ export default function TracklistGameScreen() {
 
     const saveState: TracklistSaveState = {
       gameState,
-      selectedGenre,
+      searchQuery,
       selectedArtist,
-      candidateArtists,
       candidateAlbums,
       currentAlbum,
       foundTrackIds: Array.from(foundTrackIds),
@@ -227,9 +263,8 @@ export default function TracklistGameScreen() {
   }, [
     gameId,
     gameState,
-    selectedGenre,
+    searchQuery,
     selectedArtist,
-    candidateArtists,
     candidateAlbums,
     currentAlbum,
     foundTrackIds,
@@ -239,7 +274,7 @@ export default function TracklistGameScreen() {
   ]);
 
   useEffect(() => {
-    if (gameState !== "result" && gameState !== "genreSelection" && gameId) {
+    if (gameState !== "result" && gameState !== "artistSearch" && gameId) {
       void autoSave();
     }
   }, [gameState, gameId, autoSave]);
@@ -312,28 +347,6 @@ export default function TracklistGameScreen() {
     }
   }, [gameState]);
 
-  const handleSelectGenre = async (genre: DeezerGenre) => {
-    setLoadingAlbum(true);
-    setSelectedGenre(genre);
-
-    try {
-      const artistsResponse = await deezerAPI.getGenreTopArtists(genre.id, 25);
-
-      if (!artistsResponse.data || artistsResponse.data.length === 0) {
-        show({ type: "error", message: "Aucun artiste trouvé pour ce genre" });
-        return;
-      }
-
-      setCandidateArtists(artistsResponse.data);
-      setGameState("artistSelection");
-    } catch (error) {
-      console.error("Failed to load artists:", error);
-      show({ type: "error", message: "Impossible de charger les artistes" });
-    } finally {
-      setLoadingAlbum(false);
-    }
-  };
-
   const handleSelectArtist = async (artist: DeezerArtist) => {
     setLoadingAlbum(true);
     setSelectedArtist(artist);
@@ -386,9 +399,7 @@ export default function TracklistGameScreen() {
       };
 
       const gameData: TracklistGameData = {
-        genre: selectedGenre
-          ? { id: selectedGenre.id, name: selectedGenre.name }
-          : { id: 0, name: "" },
+        genre: { id: 0, name: "Search" },
         album: {
           id: album.id,
           title: album.title,
@@ -505,12 +516,12 @@ export default function TracklistGameScreen() {
     if (gameId) {
       void deleteGameState(gameId);
     }
-    setGameState("genreSelection");
+    setGameState("artistSearch");
     setCurrentAlbum(null);
-    setCandidateArtists([]);
     setCandidateAlbums([]);
-    setSelectedGenre(null);
     setSelectedArtist(null);
+    setSearchQuery("");
+    setSearchResults([]);
     setCurrentInput("");
     setFoundTrackIds(new Set());
     setTimeRemaining(GAME_DURATION);
@@ -546,46 +557,99 @@ export default function TracklistGameScreen() {
     );
   }
 
-  if (gameState === "genreSelection") {
+  if (gameState === "artistSearch") {
     return (
       <GameLayout title="Tracklist" sessionId={sessionId} onSave={autoSave}>
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
-              Choisissez votre style
+              Cherchez un artiste
             </ThemedText>
             <ThemedText style={styles.subtitle}>
-              Sélectionnez un genre musical pour commencer
+              Entrez le nom d&apos;un artiste pour tester vos connaissances
             </ThemedText>
 
-            {loadingGenres ? (
+            <View style={styles.searchContainer}>
+              <MaterialIcons
+                name="search"
+                size={24}
+                color={Colors.game.textMuted}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Rechercher un artiste..."
+                placeholderTextColor={Colors.game.textMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery("")}
+                  style={styles.clearButton}
+                >
+                  <MaterialIcons
+                    name="close"
+                    size={20}
+                    color={Colors.game.textMuted}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {isSearching || isInitialLoading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={Colors.primary.survol} />
               </View>
             ) : (
               <FlatList
-                key="genres"
-                data={genres}
-                numColumns={2}
+                data={
+                  searchQuery.trim().length >= 3 ? searchResults : topArtists
+                }
                 keyExtractor={(item) => item.id.toString()}
-                contentContainerStyle={styles.genreGrid}
+                contentContainerStyle={styles.artistList}
+                keyboardShouldPersistTaps="handled"
+                ListHeaderComponent={
+                  searchQuery.trim().length < 3 && topArtists.length > 0 ? (
+                    <ThemedText style={styles.sectionTitle}>
+                      Artistes populaires en France
+                    </ThemedText>
+                  ) : null
+                }
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={styles.genreCard}
-                    onPress={() => handleSelectGenre(item)}
+                    style={styles.artistListItem}
+                    onPress={() => handleSelectArtist(item)}
                     disabled={loadingAlbum}
                   >
                     <Image
                       source={{ uri: item.picture_medium }}
-                      style={styles.genreImage}
+                      style={styles.artistListImage}
                     />
-                    <View style={styles.genreOverlay}>
-                      <ThemedText style={styles.genreName}>
+                    <View style={styles.artistListInfo}>
+                      <ThemedText style={styles.artistListName}>
                         {item.name}
                       </ThemedText>
                     </View>
+                    <MaterialIcons
+                      name="chevron-right"
+                      size={24}
+                      color={Colors.game.textMuted}
+                    />
                   </TouchableOpacity>
                 )}
+                ListEmptyComponent={
+                  searchQuery.trim().length >= 3 ? (
+                    <ThemedText style={styles.emptyText}>
+                      Aucun artiste trouvé
+                    </ThemedText>
+                  ) : searchQuery.trim().length < 3 && !isInitialLoading ? (
+                    <ThemedText style={styles.emptyText}>
+                      Aucune suggestion disponible
+                    </ThemedText>
+                  ) : null
+                }
               />
             )}
 
@@ -603,67 +667,21 @@ export default function TracklistGameScreen() {
     );
   }
 
-  if (gameState === "artistSelection") {
-    return (
-      <GameLayout title="Tracklist" sessionId={sessionId} onSave={autoSave}>
-        <View style={styles.container}>
-          <View style={styles.setupContainer}>
-            <ThemedText type="title" style={styles.title}>
-              Choisissez un artiste
-            </ThemedText>
-            <ThemedText style={styles.subtitle}>
-              {selectedGenre?.name} — Sur quel artiste veux-tu jouer ?
-            </ThemedText>
-
-            <FlatList
-              key="artists"
-              data={candidateArtists}
-              numColumns={3}
-              keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={styles.genreGrid}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.artistCard}
-                  onPress={() => handleSelectArtist(item)}
-                  disabled={loadingAlbum}
-                  accessibilityLabel={`Sélectionner l'artiste ${item.name}`}
-                  accessibilityRole="button"
-                >
-                  <Image
-                    source={{ uri: item.picture_medium }}
-                    style={styles.artistPicture}
-                  />
-                  <ThemedText style={styles.artistCardName} numberOfLines={2}>
-                    {item.name}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-            />
-
-            {loadingAlbum && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color={Colors.primary.survol} />
-                <ThemedText style={styles.loadingText}>
-                  Chargement des albums...
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        </View>
-      </GameLayout>
-    );
-  }
-
   if (gameState === "albumSelection") {
     return (
-      <GameLayout title="Tracklist" sessionId={sessionId} onSave={autoSave}>
+      <GameLayout
+        title="Tracklist"
+        sessionId={sessionId}
+        onSave={autoSave}
+        onBack={() => setGameState("artistSearch")}
+      >
         <View style={styles.container}>
           <View style={styles.setupContainer}>
             <ThemedText type="title" style={styles.title}>
               Choisissez un album
             </ThemedText>
             <ThemedText style={styles.subtitle}>
-              {selectedGenre?.name} — Quel album veux-tu trouver ?
+              {selectedArtist?.name} — Quel album veux-tu trouver ?
             </ThemedText>
 
             <FlatList
@@ -987,6 +1005,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 20,
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 50,
+    color: Colors.dark.text,
+    fontSize: 16,
+  },
+  artistList: {
+    paddingBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
+    marginTop: 10,
+    marginBottom: 15,
+  },
+  artistListItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  artistListImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+  },
+  artistListInfo: {
+    flex: 1,
+  },
+  artistListName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.dark.text,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: Colors.game.textMuted,
+    marginTop: 40,
+    fontSize: 16,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -995,30 +1072,8 @@ const styles = StyleSheet.create({
   genreGrid: {
     paddingBottom: 20,
   },
-  genreCard: {
-    flex: 1,
-    margin: 8,
-    aspectRatio: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-  },
-  genreImage: {
-    width: "100%",
-    height: "100%",
-  },
-  genreOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  genreName: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    paddingHorizontal: 10,
+  clearButton: {
+    padding: 8,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1030,23 +1085,6 @@ const styles = StyleSheet.create({
     color: "white",
     marginTop: 15,
     fontSize: 16,
-  },
-  artistCard: {
-    flex: 1,
-    margin: 6,
-    alignItems: "center",
-  },
-  artistPicture: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: 60,
-    marginBottom: 6,
-  },
-  artistCardName: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "center",
   },
   albumChoiceCard: {
     flex: 1,

@@ -148,19 +148,19 @@ export default function TracklistIndexScreen() {
             <View style={styles.listItem}>
               <ThemedText style={styles.listNumber}>2.</ThemedText>
               <ThemedText style={styles.listText}>
-                Choisissez un genre musical
+                Recherchez et sélectionnez un artiste
               </ThemedText>
             </View>
             <View style={styles.listItem}>
               <ThemedText style={styles.listNumber}>3.</ThemedText>
               <ThemedText style={styles.listText}>
-                Un album s&apos;affiche avec sa pochette et son nom
+                Choisissez un album de cet artiste
               </ThemedText>
             </View>
             <View style={styles.listItem}>
               <ThemedText style={styles.listNumber}>4.</ThemedText>
               <ThemedText style={styles.listText}>
-                Listez tous les titres dans les champs de texte
+                Listez tous les titres de l&apos;album
               </ThemedText>
             </View>
             <View style={styles.listItem}>
