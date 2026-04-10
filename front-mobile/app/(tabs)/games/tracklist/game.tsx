@@ -4,12 +4,10 @@ import {
   Alert,
   FlatList,
   Image,
-  Modal,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -77,7 +75,6 @@ const GAME_DURATION = 300;
 const ALBUM_CHOICES = 6;
 
 export default function TracklistGameScreen() {
-  const [showRules, setShowRules] = useState(false);
   const [gameState, setGameState] = useState<GameState>("artistSearch");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<DeezerArtist[]>([]);
@@ -666,7 +663,6 @@ export default function TracklistGameScreen() {
             )}
           </View>
         </View>
-        {rulesModal}
       </GameLayout>
     );
   }
@@ -734,7 +730,6 @@ export default function TracklistGameScreen() {
             )}
           </View>
         </View>
-        {rulesModal}
       </GameLayout>
     );
   }
@@ -893,7 +888,6 @@ export default function TracklistGameScreen() {
               </View>
             </View>
           </KeyboardAvoidingView>
-          {rulesModal}
         </GameLayout>
       </GameErrorFeedback>
     );
@@ -990,76 +984,6 @@ export default function TracklistGameScreen() {
 
   return null;
 }
-
-const rulesStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "flex-end",
-  },
-  container: {
-    backgroundColor: "#121212",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "80%",
-    borderTopWidth: 1,
-    borderColor: "#14FFEC33",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2A2A2A",
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#2A2A2A",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  closeText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-  },
-  content: {
-    padding: 20,
-    gap: 14,
-  },
-  rule: {
-    flexDirection: "row",
-    gap: 14,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderRadius: 12,
-    padding: 14,
-    borderLeftWidth: 3,
-    borderLeftColor: "#14FFEC",
-  },
-  ruleIcon: {
-    fontSize: 22,
-  },
-  ruleText: {
-    flex: 1,
-    gap: 4,
-  },
-  ruleBold: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  ruleDesc: {
-    color: "#999",
-    fontSize: 13,
-  },
-});
 
 const styles = StyleSheet.create({
   container: {
