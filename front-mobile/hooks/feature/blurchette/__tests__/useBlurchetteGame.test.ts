@@ -267,6 +267,71 @@ describe("useBlurchetteGame", () => {
     });
   });
 
+  it("persists updated blur level to local storage after a wrong answer", async () => {
+    mockUseLocalSearchParams.mockReturnValue({ gameId: "1", resume: "true" });
+    mockGetGameState.mockResolvedValue(
+      buildSavedPlayingState({ blurLevel: 2 }),
+    );
+
+    const { result } = renderHook(() => useBlurchetteGame());
+    await waitFor(() => expect(result.current.gameState).toBe("playing"));
+
+    mockSaveGameState.mockClear();
+
+    act(() => {
+      result.current.setAnswer("Totally Unrelated Title");
+    });
+    await act(async () => {
+      await result.current.submitAnswer();
+    });
+
+    await waitFor(() => {
+      expect(mockSaveGameState).toHaveBeenCalledWith(
+        "1",
+        expect.objectContaining({ blurLevel: 3 }),
+      );
+    });
+  });
+
+  it("submitAnswer guards against concurrent double submissions", async () => {
+    mockUseLocalSearchParams.mockReturnValue({ gameId: "1", resume: "true" });
+    mockGetGameState.mockResolvedValue(buildSavedPlayingState());
+
+    const { result } = renderHook(() => useBlurchetteGame());
+    await waitFor(() => expect(result.current.gameState).toBe("playing"));
+
+    let resolveUpdate: (() => void) | undefined;
+    mockUpdateGameSession.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveUpdate = () => resolve();
+        }) as never,
+    );
+
+    act(() => {
+      result.current.setAnswer("Famous Artist");
+    });
+
+    let firstCall: Promise<void> | undefined;
+    act(() => {
+      firstCall = result.current.submitAnswer();
+    });
+
+    await act(async () => {
+      await result.current.submitAnswer();
+    });
+
+    expect(mockUpdateGameSession).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveUpdate?.();
+      await firstCall;
+    });
+
+    expect(result.current.gameState).toBe("result");
+    expect(result.current.foundCorrect).toBe(true);
+  });
+
   it("resetGame clears state and deletes saved storage", async () => {
     mockUseLocalSearchParams.mockReturnValue({ gameId: "1", resume: "true" });
     mockGetGameState.mockResolvedValue(

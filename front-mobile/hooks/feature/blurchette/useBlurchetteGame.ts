@@ -7,7 +7,6 @@ import { useToast } from "@/components/Toast";
 import { useSettingsStore } from "@/stores/settingsStore";
 import {
   createGameSession,
-  getMyActiveSession,
   updateGameSession,
 } from "@/services/gameSessionService";
 import {
@@ -74,6 +73,8 @@ export function useBlurchetteGame() {
   const [currentAttempts, setCurrentAttempts] = useState<BlurchetteAttempt[]>(
     [],
   );
+
+  const isSubmittingRef = useRef(false);
 
   const keyboardAnim = useRef(new Animated.Value(0)).current;
 
@@ -156,16 +157,6 @@ export function useBlurchetteGame() {
       return;
     }
     void deleteGameState(gameId);
-
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    const timeoutPromise = new Promise<null>((resolve) => {
-      timeoutId = setTimeout(() => resolve(null), 5000);
-    });
-    Promise.race([getMyActiveSession(Number(gameId)), timeoutPromise])
-      .catch(() => {})
-      .finally(() => {
-        if (timeoutId) clearTimeout(timeoutId);
-      });
   }, [gameId, resume, loadSavedState]);
 
   const autoSave = useCallback(async () => {
@@ -197,7 +188,7 @@ export function useBlurchetteGame() {
     if (gameState !== "result" && gameState !== "genreSelection" && gameId) {
       void autoSave();
     }
-  }, [gameState, gameId, autoSave]);
+  }, [gameState, gameId, blurLevel, currentAttempts, autoSave]);
 
   const startGame = useCallback(
     async (genre: DeezerGenre) => {
@@ -275,71 +266,79 @@ export function useBlurchetteGame() {
   );
 
   const submitAnswer = useCallback(async () => {
+    if (isSubmittingRef.current) return;
     if (!answer.trim() || !currentTrack) return;
 
-    const albumTitle = currentTrack.track.album.title;
-    const artistName = currentTrack.track.artist.name;
-    const trackTitle = currentTrack.track.title;
+    isSubmittingRef.current = true;
+    try {
+      const albumTitle = currentTrack.track.album.title;
+      const artistName = currentTrack.track.artist.name;
+      const trackTitle = currentTrack.track.title;
 
-    let isCorrect = fuzzyMatch(answer, artistName);
-    if (!isCorrect) {
-      isCorrect = currentTrack.isAlbum
-        ? fuzzyMatch(answer, albumTitle)
-        : fuzzyMatch(answer, trackTitle);
-    }
-
-    const newAttempt: BlurchetteAttempt = {
-      answer: answer.trim(),
-      isCorrect,
-      blurLevel,
-      timestamp: new Date().toISOString(),
-    };
-
-    const updatedAttempts = [...currentAttempts, newAttempt];
-    setCurrentAttempts(updatedAttempts);
-
-    if (sessionId) {
-      try {
-        const isGameComplete = isCorrect || blurLevel >= 5;
-        const updateData: Partial<BlurchetteGameData> = {
-          currentBlurLevel: isCorrect ? blurLevel : Math.min(blurLevel + 1, 5),
-          attempts: updatedAttempts,
-        };
-
-        if (isGameComplete) {
-          updateData.foundCorrect = isCorrect;
-          updateData.finalBlurLevel = blurLevel;
-          updateData.completedAt = new Date().toISOString();
-
-          await updateGameSession(sessionId, {
-            status: "completed",
-            gameData: updateData as unknown as Record<string, unknown>,
-          });
-
-          if (gameId) void deleteGameState(gameId);
-        } else {
-          await updateGameSession(sessionId, {
-            gameData: updateData as unknown as Record<string, unknown>,
-          });
-        }
-      } catch (err) {
-        console.error("Failed to update session:", err);
+      let isCorrect = fuzzyMatch(answer, artistName);
+      if (!isCorrect) {
+        isCorrect = currentTrack.isAlbum
+          ? fuzzyMatch(answer, albumTitle)
+          : fuzzyMatch(answer, trackTitle);
       }
-    }
 
-    if (isCorrect) {
-      setFoundCorrect(true);
-      setGameState("result");
-      return;
-    }
+      const newAttempt: BlurchetteAttempt = {
+        answer: answer.trim(),
+        isCorrect,
+        blurLevel,
+        timestamp: new Date().toISOString(),
+      };
 
-    if (blurLevel < 5) {
-      setBlurLevel((level) => (level + 1) as BlurLevel);
-      triggerError("Ce n'est pas la bonne réponse, continuez !");
-      setAnswer("");
-    } else {
-      setFoundCorrect(false);
-      setGameState("result");
+      const updatedAttempts = [...currentAttempts, newAttempt];
+      setCurrentAttempts(updatedAttempts);
+
+      if (sessionId) {
+        try {
+          const isGameComplete = isCorrect || blurLevel >= 5;
+          const updateData: Partial<BlurchetteGameData> = {
+            currentBlurLevel: isCorrect
+              ? blurLevel
+              : Math.min(blurLevel + 1, 5),
+            attempts: updatedAttempts,
+          };
+
+          if (isGameComplete) {
+            updateData.foundCorrect = isCorrect;
+            updateData.finalBlurLevel = blurLevel;
+            updateData.completedAt = new Date().toISOString();
+
+            await updateGameSession(sessionId, {
+              status: "completed",
+              gameData: updateData as unknown as Record<string, unknown>,
+            });
+
+            if (gameId) void deleteGameState(gameId);
+          } else {
+            await updateGameSession(sessionId, {
+              gameData: updateData as unknown as Record<string, unknown>,
+            });
+          }
+        } catch (err) {
+          console.error("Failed to update session:", err);
+        }
+      }
+
+      if (isCorrect) {
+        setFoundCorrect(true);
+        setGameState("result");
+        return;
+      }
+
+      if (blurLevel < 5) {
+        setBlurLevel((level) => (level + 1) as BlurLevel);
+        triggerError("Ce n'est pas la bonne réponse, continuez !");
+        setAnswer("");
+      } else {
+        setFoundCorrect(false);
+        setGameState("result");
+      }
+    } finally {
+      isSubmittingRef.current = false;
     }
   }, [
     answer,
@@ -361,25 +360,34 @@ export function useBlurchetteGame() {
           text: "Oui",
           style: "destructive",
           onPress: async () => {
-            if (sessionId) {
-              await updateGameSession(sessionId, {
-                status: "completed",
-                gameData: {
-                  foundCorrect: false,
-                  finalBlurLevel: blurLevel,
-                  completedAt: new Date().toISOString(),
-                  attempts: currentAttempts,
-                } as unknown as Record<string, unknown>,
+            try {
+              if (sessionId) {
+                await updateGameSession(sessionId, {
+                  status: "completed",
+                  gameData: {
+                    foundCorrect: false,
+                    finalBlurLevel: blurLevel,
+                    completedAt: new Date().toISOString(),
+                    attempts: currentAttempts,
+                  } as unknown as Record<string, unknown>,
+                });
+              }
+              if (gameId) await deleteGameState(gameId);
+            } catch (err) {
+              console.error("Failed to abandon game:", err);
+              show({
+                type: "error",
+                message: "Impossible de synchroniser l'abandon",
               });
+            } finally {
+              setFoundCorrect(false);
+              setGameState("result");
             }
-            if (gameId) await deleteGameState(gameId);
-            setFoundCorrect(false);
-            setGameState("result");
           },
         },
       ],
     );
-  }, [sessionId, blurLevel, currentAttempts, gameId]);
+  }, [sessionId, blurLevel, currentAttempts, gameId, show]);
 
   const resetGame = useCallback(() => {
     if (gameId) void deleteGameState(gameId);
