@@ -58,10 +58,6 @@ const ALBUM_CHOICES = 6;
 export function useTracklistGame() {
   const [gameState, setGameState] = useState<GameState>("artistSearch");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<DeezerArtist[]>([]);
-  const [topArtists, setTopArtists] = useState<DeezerArtist[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [loadingAlbum, setLoadingAlbum] = useState(false);
 
   const [candidateAlbums, setCandidateAlbums] = useState<DeezerAlbum[]>([]);
@@ -83,7 +79,6 @@ export function useTracklistGame() {
   const [validatedAnswers, setValidatedAnswers] = useState<TrackAnswer[]>([]);
 
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isProcessingAnswerRef = useRef(false);
   const isSubmittingRef = useRef(false);
 
@@ -97,67 +92,6 @@ export function useTracklistGame() {
   const { shakeAnimation, borderOpacity, triggerError } = useErrorFeedback(
     errorAnimationsEnabled,
   );
-
-  const fetchTopArtists = useCallback(async () => {
-    setIsInitialLoading(true);
-    try {
-      const response = await deezerAPI.getTopArtists(20);
-      setTopArtists(response.data);
-    } catch (error) {
-      console.error("Failed to fetch top artists:", error);
-      show({
-        type: "error",
-        message: "Impossible de charger les suggestions d'artistes",
-      });
-    } finally {
-      setIsInitialLoading(false);
-    }
-  }, [show]);
-
-  useEffect(() => {
-    void fetchTopArtists();
-  }, [fetchTopArtists]);
-
-  const performSearch = useCallback(
-    async (query: string) => {
-      if (query.trim().length < 3) {
-        setSearchResults([]);
-        return;
-      }
-
-      setIsSearching(true);
-      try {
-        const response = await deezerAPI.searchArtists(query, 20);
-        setSearchResults(response.data);
-      } catch (error) {
-        console.error("Search failed:", error);
-        show({ type: "error", message: "Échec de la recherche d'artistes" });
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [show],
-  );
-
-  useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    if (searchQuery.trim().length >= 3) {
-      searchTimeoutRef.current = setTimeout(() => {
-        void performSearch(searchQuery);
-      }, 400);
-    } else {
-      setSearchResults([]);
-    }
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchQuery, performSearch]);
 
   const loadSavedState = useCallback(async () => {
     if (!gameId) return;
@@ -518,7 +452,6 @@ export function useTracklistGame() {
     setCandidateAlbums([]);
     setSelectedArtist(null);
     setSearchQuery("");
-    setSearchResults([]);
     setCurrentInput("");
     setFoundTrackIds(new Set());
     setTimeRemaining(GAME_DURATION);
@@ -533,13 +466,8 @@ export function useTracklistGame() {
   }, []);
 
   return {
-    // State
     gameState,
     searchQuery,
-    searchResults,
-    topArtists,
-    isSearching,
-    isInitialLoading,
     loadingAlbum,
     candidateAlbums,
     selectedArtist,
@@ -550,17 +478,11 @@ export function useTracklistGame() {
     timeRemaining,
     sessionId,
     sessionError,
-
-    // Error feedback
     shakeAnimation,
     borderOpacity,
     errorAnimationsEnabled,
-
-    // Controlled input setters
     setSearchQuery,
     setCurrentInput,
-
-    // Handlers
     handleSelectArtist,
     startGameWithAlbum,
     handleSubmitAnswer,
