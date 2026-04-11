@@ -127,6 +127,49 @@ describe("useArtistSearch", () => {
     expect(result.current.searchResults[0].name).toBe("Daft Punk");
   });
 
+  it("clears isSearching immediately when query drops below 3 characters mid-flight", async () => {
+    let resolveSearch: (value: { data: DeezerArtist[] }) => void = () => {};
+    mockDeezerAPI.searchArtists.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSearch = resolve;
+        }),
+    );
+
+    const { result, rerender } = renderHook<
+      ReturnType<typeof useArtistSearch>,
+      { q: string }
+    >(({ q }) => useArtistSearch(q), {
+      initialProps: { q: "daft" },
+    });
+
+    await waitFor(() => {
+      expect(mockDeezerAPI.getTopArtists).toHaveBeenCalled();
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(400);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSearching).toBe(true);
+    });
+
+    rerender({ q: "da" });
+
+    await waitFor(() => {
+      expect(result.current.isSearching).toBe(false);
+    });
+    expect(result.current.searchResults).toEqual([]);
+
+    await act(async () => {
+      resolveSearch({ data: [buildArtist(99, "Daft Punk")] });
+    });
+
+    expect(result.current.searchResults).toEqual([]);
+    expect(result.current.isSearching).toBe(false);
+  });
+
   it("resets search results when query drops below 3 characters", async () => {
     const { result, rerender } = renderHook<
       ReturnType<typeof useArtistSearch>,

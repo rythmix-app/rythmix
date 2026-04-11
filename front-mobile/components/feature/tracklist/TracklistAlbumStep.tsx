@@ -30,6 +30,7 @@ export default function TracklistAlbumStep({
   onBack,
   onSave,
 }: TracklistAlbumStepProps) {
+  const artistName = selectedArtist?.name ?? "cet artiste";
   return (
     <GameLayout
       title="Tracklist"
@@ -43,7 +44,7 @@ export default function TracklistAlbumStep({
             Choisissez un album
           </ThemedText>
           <ThemedText style={styles.subtitle}>
-            {selectedArtist?.name} — Quel album veux-tu trouver ?
+            {artistName} — Quel album veux-tu trouver ?
           </ThemedText>
 
           <FlatList
@@ -57,7 +58,7 @@ export default function TracklistAlbumStep({
                 style={styles.albumChoiceCard}
                 onPress={() => onSelectAlbum(item)}
                 disabled={loadingAlbum}
-                accessibilityLabel={`Album ${item.title} de ${item.artist?.name ?? selectedArtist?.name}`}
+                accessibilityLabel={`Album ${item.title} de ${item.artist?.name ?? artistName}`}
                 accessibilityRole="button"
               >
                 <Image
@@ -72,7 +73,7 @@ export default function TracklistAlbumStep({
                     style={styles.albumChoiceArtist}
                     numberOfLines={1}
                   >
-                    {item.artist?.name ?? selectedArtist?.name}
+                    {item.artist?.name ?? artistName}
                   </ThemedText>
                 </View>
               </TouchableOpacity>

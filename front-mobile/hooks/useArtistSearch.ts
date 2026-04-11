@@ -85,7 +85,9 @@ export function useArtistSearch(query: string) {
         void performSearch(query);
       }, SEARCH_DEBOUNCE_MS);
     } else {
+      latestSearchRequestIdRef.current += 1;
       setSearchResults([]);
+      setIsSearching(false);
     }
 
     return () => {

@@ -47,11 +47,13 @@ export default function ArtistSelector({
           value={query}
           onChangeText={onQueryChange}
           autoCorrect={false}
+          editable={!disabled}
         />
         {query.length > 0 && (
           <TouchableOpacity
             onPress={() => onQueryChange("")}
             style={styles.clearButton}
+            disabled={disabled}
           >
             <MaterialIcons
               name="close"
