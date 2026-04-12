@@ -151,7 +151,6 @@ describe("useTracklistGame", () => {
       triggerError: mockTriggerError,
     });
 
-    mockDeezerAPI.getTopArtists.mockResolvedValue({ data: [] } as never);
     mockDeezerAPI.getArtistAlbums.mockResolvedValue({
       data: [sampleAlbum],
     } as never);
