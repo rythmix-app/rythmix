@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { StyleSheet, Dimensions } from "react-native";
 import Animated, {
   useSharedValue,
@@ -26,6 +27,8 @@ const SWIPE_CONFIG = {
   snapBackDuration: 250,
 };
 
+export type SwipeDirection = "left" | "right";
+
 interface SwipeCardProps {
   data: MusicCardData;
   onSwipeLeft?: (data: MusicCardData) => void;
@@ -34,6 +37,7 @@ interface SwipeCardProps {
   index?: number;
   isPlaying?: boolean;
   onTogglePlay?: (data: MusicCardData) => void;
+  entryDirection?: SwipeDirection;
 }
 
 export default function SwipeCard({
@@ -44,9 +48,25 @@ export default function SwipeCard({
   index = 0,
   isPlaying = false,
   onTogglePlay,
+  entryDirection,
 }: SwipeCardProps) {
+  const initialEntryOffset =
+    entryDirection === "right"
+      ? SCREEN_WIDTH * 1.5
+      : entryDirection === "left"
+        ? -SCREEN_WIDTH * 1.5
+        : 0;
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const entryOffset = useSharedValue(initialEntryOffset);
+
+  useEffect(() => {
+    if (initialEntryOffset !== 0) {
+      entryOffset.value = withSpring(0, SWIPE_CONFIG.springConfig);
+    }
+    // Entry animation runs once on mount; subsequent prop changes are ignored intentionally.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
   const isSwipingHorizontal = useSharedValue(false);
@@ -119,7 +139,7 @@ export default function SwipeCard({
 
     return {
       transform: [
-        { translateX: translateX.value },
+        { translateX: translateX.value + entryOffset.value },
         { translateY: translateY.value },
         { rotate: `${rotation}deg` },
       ],

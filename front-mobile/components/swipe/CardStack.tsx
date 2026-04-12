@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import SwipeCard from "./SwipeCard";
+import SwipeCard, { SwipeDirection } from "./SwipeCard";
 import { MusicCardData } from "./MusicCard";
 import SwipeButton from "@/components/swipe/SwipeButton";
 import { Colors } from "@/constants/Colors";
@@ -40,6 +40,7 @@ export default function CardStack({
 }: CardStackProps) {
   const cards = initialCards;
   const [currentIndex, setCurrentIndex] = useState(0);
+  const swipeDirectionsRef = useRef<Record<string, SwipeDirection>>({});
   const lastPlayedCardIdRef = useRef<string | null>(null);
   const hasLoadedMoreRef = useRef(false);
   const onLoadMoreRef = useRef(onLoadMore);
@@ -90,6 +91,7 @@ export default function CardStack({
 
   const handleSwipeLeft = (card: MusicCardData) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    swipeDirectionsRef.current[card.id] = "left";
     onSwipeLeft?.(card);
 
     setCurrentIndex((prev: number) => {
@@ -103,6 +105,7 @@ export default function CardStack({
 
   const handleSwipeRight = (card: MusicCardData) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    swipeDirectionsRef.current[card.id] = "right";
     onSwipeRight?.(card);
 
     setCurrentIndex((prev: number) => {
@@ -117,7 +120,14 @@ export default function CardStack({
   const handleReload = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     lastPlayedCardIdRef.current = null; // Reset pour permettre de rejouer la première carte
+    swipeDirectionsRef.current = {};
     setCurrentIndex(0);
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex === 0) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setCurrentIndex((prev: number) => Math.max(0, prev - 1));
   };
 
   const visibleCards = cards.slice(currentIndex, currentIndex + 3);
@@ -159,6 +169,7 @@ export default function CardStack({
               index={actualIndex}
               isPlaying={isTop && currentTrackId === card.id && isPlaying}
               onTogglePlay={onTogglePlay}
+              entryDirection={swipeDirectionsRef.current[card.id]}
             />
           );
         })}
@@ -175,11 +186,10 @@ export default function CardStack({
           }}
         />
         <SwipeButton
-          type={"replay"}
-          onPress={() => {
-            // TODO: Implement replay functionality (e.g., show the previous card again)
-          }}
+          type={"previous"}
+          onPress={handlePrevious}
           size={"small"}
+          disabled={currentIndex === 0}
         />
         <SwipeButton
           type={"like"}

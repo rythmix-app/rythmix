@@ -9,9 +9,10 @@ import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 type SwipeButtonProps = {
-  type: "like" | "dislike" | "replay";
+  type: "like" | "dislike" | "previous";
   size?: "medium" | "small";
   onPress?: () => void;
+  disabled?: boolean;
 };
 
 const SIZES = {
@@ -28,13 +29,13 @@ const SIZES = {
 const GRADIENTS: Record<SwipeButtonProps["type"], [string, string]> = {
   like: ["#40D400", "#216E00"],
   dislike: ["#D40000", "#6E0000"],
-  replay: ["#0D7377", "#18D6DD"],
+  previous: ["#0D7377", "#18D6DD"],
 };
 
 const BORDER = {
   like: "#40D400",
   dislike: "#D40000",
-  replay: "#18D6DD",
+  previous: "#18D6DD",
 };
 
 const ICONS = {
@@ -42,8 +43,8 @@ const ICONS = {
     <FontAwesome name="heart" size={size} />
   ),
   dislike: ({ size }: { size: number }) => <Entypo name="cross" size={size} />,
-  replay: ({ size }: { size: number }) => (
-    <MaterialCommunityIcons name="replay" size={size} />
+  previous: ({ size }: { size: number }) => (
+    <MaterialCommunityIcons name="skip-previous" size={size} />
   ),
 };
 
@@ -51,6 +52,7 @@ const SwipeButton: React.FC<SwipeButtonProps> = ({
   type,
   size = "medium",
   onPress,
+  disabled = false,
 }) => {
   const dimensions = SIZES[size];
   const gradientColors = GRADIENTS[type];
@@ -60,6 +62,7 @@ const SwipeButton: React.FC<SwipeButtonProps> = ({
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={({ pressed }) => [
         styles.container,
         {
@@ -70,6 +73,7 @@ const SwipeButton: React.FC<SwipeButtonProps> = ({
           borderWidth: 2,
         },
         pressed && styles.pressed,
+        disabled && styles.disabled,
       ]}
     >
       <MaskedView
@@ -102,6 +106,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  disabled: {
+    opacity: 0.5,
   },
   iconMask: {
     flex: 1,

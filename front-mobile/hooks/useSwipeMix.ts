@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { cacheManager } from "@/services/cache-manager";
-import { createMyLikedTrack } from "@/services/likedTrackService";
+import {
+  createMyLikedTrack,
+  deleteMyLikedTrack,
+} from "@/services/likedTrackService";
 import { MusicCardData } from "@/components/swipe";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { useAudioPlayer } from "./useAudioPlayer";
@@ -23,6 +26,8 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   const currentPageIndexRef = useRef(0);
   // Verrou synchrone pour éviter les appels concurrents à loadTracks
   const isLoadingRef = useRef(false);
+  // Tracks likés persistés en DB — utilisé pour rollback sur un dislike qui suit un like
+  const likedTrackIdsRef = useRef<Set<string>>(new Set());
 
   const handleRetry = useCallback(
     async (track: DeezerTrack): Promise<DeezerTrack | null> => {
@@ -113,8 +118,13 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   // Handler pour swipe left (skip/dislike)
   const handleSwipeLeft = useCallback(
     (card: MusicCardData) => {
-      // TODO: Enregistrer le dislike dans le backend
-      // TODO: Utiliser pour améliorer les recommandations
+      // Rollback d'un like précédent si l'utilisateur change d'avis via le bouton précédent
+      if (likedTrackIdsRef.current.has(card.id)) {
+        likedTrackIdsRef.current.delete(card.id);
+        deleteMyLikedTrack(card.id).catch(() => {
+          // Erreurs réseau ignorées silencieusement
+        });
+      }
 
       // Arrêter la lecture si c'est le morceau actuel
       if (audioPlayer.currentTrack?.id.toString() === card.id) {
@@ -128,6 +138,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   const handleSwipeRight = useCallback(
     async (card: MusicCardData) => {
       // Persister le like en arrière-plan sans bloquer l'UX
+      likedTrackIdsRef.current.add(card.id);
       createMyLikedTrack({
         deezerTrackId: card.id,
         title: card.title,
@@ -135,6 +146,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         type: "track",
       }).catch(() => {
         // Erreurs réseau et 409 (déjà liké) ignorées silencieusement
+        likedTrackIdsRef.current.delete(card.id);
       });
 
       // Arrêter la lecture pour passer à la carte suivante
