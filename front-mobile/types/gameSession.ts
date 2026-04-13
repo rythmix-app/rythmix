@@ -125,3 +125,33 @@ export interface TracklistGameData {
   startedAt?: string;
   completedAt: string;
 }
+
+// Types spécifiques pour le jeu Blind Test
+export interface BlindtestRound {
+  trackId: number;
+  trackTitle: string;
+  artistId: number;
+  artistName: string;
+  featuringNames: string[];
+  albumTitle: string;
+  coverUrl: string;
+  artistCorrect: boolean;
+  featuringFoundNames: string[];
+  titleCorrect: boolean;
+  bonusEarned: boolean;
+  timeTakenMs: number;
+  roundScore: number;
+}
+
+export interface BlindtestGameData {
+  genre: {
+    id: number;
+    name: string;
+  };
+  totalRounds: number;
+  rounds: BlindtestRound[];
+  totalScore: number;
+  maxScore: number;
+  startedAt: string;
+  completedAt: string | null;
+}
