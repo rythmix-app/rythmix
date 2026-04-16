@@ -79,6 +79,15 @@ export function useBlindtestGame() {
   const [warmMessage, setWarmMessage] = useState<string | null>(null);
   const warmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (warmTimerRef.current) {
+        clearTimeout(warmTimerRef.current);
+        warmTimerRef.current = null;
+      }
+    };
+  }, []);
+
   const [completedRounds, setCompletedRounds] = useState<BlindtestRound[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState(false);
@@ -117,6 +126,12 @@ export function useBlindtestGame() {
   );
 
   const audioPlayer = useAudioPlayer({ onRetry: handleAudioRetry });
+
+  const stopAudioRef = useRef(audioPlayer.stop);
+
+  useEffect(() => {
+    stopAudioRef.current = audioPlayer.stop;
+  }, [audioPlayer.stop]);
 
   const currentTrack =
     tracks.length > currentRoundIndex ? tracks[currentRoundIndex] : null;
@@ -256,7 +271,7 @@ export function useBlindtestGame() {
   // --- Cleanup audio on unmount ---
   useEffect(() => {
     return () => {
-      void audioPlayer.stop();
+      void stopAudioRef.current();
     };
   }, []);
 
@@ -327,12 +342,17 @@ export function useBlindtestGame() {
           return;
         }
 
+        const maxScore = valid.reduce(
+          (total, track) => total + 2 + getFeaturing(track).length,
+          0,
+        );
+
         const gameData: BlindtestGameData = {
           genre: { id: genre.id, name: genre.name },
           totalRounds: valid.length,
           rounds: [],
           totalScore: 0,
-          maxScore: valid.length * 3,
+          maxScore,
           startedAt: new Date().toISOString(),
           completedAt: null,
         };

@@ -55,8 +55,8 @@ export default function BlindtestResultScreen({
             Récapitulatif
           </ThemedText>
 
-          {completedRounds.map((round, index) => (
-            <View key={index} style={styles.roundRow}>
+          {completedRounds.map((round) => (
+            <View key={round.trackId} style={styles.roundRow}>
               <Image
                 source={{ uri: round.coverUrl }}
                 style={styles.roundCover}
@@ -83,7 +83,7 @@ export default function BlindtestResultScreen({
           <Button
             title="Retour aux jeux"
             variant="outline"
-            onPress={() => router.push('/games')}
+            onPress={() => router.push("/games")}
             style={styles.button}
           />
         </View>

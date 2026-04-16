@@ -113,7 +113,9 @@ export default function BlindtestPlayingScreen({
     };
   }, [keyboardAnim]);
 
-  // Smooth timeline
+  // Smooth timeline — intentionally excludes timeRemaining from deps:
+  // adding it would restart the animation every second. The value is read
+  // once when currentRoundIndex changes (including resume).
   useEffect(() => {
     const elapsed = roundDuration - timeRemaining;
     const startValue = roundDuration > 0 ? elapsed / roundDuration : 0;
@@ -128,7 +130,8 @@ export default function BlindtestPlayingScreen({
     }
 
     return () => progressAnim.stopAnimation();
-  }, [currentRoundIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRoundIndex, progressAnim, roundDuration]);
 
   // Auto-focus after each answer attempt
   useEffect(() => {
