@@ -1,5 +1,4 @@
 import GameSession from '#models/game_session'
-import db from '@adonisjs/lucid/services/db'
 import { GameSessionStatus } from '#enums/game_session_status'
 
 export class GameSessionService {
@@ -170,34 +169,39 @@ export class GameSessionService {
   }
 
   public async getMyGameStats(userId: string, gameId: number) {
-    const result = await db.rawQuery(
-      `SELECT
-          COUNT(*)::int AS "totalPlayed",
-          COALESCE(MAX((game_data->>'score')::numeric), 0) AS "bestScore",
-          COALESCE(
-            AVG(
-              CASE WHEN (game_data->>'maxScore')::numeric > 0
-                THEN (game_data->>'score')::numeric / (game_data->>'maxScore')::numeric * 100
-                ELSE 0
-              END
-            ), 0
-          ) AS "averageScore",
-          COALESCE(AVG((game_data->>'timeElapsed')::numeric), 0) AS "averageTimeElapsed",
-          MAX(created_at) AS "lastPlayedAt"
-        FROM game_sessions
-        WHERE players::jsonb @> ?::jsonb
-          AND game_id = ?
-          AND status = ?`,
-      [JSON.stringify([{ userId }]), gameId, GameSessionStatus.Completed]
-    )
+    const sessions = await GameSession.query()
+      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+      .where('game_id', gameId)
+      .where('status', GameSessionStatus.Completed)
+      .orderBy('created_at', 'desc')
 
-    const row = result.rows[0]
+    if (sessions.length === 0) {
+      return {
+        totalPlayed: 0,
+        bestScore: 0,
+        averageScore: 0,
+        averageTimeElapsed: 0,
+        lastPlayedAt: null,
+      }
+    }
+
+    const totalPlayed = sessions.length
+    const bestScore = Math.max(...sessions.map((s) => Number(s.gameData?.score ?? 0)))
+    const averageScore =
+      sessions.reduce((sum, s) => {
+        const maxScore = Number(s.gameData?.maxScore ?? 0)
+        return sum + (maxScore > 0 ? (Number(s.gameData?.score ?? 0) / maxScore) * 100 : 0)
+      }, 0) / totalPlayed
+    const averageTimeElapsed =
+      sessions.reduce((sum, s) => sum + Number(s.gameData?.timeElapsed ?? 0), 0) / totalPlayed
+    const lastPlayedAt = sessions[0].createdAt.toISO()
+
     return {
-      totalPlayed: row.totalPlayed ?? 0,
-      bestScore: Number(row.bestScore ?? 0),
-      averageScore: Math.round(Number(row.averageScore ?? 0) * 100) / 100,
-      averageTimeElapsed: Math.round(Number(row.averageTimeElapsed ?? 0) * 100) / 100,
-      lastPlayedAt: row.lastPlayedAt ?? null,
+      totalPlayed,
+      bestScore,
+      averageScore: Math.round(averageScore * 100) / 100,
+      averageTimeElapsed: Math.round(averageTimeElapsed * 100) / 100,
+      lastPlayedAt,
     }
   }
 
