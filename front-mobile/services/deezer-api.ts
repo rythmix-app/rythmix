@@ -40,6 +40,12 @@ export interface DeezerTrack {
     type: string;
   };
   type: string;
+  contributors?: {
+    id: number;
+    name: string;
+    role: string;
+    type: string;
+  }[];
 }
 
 export interface DeezerSearchResponse {

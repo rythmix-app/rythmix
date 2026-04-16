@@ -52,6 +52,9 @@ export const levenshteinDistance = (a: string, b: string): number => {
 };
 
 const DEFAULT_SIMILARITY_THRESHOLD = 0.75;
+const NEAR_MATCH_LOWER = 0.45;
+const NEAR_MATCH_UPPER = DEFAULT_SIMILARITY_THRESHOLD;
+const SUBSTRING_MIN_RATIO = 0.6;
 
 /**
  * Returns true if input approximately matches target using Levenshtein similarity.
@@ -74,11 +77,16 @@ export const fuzzyMatch = (
 
   if (normalizedInput.length < 3) return false;
 
-  if (
-    normalizedTarget.includes(normalizedInput) ||
-    normalizedInput.includes(normalizedTarget)
-  ) {
+  // Input contains the full target → user typed more than needed, always accept
+  if (normalizedInput.includes(normalizedTarget)) {
     return true;
+  }
+
+  // Target contains input → only accept if input covers enough of the target
+  if (normalizedTarget.includes(normalizedInput)) {
+    return (
+      normalizedInput.length / normalizedTarget.length >= SUBSTRING_MIN_RATIO
+    );
   }
 
   const minLength = Math.min(normalizedInput.length, normalizedTarget.length);
@@ -89,4 +97,28 @@ export const fuzzyMatch = (
 
   const distance = levenshteinDistance(normalizedInput, normalizedTarget);
   return 1 - distance / maxLength >= threshold;
+};
+
+/**
+ * Returns true if input is close to target but not close enough to fuzzyMatch.
+ * Used to show "almost there" hints.
+ */
+export const nearMatch = (input: string, target: string): boolean => {
+  const normalizedInput = normalizeString(input, true);
+  const normalizedTarget = normalizeString(target, true);
+
+  if (normalizedInput.length < 3 || normalizedTarget.length === 0) return false;
+
+  // Already a fuzzy match — not "near", it's correct
+  if (fuzzyMatch(input, target)) return false;
+
+  const minLength = Math.min(normalizedInput.length, normalizedTarget.length);
+  const maxLength = Math.max(normalizedInput.length, normalizedTarget.length);
+
+  if (minLength / maxLength < 0.4) return false;
+
+  const distance = levenshteinDistance(normalizedInput, normalizedTarget);
+  const similarity = 1 - distance / maxLength;
+
+  return similarity >= NEAR_MATCH_LOWER && similarity < NEAR_MATCH_UPPER;
 };

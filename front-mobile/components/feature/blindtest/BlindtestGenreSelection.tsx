@@ -5,38 +5,40 @@ import GenreSelector from "@/components/GenreSelector";
 import { Colors } from "@/constants/Colors";
 import { DeezerGenre } from "@/services/deezer-api";
 
-interface BlurchetteGenreSelectionProps {
+interface BlindtestGenreSelectionProps {
   sessionId: string | null;
   genres: DeezerGenre[];
   loadingGenres: boolean;
-  loadingTrack: boolean;
+  loadingTracks: boolean;
   onSelectGenre: (genre: DeezerGenre) => void;
   onSave: () => Promise<void>;
 }
 
-export default function BlurchetteGenreSelection({
+export default function BlindtestGenreSelection({
   sessionId,
   genres,
   loadingGenres,
-  loadingTrack,
+  loadingTracks,
   onSelectGenre,
   onSave,
-}: BlurchetteGenreSelectionProps) {
+}: BlindtestGenreSelectionProps) {
   return (
-    <GameLayout title="Blurchette" sessionId={sessionId} onSave={onSave}>
+    <GameLayout title="Blind Test" sessionId={sessionId} onSave={onSave}>
       <View style={styles.container}>
         <View style={styles.setupContainer}>
           <GenreSelector
             genres={genres}
             loading={loadingGenres}
-            disabled={loadingTrack}
+            disabled={loadingTracks}
             onSelect={onSelectGenre}
           />
 
-          {loadingTrack && (
+          {loadingTracks && (
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size="large" color={Colors.primary.survol} />
-              <ThemedText style={styles.loadingText}>Chargement...</ThemedText>
+              <ThemedText style={styles.loadingText}>
+                Chargement des morceaux...
+              </ThemedText>
             </View>
           )}
         </View>
