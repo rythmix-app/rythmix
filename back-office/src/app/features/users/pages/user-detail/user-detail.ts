@@ -7,8 +7,10 @@ import {
   UpdateUserDto,
 } from '../../../../core/models/user.model';
 import { LikedTrack } from '../../../../core/models/liked-track.model';
+import { UserAchievement } from '../../../../core/models/user-achievement.model';
 import { UserService } from '../../../../core/services/user.service';
 import { LikedTrackService } from '../../../../core/services/liked-track.service';
+import { UserAchievementService } from '../../../../core/services/user-achievement.service';
 
 @Component({
   standalone: false,
@@ -22,6 +24,8 @@ export class UserDetail implements OnInit {
   userId?: string;
   user?: User;
   likedTracks: LikedTrack[] = [];
+  userAchievements: UserAchievement[] = [];
+  selectedAchievement: UserAchievement | null = null;
   isLoading = false;
   isSubmitting = false;
   route = inject(ActivatedRoute);
@@ -29,6 +33,7 @@ export class UserDetail implements OnInit {
   fb = inject(FormBuilder);
   userService = inject(UserService);
   likedTrackService = inject(LikedTrackService);
+  userAchievementService = inject(UserAchievementService);
   private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
@@ -78,6 +83,7 @@ export class UserDetail implements OnInit {
         });
         this.isLoading = false;
         this.loadLikedTracks(user.id);
+        this.loadUserAchievements(user.id);
       },
       error: (error) => {
         console.error('Error loading user:', error);
@@ -97,6 +103,36 @@ export class UserDetail implements OnInit {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       error: () => {},
     });
+  }
+
+  loadUserAchievements(userId: string): void {
+    this.userAchievementService.getByUserId(userId).subscribe({
+      next: (achievements) => {
+        this.userAchievements = achievements.sort((a, b) => {
+          if (a.unlockedAt && !b.unlockedAt) return -1;
+          if (!a.unlockedAt && b.unlockedAt) return 1;
+          return 0;
+        });
+      },
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      error: () => {},
+    });
+  }
+
+  openAchievementDetail(ua: UserAchievement): void {
+    this.selectedAchievement = ua;
+  }
+
+  closeAchievementDetail(): void {
+    this.selectedAchievement = null;
+  }
+
+  getAchievementProgress(ua: UserAchievement): number {
+    if (ua.requiredProgress === 0) return 100;
+    return Math.min(
+      100,
+      Math.round((ua.currentProgress / ua.requiredProgress) * 100),
+    );
   }
 
   deleteLikedTrack(track: LikedTrack): void {

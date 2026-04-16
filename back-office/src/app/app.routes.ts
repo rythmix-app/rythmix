@@ -6,7 +6,7 @@ import { RegisterComponent } from './features/auth/register/register';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/users',
+    redirectTo: '/dashboard',
     pathMatch: 'full',
   },
   {
@@ -16,6 +16,14 @@ export const routes: Routes = [
   {
     path: 'register',
     component: RegisterComponent,
+  },
+  {
+    path: 'dashboard',
+    loadChildren: () =>
+      import('./features/dashboard/dashboard-module').then(
+        (m) => m.DashboardModule,
+      ),
+    canActivate: [authGuard],
   },
   {
     path: 'users',

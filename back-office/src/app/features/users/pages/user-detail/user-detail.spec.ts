@@ -11,14 +11,17 @@ import { of, throwError } from 'rxjs';
 import { UserDetail } from './user-detail';
 import { UserService } from '../../../../core/services/user.service';
 import { LikedTrackService } from '../../../../core/services/liked-track.service';
+import { UserAchievementService } from '../../../../core/services/user-achievement.service';
 import { User } from '../../../../core/models/user.model';
 import { LikedTrack } from '../../../../core/models/liked-track.model';
+import { UserAchievement } from '../../../../core/models/user-achievement.model';
 
 describe('UserDetail', () => {
   let component: UserDetail;
   let fixture: ComponentFixture<UserDetail>;
   let userService: jasmine.SpyObj<UserService>;
   let likedTrackService: jasmine.SpyObj<LikedTrackService>;
+  let userAchievementService: jasmine.SpyObj<UserAchievementService>;
   let router: jasmine.SpyObj<Router>;
   let activatedRoute: {
     snapshot: {
@@ -49,6 +52,10 @@ describe('UserDetail', () => {
       'getByUserId',
       'deleteLikedTrack',
     ]);
+    const userAchievementServiceSpy = jasmine.createSpyObj(
+      'UserAchievementService',
+      ['getByUserId'],
+    );
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     activatedRoute = {
@@ -66,6 +73,10 @@ describe('UserDetail', () => {
       providers: [
         { provide: UserService, useValue: userServiceSpy },
         { provide: LikedTrackService, useValue: likedTrackServiceSpy },
+        {
+          provide: UserAchievementService,
+          useValue: userAchievementServiceSpy,
+        },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: activatedRoute },
       ],
@@ -77,11 +88,15 @@ describe('UserDetail', () => {
     likedTrackService = TestBed.inject(
       LikedTrackService,
     ) as jasmine.SpyObj<LikedTrackService>;
+    userAchievementService = TestBed.inject(
+      UserAchievementService,
+    ) as jasmine.SpyObj<UserAchievementService>;
     router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
 
     // Set default mock return values to prevent errors in tests
     userService.getUserById.and.returnValue(of(mockUser));
     likedTrackService.getByUserId.and.returnValue(of([]));
+    userAchievementService.getByUserId.and.returnValue(of([]));
   });
 
   afterEach(() => {
@@ -600,6 +615,161 @@ describe('UserDetail', () => {
       component.deleteLikedTrack(trackNoTitle);
 
       expect(window.confirm).toHaveBeenCalledWith('Supprimer "123456" ?');
+    });
+  });
+
+  describe('loadUserAchievements', () => {
+    const mockAchievements: UserAchievement[] = [
+      {
+        id: 'ua-1',
+        userId: '1',
+        achievementId: 1,
+        currentProgress: 1,
+        requiredProgress: 1,
+        currentTier: 1,
+        progressData: {},
+        unlockedAt: '2024-03-01T10:00:00.000Z',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-03-01T10:00:00.000Z',
+        achievement: {
+          id: 1,
+          name: 'First Win',
+          description: null,
+          type: 'first_win',
+          icon: '🥇',
+        },
+      },
+      {
+        id: 'ua-2',
+        userId: '1',
+        achievementId: 2,
+        currentProgress: 10,
+        requiredProgress: 50,
+        currentTier: 1,
+        progressData: {},
+        unlockedAt: null,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-15T00:00:00.000Z',
+        achievement: {
+          id: 2,
+          name: 'Veteran',
+          description: null,
+          type: 'games_played',
+          icon: '🏆',
+        },
+      },
+    ];
+
+    it('should load achievements and sort unlocked first', () => {
+      const unordered: UserAchievement[] = [
+        mockAchievements[1],
+        mockAchievements[0],
+      ];
+      userAchievementService.getByUserId.and.returnValue(of(unordered));
+
+      component.loadUserAchievements('1');
+
+      expect(userAchievementService.getByUserId).toHaveBeenCalledWith('1');
+      expect(component.userAchievements.length).toBe(2);
+      // Unlocked achievement should come first
+      expect(component.userAchievements[0].unlockedAt).not.toBeNull();
+      expect(component.userAchievements[1].unlockedAt).toBeNull();
+    });
+
+    it('should handle error silently and leave userAchievements unchanged', () => {
+      component.userAchievements = mockAchievements;
+      userAchievementService.getByUserId.and.returnValue(
+        throwError(() => new Error('Error')),
+      );
+
+      component.loadUserAchievements('1');
+
+      // userAchievements should remain unchanged on error
+      expect(component.userAchievements).toEqual(mockAchievements);
+    });
+
+    it('should be called after loadUser succeeds', () => {
+      userService.getUserById.and.returnValue(of(mockUser));
+      userAchievementService.getByUserId.and.returnValue(of(mockAchievements));
+      component.userId = '1';
+      component.mode = 'view';
+      component.initForm();
+
+      component.loadUser();
+
+      expect(userAchievementService.getByUserId).toHaveBeenCalledWith('1');
+    });
+  });
+
+  describe('openAchievementDetail / closeAchievementDetail', () => {
+    const mockAchievement: UserAchievement = {
+      id: 'ua-1',
+      userId: '1',
+      achievementId: 1,
+      currentProgress: 1,
+      requiredProgress: 1,
+      currentTier: 1,
+      progressData: {},
+      unlockedAt: '2024-03-01T10:00:00.000Z',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-03-01T10:00:00.000Z',
+      achievement: {
+        id: 1,
+        name: 'First Win',
+        description: null,
+        type: 'first_win',
+        icon: '🥇',
+      },
+    };
+
+    it('should set selectedAchievement when opening', () => {
+      component.openAchievementDetail(mockAchievement);
+
+      expect(component.selectedAchievement).toBe(mockAchievement);
+    });
+
+    it('should clear selectedAchievement when closing', () => {
+      component.selectedAchievement = mockAchievement;
+
+      component.closeAchievementDetail();
+
+      expect(component.selectedAchievement).toBeNull();
+    });
+  });
+
+  describe('getAchievementProgress', () => {
+    const makeUa = (current: number, required: number): UserAchievement => ({
+      id: 'ua-1',
+      userId: '1',
+      achievementId: 1,
+      currentProgress: current,
+      requiredProgress: required,
+      currentTier: 1,
+      progressData: {},
+      unlockedAt: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    });
+
+    it('should return correct percentage', () => {
+      expect(component.getAchievementProgress(makeUa(25, 100))).toBe(25);
+      expect(component.getAchievementProgress(makeUa(1, 4))).toBe(25);
+    });
+
+    it('should round to nearest integer', () => {
+      expect(component.getAchievementProgress(makeUa(1, 3))).toBe(33);
+    });
+
+    it('should clamp to 100 when progress exceeds required', () => {
+      expect(component.getAchievementProgress(makeUa(150, 100))).toBe(100);
+    });
+
+    it('should return 100 when requiredProgress is 0', () => {
+      expect(component.getAchievementProgress(makeUa(0, 0))).toBe(100);
+    });
+
+    it('should return 100 for a fully completed achievement', () => {
+      expect(component.getAchievementProgress(makeUa(50, 50))).toBe(100);
     });
   });
 });

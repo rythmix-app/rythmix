@@ -39,6 +39,13 @@ export class MainLayoutComponent implements OnInit {
 
   menuItems: MenuSection[] = [
     {
+      title: 'GÉNÉRAL',
+      icon: 'fa-chart-line',
+      items: [
+        { label: 'Tableau de bord', route: '/dashboard', icon: 'fa-chart-pie' },
+      ],
+    },
+    {
       title: 'UTILISATEURS',
       icon: 'fa-users',
       items: [

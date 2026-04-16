@@ -1,0 +1,263 @@
+<div class="dashboard-page">
+  <div class="page-header">
+    <h1 class="page-title">TABLEAU DE BORD</h1>
+    <div class="header-actions">
+      @if (lastRefreshed) {
+        <span class="last-refresh">
+          <i class="fas fa-clock"></i>
+          Actualisé à {{ lastRefreshed | date: "HH:mm:ss" }}
+        </span>
+      }
+      <button class="btn-refresh" (click)="loadStats()" [disabled]="isLoading">
+        <i class="fas fa-sync-alt" [class.spinning]="isLoading"></i>
+        Actualiser
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+    </div>
+  }
+
+  @if (!isLoading && stats) {
+    <div class="dashboard-content">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon accent">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ stats.users.total }}</div>
+            <div class="kpi-label">Utilisateurs</div>
+            <div class="kpi-sub">
+              <span class="sub-success">{{ stats.users.active }} actifs</span>
+              @if (stats.users.deleted > 0) {
+                <span class="sub-muted">
+                  · {{ stats.users.deleted }} supprimés</span
+                >
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon success">
+            <i class="fas fa-gamepad"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ stats.sessions.total }}</div>
+            <div class="kpi-label">Sessions de jeu</div>
+            <div class="kpi-sub">
+              <span class="sub-accent"
+                >{{ stats.sessions.active }} en cours</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon warning">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ getSessionCompletionRate() }}%</div>
+            <div class="kpi-label">Taux de complétion</div>
+            <div class="kpi-sub">
+              <span class="sub-muted"
+                >{{ stats.sessions.completed }} /
+                {{ stats.sessions.total }} sessions</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon danger">
+            <i class="fas fa-trophy"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-value">{{ stats.achievements.total }}</div>
+            <div class="kpi-label">Achievements</div>
+            <div class="kpi-sub">
+              <span class="sub-muted">Définis dans le système</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stats-card">
+          <div class="stats-card-header">
+            <h2 class="stats-card-title">
+              <i class="fas fa-chart-bar"></i>
+              Sessions par statut
+            </h2>
+          </div>
+          <div class="status-list">
+            <div class="status-item">
+              <div class="status-left">
+                <span class="status-dot pending"></span>
+                <span class="status-label">En attente</span>
+              </div>
+              <div class="status-right">
+                <span class="status-count">{{ stats.sessions.pending }}</span>
+                @if (stats.sessions.total > 0) {
+                  <span class="status-pct">
+                    {{
+                      (
+                        (stats.sessions.pending / stats.sessions.total) *
+                        100
+                      ).toFixed(0)
+                    }}%
+                  </span>
+                }
+              </div>
+            </div>
+            <div class="status-bar-wrap">
+              <div
+                class="status-bar pending"
+                [style.width.%]="
+                  stats.sessions.total > 0
+                    ? (stats.sessions.pending / stats.sessions.total) * 100
+                    : 0
+                "
+              ></div>
+            </div>
+
+            <div class="status-item">
+              <div class="status-left">
+                <span class="status-dot active"></span>
+                <span class="status-label">En cours</span>
+              </div>
+              <div class="status-right">
+                <span class="status-count">{{ stats.sessions.active }}</span>
+                @if (stats.sessions.total > 0) {
+                  <span class="status-pct">
+                    {{
+                      (
+                        (stats.sessions.active / stats.sessions.total) *
+                        100
+                      ).toFixed(0)
+                    }}%
+                  </span>
+                }
+              </div>
+            </div>
+            <div class="status-bar-wrap">
+              <div
+                class="status-bar active"
+                [style.width.%]="
+                  stats.sessions.total > 0
+                    ? (stats.sessions.active / stats.sessions.total) * 100
+                    : 0
+                "
+              ></div>
+            </div>
+
+            <div class="status-item">
+              <div class="status-left">
+                <span class="status-dot completed"></span>
+                <span class="status-label">Terminées</span>
+              </div>
+              <div class="status-right">
+                <span class="status-count">{{ stats.sessions.completed }}</span>
+                @if (stats.sessions.total > 0) {
+                  <span class="status-pct">
+                    {{
+                      (
+                        (stats.sessions.completed / stats.sessions.total) *
+                        100
+                      ).toFixed(0)
+                    }}%
+                  </span>
+                }
+              </div>
+            </div>
+            <div class="status-bar-wrap">
+              <div
+                class="status-bar completed"
+                [style.width.%]="
+                  stats.sessions.total > 0
+                    ? (stats.sessions.completed / stats.sessions.total) * 100
+                    : 0
+                "
+              ></div>
+            </div>
+
+            <div class="status-item">
+              <div class="status-left">
+                <span class="status-dot canceled"></span>
+                <span class="status-label">Annulées</span>
+              </div>
+              <div class="status-right">
+                <span class="status-count">{{ stats.sessions.canceled }}</span>
+                @if (stats.sessions.total > 0) {
+                  <span class="status-pct">
+                    {{
+                      (
+                        (stats.sessions.canceled / stats.sessions.total) *
+                        100
+                      ).toFixed(0)
+                    }}%
+                  </span>
+                }
+              </div>
+            </div>
+            <div class="status-bar-wrap">
+              <div
+                class="status-bar canceled"
+                [style.width.%]="
+                  stats.sessions.total > 0
+                    ? (stats.sessions.canceled / stats.sessions.total) * 100
+                    : 0
+                "
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <div class="stats-card-header">
+            <h2 class="stats-card-title">
+              <i class="fas fa-user-plus"></i>
+              Derniers inscrits
+            </h2>
+            <a routerLink="/users" class="stats-card-link">
+              Voir tous <i class="fas fa-arrow-right"></i>
+            </a>
+          </div>
+          @if (stats.users.recent.length === 0) {
+            <div class="empty-state">Aucun utilisateur</div>
+          }
+          @for (user of stats.users.recent; track user.id) {
+            <div class="recent-user-row">
+              <div class="recent-user-avatar">
+                {{ user.username.charAt(0).toUpperCase() }}
+              </div>
+              <div class="recent-user-info">
+                <span class="recent-user-name">{{
+                  getUserDisplayName(user)
+                }}</span>
+                <span class="recent-user-email">{{ user.email }}</span>
+              </div>
+              <div class="recent-user-meta">
+                <span
+                  class="badge"
+                  [class.badge-admin]="user.role === 'admin'"
+                  [class.badge-user]="user.role !== 'admin'"
+                >
+                  {{ user.role || "user" }}
+                </span>
+                <span class="recent-user-date">{{
+                  user.createdAt | date: "dd/MM/yy"
+                }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>
