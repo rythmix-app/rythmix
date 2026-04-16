@@ -73,9 +73,14 @@ describe("fuzzyMatch", () => {
     expect(fuzzyMatch("og", "OG")).toBe(true);
   });
 
-  it("matches exact substring", () => {
+  it("matches substring when length ratio is sufficient", () => {
     expect(fuzzyMatch("thriller", "Thriller")).toBe(true);
-    expect(fuzzyMatch("bad", "Michael Jackson - Bad")).toBe(true);
+    expect(fuzzyMatch("tiakol", "Tiakola")).toBe(true);
+  });
+
+  it("rejects substring when input is too short relative to target", () => {
+    expect(fuzzyMatch("tia", "Tiakola")).toBe(false);
+    expect(fuzzyMatch("bad", "Michael Jackson - Bad")).toBe(false);
   });
 
   it("matches with minor typo via Levenshtein", () => {

@@ -54,6 +54,7 @@ export const levenshteinDistance = (a: string, b: string): number => {
 const DEFAULT_SIMILARITY_THRESHOLD = 0.75;
 const NEAR_MATCH_LOWER = 0.45;
 const NEAR_MATCH_UPPER = DEFAULT_SIMILARITY_THRESHOLD;
+const SUBSTRING_MIN_RATIO = 0.6;
 
 /**
  * Returns true if input approximately matches target using Levenshtein similarity.
@@ -76,11 +77,16 @@ export const fuzzyMatch = (
 
   if (normalizedInput.length < 3) return false;
 
-  if (
-    normalizedTarget.includes(normalizedInput) ||
-    normalizedInput.includes(normalizedTarget)
-  ) {
+  // Input contains the full target → user typed more than needed, always accept
+  if (normalizedInput.includes(normalizedTarget)) {
     return true;
+  }
+
+  // Target contains input → only accept if input covers enough of the target
+  if (normalizedTarget.includes(normalizedInput)) {
+    return (
+      normalizedInput.length / normalizedTarget.length >= SUBSTRING_MIN_RATIO
+    );
   }
 
   const minLength = Math.min(normalizedInput.length, normalizedTarget.length);

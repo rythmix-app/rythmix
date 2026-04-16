@@ -58,15 +58,15 @@ export default function BlindtestRoundReveal({
             Score : {roundScore}/{maxRoundScore}
           </ThemedText>
 
-          <ScoreRow label="Artiste" correct={artistCorrect} />
+          <ScoreRow label={track.artist.name} correct={artistCorrect} />
           {featuringNames.map((name) => (
             <ScoreRow
               key={name}
-              label={`Feat. ${name}`}
+              label={name}
               correct={featuringFoundNames.includes(name)}
             />
           ))}
-          <ScoreRow label="Titre" correct={titleCorrect} />
+          <ScoreRow label={track.title} correct={titleCorrect} />
         </View>
 
         <Button
