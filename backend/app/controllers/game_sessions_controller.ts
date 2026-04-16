@@ -265,6 +265,27 @@ export default class GameSessionsController {
   }
 
   @ApiOperation({
+    summary: 'Get my game stats for a specific game',
+    description:
+      'Retrieve aggregated statistics (total played, best score, average score, average time, last played) from completed sessions of the authenticated user for a specific game.',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiParam({ name: 'gameId', description: 'Game ID', required: true })
+  @ApiResponse({ status: 200, description: 'Game stats retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Error while fetching game stats' })
+  public async myGameStats({ auth, params, response }: HttpContext) {
+    try {
+      const userId = auth.user!.id
+      const gameId = Number(params.gameId)
+      const stats = await this.gameSessionService.getMyGameStats(userId, gameId)
+      return response.json(stats)
+    } catch (error) {
+      return response.status(500).json({ message: 'Error while fetching game stats' })
+    }
+  }
+
+  @ApiOperation({
     summary: 'Get my active session for a game',
     description:
       'Retrieve the active game session of the authenticated user for a specific game, or null if none exists. If multiple active sessions exist, returns the most recent one.',

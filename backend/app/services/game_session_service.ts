@@ -1,4 +1,5 @@
 import GameSession from '#models/game_session'
+import db from '@adonisjs/lucid/services/db'
 import { GameSessionStatus } from '#enums/game_session_status'
 
 export class GameSessionService {
@@ -166,6 +167,38 @@ export class GameSessionService {
     }
 
     return query.paginate(page, limit)
+  }
+
+  public async getMyGameStats(userId: string, gameId: number) {
+    const result = await db.rawQuery(
+      `SELECT
+          COUNT(*)::int AS "totalPlayed",
+          COALESCE(MAX((game_data->>'score')::numeric), 0) AS "bestScore",
+          COALESCE(
+            AVG(
+              CASE WHEN (game_data->>'maxScore')::numeric > 0
+                THEN (game_data->>'score')::numeric / (game_data->>'maxScore')::numeric * 100
+                ELSE 0
+              END
+            ), 0
+          ) AS "averageScore",
+          COALESCE(AVG((game_data->>'timeElapsed')::numeric), 0) AS "averageTimeElapsed",
+          MAX(created_at) AS "lastPlayedAt"
+        FROM game_sessions
+        WHERE players::jsonb @> ?::jsonb
+          AND game_id = ?
+          AND status = ?`,
+      [JSON.stringify([{ userId }]), gameId, GameSessionStatus.Completed]
+    )
+
+    const row = result.rows[0]
+    return {
+      totalPlayed: row.totalPlayed ?? 0,
+      bestScore: Number(row.bestScore ?? 0),
+      averageScore: Math.round(Number(row.averageScore ?? 0) * 100) / 100,
+      averageTimeElapsed: Math.round(Number(row.averageTimeElapsed ?? 0) * 100) / 100,
+      lastPlayedAt: row.lastPlayedAt ?? null,
+    }
   }
 
   public async getMyActiveSessionByGameId(userId: string, gameId: number) {
