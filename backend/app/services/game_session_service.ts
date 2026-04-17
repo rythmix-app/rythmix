@@ -192,7 +192,8 @@ export class GameSessionService {
 
     const totalPlayed = sessions.length
     const bestScore = Math.max(...sessions.map((s) => Number(s.gameData?.score ?? 0)))
-    const averageScore = sessions.reduce((sum, s) => sum + Number(s.gameData?.score ?? 0), 0) / totalPlayed
+    const averageScore =
+      sessions.reduce((sum, s) => sum + Number(s.gameData?.score ?? 0), 0) / totalPlayed
     const averageTimeElapsed =
       sessions.reduce((sum, s) => sum + Number(s.gameData?.timeElapsed ?? 0), 0) / totalPlayed
     const lastPlayedAt = sessions[0].createdAt.toISO()
