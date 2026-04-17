@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -59,16 +60,48 @@ export default function HigherOrLowerGameScreen() {
 
   // Charger les artistes initiaux
   const loadInitialArtists = useCallback(async () => {
+    console.log("[HigherOrLower] Initializing game with gameId:", gameId);
+    
+    if (!gameId || isNaN(Number(gameId))) {
+      console.error("[HigherOrLower] Invalid gameId:", gameId);
+      Alert.alert("Erreur", "L'identifiant du jeu est manquant.");
+      router.back();
+      return;
+    }
+
     try {
+      setGameState("loading");
+      // Étape 1: Récupérer le Top Artistes (allégé)
       const response = await deezerAPI.getTopArtists(50);
-      const filtered = response.data.filter(
-        (a) => a.picture_xl && a.nb_fan !== undefined && a.nb_fan > 0
+      
+      if (!response || !response.data || response.data.length < 2) {
+        throw new Error("Impossible de récupérer le classement des artistes.");
+      }
+
+      console.log("[HigherOrLower] Top artists fetched, enriching data...");
+
+      // Étape 2: Enrichir les 5 premiers pour démarrer vite (en parallèle)
+      const firstBatch = response.data.slice(0, 10);
+      const enrichedArtists = await Promise.all(
+        firstBatch.map(async (a) => {
+          try {
+            return await deezerAPI.getArtist(a.id);
+          } catch (e) {
+            console.warn(`Failed to enrich artist ${a.name}`, e);
+            return null;
+          }
+        })
       );
+
+      const filtered = enrichedArtists.filter(
+        (a): a is DeezerArtist => a !== null && !!a.picture_xl && !!a.nb_fan
+      );
+
+      if (filtered.length < 2) {
+        throw new Error("Pas assez d'artistes avec des données complètes trouvés.");
+      }
       
       artistPool.current = filtered;
-      
-      if (filtered.length < 2) throw new Error("Pas assez d'artistes trouvés");
-      
       const a = filtered[0];
       const b = filtered[1];
       
@@ -78,27 +111,57 @@ export default function HigherOrLowerGameScreen() {
       usedArtistIds.current.add(b.id);
       currentArtistIndex.current = 1;
       
+      console.log("[HigherOrLower] Ready to play with artists:", a.name, "(", a.nb_fan, ") and", b.name, "(", b.nb_fan, ")");
+
       // Créer la session
-      const session = await createGameSession({
-        gameId: Number(gameId),
-        status: "active",
-        gameData: {
+      try {
+        const initialGameData: HigherOrLowerGameData = {
           totalRounds: 0,
           streak: 0,
           bestStreak: 0,
           rounds: [],
           startedAt: new Date().toISOString(),
           completedAt: null,
-        } as HigherOrLowerGameData,
-      });
+        };
+
+        const session = await createGameSession({
+          gameId: Number(gameId),
+          status: "active",
+          gameData: initialGameData as unknown as Record<string, unknown>,
+        });
+        setSessionId(session.id);
+      } catch (sessionError) {
+        console.warn("[HigherOrLower] Session creation failed:", sessionError);
+      }
       
-      setSessionId(session.id);
       setGameState("playing");
+      
+      // Charger le reste en arrière-plan (non bloquant)
+      loadMoreArtistsInBackground(response.data.slice(10));
     } catch (error) {
-      console.error("Error loading artists:", error);
+      console.error("[HigherOrLower] Critical initialization error:", error);
+      Alert.alert(
+        "Erreur de chargement",
+        error instanceof Error ? error.message : "Une erreur inconnue est survenue"
+      );
       router.back();
     }
   }, [gameId]);
+
+  // Fonction utilitaire pour charger plus d'artistes en arrière-plan
+  const loadMoreArtistsInBackground = async (remaining: DeezerArtist[]) => {
+    for (let i = 0; i < remaining.length; i++) {
+      try {
+        const fullArtist = await deezerAPI.getArtist(remaining[i].id);
+        if (fullArtist && fullArtist.picture_xl && fullArtist.nb_fan) {
+          artistPool.current = [...artistPool.current, fullArtist];
+        }
+      } catch (e) {
+        // Ignorer silencieusement les échecs individuels
+      }
+    }
+    console.log("[HigherOrLower] Artist pool enriched, total:", artistPool.current.length);
+  };
 
   useEffect(() => {
     loadInitialArtists();
@@ -108,20 +171,30 @@ export default function HigherOrLowerGameScreen() {
   const getNextArtist = useCallback(async () => {
     currentArtistIndex.current += 1;
     
-    // Si on arrive au bout du pool, on en recharge
-    if (currentArtistIndex.current >= artistPool.current.length - 5) {
-      try {
-        const response = await deezerAPI.getTopArtists(50, artistPool.current.length);
-        const filtered = response.data.filter(
-          (a) => a.picture_xl && a.nb_fan !== undefined && !usedArtistIds.current.has(a.id)
-        );
-        artistPool.current = [...artistPool.current, ...filtered];
-      } catch (e) {
-        console.warn("Failed to fetch more artists", e);
+    // Si on arrive au bout du pool enrichi
+    if (currentArtistIndex.current >= artistPool.current.length) {
+      console.log("[HigherOrLower] End of enriched pool, waiting for more...");
+      // Petit délai pour laisser le chargement d'arrière-plan travailler
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (currentArtistIndex.current >= artistPool.current.length) {
+        // Si toujours rien, on en recharge un par défaut en urgence
+        const topArtists = await deezerAPI.getTopArtists(50);
+        // On cherche le premier qu'on n'a pas utilisé
+        const unused = topArtists.data.find(a => !usedArtistIds.current.has(a.id));
+        if (unused) {
+          const full = await deezerAPI.getArtist(unused.id);
+          artistPool.current = [...artistPool.current, full];
+        } else {
+           // En dernier recours, on reprend le pool initial filtré
+           currentArtistIndex.current = 0;
+        }
       }
     }
     
-    return artistPool.current[currentArtistIndex.current];
+    const next = artistPool.current[currentArtistIndex.current];
+    usedArtistIds.current.add(next.id);
+    return next;
   }, []);
 
   const handleGuess = async (guess: "higher" | "lower") => {
@@ -296,82 +369,69 @@ export default function HigherOrLowerGameScreen() {
     <View style={styles.container}>
       <Header title="Plus ou moins" variant="withBack" />
       
-      <View style={styles.streakContainer}>
-        <ThemedText style={styles.streakText}>SÉRIE : {streak}</ThemedText>
-      </View>
-
       <View style={styles.gameArea}>
-        {/* Artiste A (Haut) */}
-        <Animated.View style={[styles.artistCard, styles.cardTop, cardAStyle]}>
-          <Image source={{ uri: artistA?.picture_xl }} style={styles.artistImage} />
-          <View style={styles.overlay} />
-          <View style={styles.artistInfo}>
-            <ThemedText type="title" style={styles.artistName}>{artistA?.name}</ThemedText>
-            <ThemedText style={styles.fansText}>a</ThemedText>
-            <ThemedText style={styles.fansCount}>{formatNumber(artistA?.nb_fan || 0)}</ThemedText>
-            <ThemedText style={styles.fansText}>auditeurs mensuels</ThemedText>
-          </View>
-        </Animated.View>
-
-        {/* Badge VS */}
-        <Animated.View style={[styles.vsBadge, vsStyle]}>
-          <ThemedText style={styles.vsText}>VS</ThemedText>
-        </Animated.View>
-
-        {/* Artiste B (Bas) */}
-        <Animated.View style={[styles.artistCard, styles.cardBottom, cardBStyle]}>
-          <Image source={{ uri: artistB?.picture_xl }} style={styles.artistImage} />
-          <View style={[
-            styles.overlay, 
-            gameState === "wrong" && styles.overlayWrong,
-            isCorrect === true && styles.overlayCorrect
-          ]} />
-          <View style={styles.artistInfo}>
-            <ThemedText type="title" style={styles.artistName}>{artistB?.name}</ThemedText>
-            <ThemedText style={styles.fansText}>a</ThemedText>
-            
-            <Animated.View style={revealStyle}>
-              <ThemedText style={styles.fansCount}>{formatNumber(artistB?.nb_fan || 0)}</ThemedText>
-            </Animated.View>
-            
-            {gameState === "playing" && (
-              <ThemedText style={styles.fansCountHidden}>???</ThemedText>
-            )}
-            
-            <ThemedText style={styles.fansText}>auditeurs mensuels</ThemedText>
-
-            {gameState === "playing" && (
-              <View style={styles.controls}>
-                <TouchableOpacity 
-                  style={styles.guessButton} 
-                  onPress={() => handleGuess("higher")}
-                >
-                  <MaterialIcons name="trending-up" size={32} color="white" />
-                  <ThemedText style={styles.guessButtonText}>PLUS</ThemedText>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.guessButton, styles.lowerButton]} 
-                  onPress={() => handleGuess("lower")}
-                >
-                  <MaterialIcons name="trending-down" size={32} color="white" />
-                  <ThemedText style={styles.guessButtonText}>MOINS</ThemedText>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-          
-          {/* Feedback visuel lors de la révélation */}
-          {isCorrect !== null && (
-            <View style={styles.feedbackContainer}>
-              <MaterialIcons 
-                name={isCorrect ? "check-circle" : "cancel"} 
-                size={80} 
-                color={isCorrect ? "#4CAF50" : "#F44336"} 
-              />
+        {/* Zone Supérieure (Artiste A) - Clic si B < A (MOINS) */}
+        <TouchableOpacity 
+          style={[styles.clickableArea, styles.areaTop]} 
+          activeOpacity={0.8}
+          onPress={() => handleGuess("lower")}
+          disabled={gameState !== "playing"}
+        >
+          <View style={styles.artistContent}>
+            <View style={styles.profileBubble}>
+              <Image source={{ uri: artistA?.picture_xl }} style={styles.bubbleImage} />
             </View>
-          )}
-        </Animated.View>
+            <ThemedText style={styles.artistName}>{artistA?.name}</ThemedText>
+            <ThemedText style={styles.fansCount}>{formatNumber(artistA?.nb_fan || 0)}</ThemedText>
+            <ThemedText style={styles.fansLabel}>auditeurs mensuels</ThemedText>
+          </View>
+        </TouchableOpacity>
+
+        {/* Séparateur VS */}
+        <View style={styles.vsContainer}>
+          <View style={styles.vsLine} />
+          <ThemedText style={styles.vsText}>VS</ThemedText>
+          <View style={styles.vsLine} />
+        </View>
+
+        {/* Zone Inférieure (Artiste B) - Clic si B > A (PLUS) */}
+        <TouchableOpacity 
+          style={[styles.clickableArea, styles.areaBottom]} 
+          activeOpacity={0.8}
+          onPress={() => handleGuess("higher")}
+          disabled={gameState !== "playing"}
+        >
+          <View style={styles.artistContent}>
+            <View style={styles.profileBubble}>
+              <Image source={{ uri: artistB?.picture_xl }} style={styles.bubbleImage} />
+              {isCorrect !== null && (
+                <View style={styles.feedbackOverlay}>
+                   <MaterialIcons 
+                    name={isCorrect ? "check-circle" : "cancel"} 
+                    size={60} 
+                    color={isCorrect ? "#4CAF50" : "#F44336"} 
+                  />
+                </View>
+              )}
+            </View>
+            <ThemedText style={styles.artistName}>{artistB?.name}</ThemedText>
+            
+            <View style={styles.scoreContainer}>
+              {gameState === "playing" ? (
+                <ThemedText style={styles.fansCountHidden}>???</ThemedText>
+              ) : (
+                <Animated.View style={revealStyle}>
+                  <ThemedText style={styles.fansCount}>{formatNumber(artistB?.nb_fan || 0)}</ThemedText>
+                </Animated.View>
+              )}
+            </View>
+            <ThemedText style={styles.fansLabel}>auditeurs mensuels</ThemedText>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.streakBadge}>
+          <ThemedText style={styles.streakText}>SÉRIE : {streak}</ThemedText>
+        </View>
       </View>
     </View>
   );
@@ -382,145 +442,112 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.primary.fondPremier,
   },
-  centerContainer: {
+  gameArea: {
+    flex: 1,
+    position: "relative",
+  },
+  clickableArea: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.primary.fondPremier,
+    backgroundColor: "#1A2B2C", // Bleu terne
   },
-  gameArea: {
-    flex: 1,
+  areaTop: {
+    borderBottomWidth: 0,
   },
-  artistCard: {
-    height: height / 2 - 40,
-    width: width,
-    position: "relative",
+  areaBottom: {
+    borderTopWidth: 0,
+  },
+  artistContent: {
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: 20,
+  },
+  profileBubble: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.2)",
     overflow: "hidden",
+    marginBottom: 15,
+    backgroundColor: "#2A3B3C",
+    position: "relative",
   },
-  cardTop: {
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.1)",
-  },
-  cardBottom: {
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.1)",
-  },
-  artistImage: {
-    ...StyleSheet.absoluteFillObject,
+  bubbleImage: {
     width: "100%",
     height: "100%",
   },
-  overlay: {
+  feedbackOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  overlayWrong: {
-    backgroundColor: "rgba(244, 67, 54, 0.4)",
-  },
-  overlayCorrect: {
-    backgroundColor: "rgba(76, 175, 80, 0.2)",
-  },
-  artistInfo: {
-    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    zIndex: 2,
   },
   artistName: {
-    textAlign: "center",
-    fontSize: 28,
-    marginBottom: 5,
     color: "white",
-    textShadowColor: "rgba(0,0,0,0.75)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 10,
-  },
-  fansText: {
-    color: "#CCC",
-    fontSize: 16,
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontSize: 28,
+    fontFamily: "Author-Bold", // Utilisation de la police Author
+    textAlign: "center",
+    marginBottom: 5,
   },
   fansCount: {
-    color: Colors.primary.survol,
-    fontSize: 42,
-    fontWeight: "900",
-    marginVertical: 10,
+    color: "#4FD1D9", // Bleu clair (Primary survol ou similaire)
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   fansCountHidden: {
     color: "white",
-    fontSize: 42,
-    fontWeight: "900",
-    marginVertical: 10,
+    fontSize: 36,
+    fontWeight: "bold",
+    opacity: 0.5,
   },
-  vsBadge: {
-    position: "absolute",
-    top: height / 2 - 80,
-    left: width / 2 - 30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "white",
+  fansLabel: {
+    color: "#999",
+    fontSize: 14,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  scoreContainer: {
+    height: 45,
     justifyContent: "center",
+  },
+  vsContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    zIndex: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 5,
-    elevation: 5,
+    justifyContent: "center",
+    height: 40,
+    paddingHorizontal: 30,
+    backgroundColor: "#1A2B2C",
+  },
+  vsLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.3)",
   },
   vsText: {
-    color: "black",
-    fontWeight: "bold",
-    fontSize: 20,
-  },
-  controls: {
-    flexDirection: "row",
-    marginTop: 30,
-    gap: 20,
-  },
-  guessButton: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 25,
-    paddingVertical: 12,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: "white",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  lowerButton: {
-    // Optionnel: style différent pour Moins
-  },
-  guessButtonText: {
     color: "white",
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: "Bold",
+    marginHorizontal: 15,
   },
-  streakContainer: {
+  streakBadge: {
     position: "absolute",
-    top: 100,
+    top: 20,
     right: 20,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
-    zIndex: 20,
   },
   streakText: {
-    color: Colors.primary.survol,
+    color: "#4FD1D9",
+    fontSize: 12,
     fontWeight: "bold",
-    fontSize: 14,
   },
-  feedbackContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 5,
-  },
+  // ... (rest of styles for loading/result remain similar)
   resultContent: {
     flex: 1,
     justifyContent: "center",
