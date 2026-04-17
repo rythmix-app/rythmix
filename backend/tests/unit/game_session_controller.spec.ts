@@ -325,12 +325,25 @@ test.group('GameSessionsController - Unit', () => {
     const controller = new GameSessionsController(service)
 
     const response = makeResponse()
-    const params = { gameId: 5 }
+    const params = { gameId: '5' }
 
     await controller.getByGame({ response, params } as any as HttpContext)
 
     assert.equal(response.statusCode, 200)
     assert.equal(response.body.gameSessions.length, 2)
+  })
+
+  test('getByGame returns 400 for invalid gameId', async ({ assert }) => {
+    const service = {} as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const params = { gameId: 'abc' }
+
+    await controller.getByGame({ response, params } as any as HttpContext)
+
+    assert.equal(response.statusCode, 400)
+    assert.match(response.body.message, /Invalid gameId/i)
   })
 
   test('getByGame returns 500 when service throws', async ({ assert }) => {
@@ -342,7 +355,7 @@ test.group('GameSessionsController - Unit', () => {
     const controller = new GameSessionsController(service)
 
     const response = makeResponse()
-    const params = { gameId: 1 }
+    const params = { gameId: '1' }
 
     await controller.getByGame({ response, params } as any as HttpContext)
 
@@ -350,22 +363,88 @@ test.group('GameSessionsController - Unit', () => {
     assert.match(response.body.message, /Error while fetching game sessions/i)
   })
 
-  test('getByStatus returns 200 with sessions with specific status', async ({ assert }) => {
+  test('myGameStats returns 200 with stats on success', async ({ assert }) => {
+    const mockStats = {
+      totalPlayed: 5,
+      bestScore: 18,
+      averageScore: 12.4,
+      averageTimeElapsed: 45.3,
+      lastPlayedAt: '2026-04-15T10:00:00.000Z',
+    }
+    const service = { getGameStats: async () => mockStats } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const auth = { user: { id: 'user-1' } }
+    const params = { gameId: '1' }
+
+    await controller.myGameStats({ auth, params, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 200)
+    assert.deepEqual(response.body, mockStats)
+  })
+
+  test('myGameStats returns 400 for invalid gameId', async ({ assert }) => {
+    const service = {} as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const auth = { user: { id: 'user-1' } }
+    const params = { gameId: 'notanumber' }
+
+    await controller.myGameStats({ auth, params, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 400)
+    assert.match(response.body.message, /Invalid gameId/i)
+  })
+
+  test('myGameStats returns 500 when service throws', async ({ assert }) => {
+    const service = {
+      getGameStats: async () => {
+        throw new Error('boom')
+      },
+    } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const auth = { user: { id: 'user-1' } }
+    const params = { gameId: '1' }
+
+    await controller.myGameStats({ auth, params, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(response.body.message, /Error while fetching game stats/i)
+  })
+
+  test('getByStatus returns 200 with sessions with valid status', async ({ assert }) => {
     const service = {
       getByStatus: async () => [
-        { id: 'session-1', status: 'en_cours' },
-        { id: 'session-2', status: 'en_cours' },
+        { id: 'session-1', status: 'completed' },
+        { id: 'session-2', status: 'completed' },
       ],
     } as any
     const controller = new GameSessionsController(service)
 
     const response = makeResponse()
-    const params = { status: 'en_cours' }
+    const params = { status: 'completed' }
 
     await controller.getByStatus({ response, params } as any as HttpContext)
 
     assert.equal(response.statusCode, 200)
     assert.equal(response.body.gameSessions.length, 2)
+  })
+
+  test('getByStatus returns 400 for invalid status', async ({ assert }) => {
+    const service = {} as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const params = { status: 'invalid_status' }
+
+    await controller.getByStatus({ response, params } as any as HttpContext)
+
+    assert.equal(response.statusCode, 400)
+    assert.match(response.body.message, /Invalid status/i)
   })
 
   test('getByStatus returns 500 when service throws', async ({ assert }) => {
@@ -377,7 +456,7 @@ test.group('GameSessionsController - Unit', () => {
     const controller = new GameSessionsController(service)
 
     const response = makeResponse()
-    const params = { status: 'terminee' }
+    const params = { status: 'completed' }
 
     await controller.getByStatus({ response, params } as any as HttpContext)
 

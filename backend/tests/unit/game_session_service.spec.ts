@@ -488,6 +488,52 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     }
   })
 
+  test('getGameStats returns neutral values when no completed sessions', async ({ assert }) => {
+    const game = await createTestGame('stats_empty')
+    const userId = `user-stats-empty-${Date.now()}`
+
+    const stats = await service.getGameStats(userId, game.id)
+
+    assert.equal(stats.totalPlayed, 0)
+    assert.equal(stats.bestScore, 0)
+    assert.equal(stats.averageScore, 0)
+    assert.equal(stats.averageTimeElapsed, 0)
+    assert.isNull(stats.lastPlayedAt)
+  })
+
+  test('getGameStats computes aggregates from completed sessions', async ({ assert }) => {
+    const game = await createTestGame('stats_agg')
+    const userId = `user-stats-agg-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: { score: 10, maxScore: 18, timeElapsed: 30 },
+    })
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: { score: 16, maxScore: 18, timeElapsed: 60 },
+    })
+    // Canceled session should be excluded
+    await GameSession.create({
+      gameId: game.id,
+      status: 'canceled',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: { score: 0, maxScore: 18, timeElapsed: 5 },
+    })
+
+    const stats = await service.getGameStats(userId, game.id)
+
+    assert.equal(stats.totalPlayed, 2)
+    assert.equal(stats.bestScore, 16)
+    assert.equal(stats.averageScore, 13)
+    assert.equal(stats.averageTimeElapsed, 45)
+    assert.isNotNull(stats.lastPlayedAt)
+  })
+
   test('JSON fields are properly serialized and deserialized', async ({ assert }) => {
     const game = await createTestGame('json')
     const complexPlayers = [
