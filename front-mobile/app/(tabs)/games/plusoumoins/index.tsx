@@ -127,7 +127,9 @@ export default function HigherOrLowerIndexScreen() {
                 </ThemedText>
               </View>
               <ThemedText style={styles.text}>
-                Devinez si l&apos;artiste mystère a plus ou moins d&apos;auditeurs mensuels que l&apos;artiste affiché. Testez vos connaissances sur la popularité des artistes !
+                Devinez si l&apos;artiste mystère a plus ou moins
+                d&apos;auditeurs mensuels que l&apos;artiste affiché. Testez vos
+                connaissances sur la popularité des artistes !
               </ThemedText>
             </View>
 
@@ -146,7 +148,8 @@ export default function HigherOrLowerIndexScreen() {
                 <View style={styles.listItem}>
                   <ThemedText style={styles.listNumber}>1.</ThemedText>
                   <ThemedText style={styles.listText}>
-                    Un artiste s&apos;affiche en haut avec son nombre d&apos;auditeurs
+                    Un artiste s&apos;affiche en haut avec son nombre
+                    d&apos;auditeurs
                   </ThemedText>
                 </View>
                 <View style={styles.listItem}>
@@ -164,7 +167,8 @@ export default function HigherOrLowerIndexScreen() {
                 <View style={styles.listItem}>
                   <ThemedText style={styles.listNumber}>4.</ThemedText>
                   <ThemedText style={styles.listText}>
-                    Bonne réponse : l&apos;artiste du bas monte, un nouveau challenger arrive
+                    Bonne réponse : l&apos;artiste du bas monte, un nouveau
+                    challenger arrive
                   </ThemedText>
                 </View>
                 <View style={styles.listItem}>
@@ -225,7 +229,9 @@ export default function HigherOrLowerIndexScreen() {
           { text: "Un artiste s'affiche en haut avec son nombre d'auditeurs" },
           { text: "Un second artiste apparaît en bas, son score est caché" },
           { text: "Appuie sur PLUS ou MOINS selon ton instinct" },
-          { text: "Bonne réponse : l'artiste du bas monte, un nouveau challenger arrive" },
+          {
+            text: "Bonne réponse : l'artiste du bas monte, un nouveau challenger arrive",
+          },
           { text: "Mauvaise réponse : la partie se termine" },
         ]}
       />
