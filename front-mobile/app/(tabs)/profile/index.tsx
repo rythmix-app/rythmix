@@ -1,13 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  Pressable,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
@@ -18,21 +11,6 @@ const MOCK_STATS = {
   matchs: 87,
   gamesPlayed: 23,
 };
-
-// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
-const MOCK_TOP_ARTISTS = [
-  { id: "1", name: "Daft Punk", avatarUrl: null },
-  { id: "2", name: "Stromae", avatarUrl: null },
-  { id: "3", name: "Aya Nakamura", avatarUrl: null },
-];
-
-// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
-const MOCK_TOP_GENRES = [
-  { id: "1", name: "Électro", percentage: 45 },
-  { id: "2", name: "Pop", percentage: 30 },
-  { id: "3", name: "Hip-Hop", percentage: 15 },
-  { id: "4", name: "Rock", percentage: 10 },
-];
 
 // TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
 const MOCK_BADGES = [
@@ -137,100 +115,6 @@ export default function ProfileScreen() {
             <StatCard label="Matchs" value={MOCK_STATS.matchs} />
             <StatCard label="Jeux joués" value={MOCK_STATS.gamesPlayed} />
           </View>
-        </View>
-
-        {/* ── Mes préférences ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Mes préférences</Text>
-
-          <Text style={styles.subSectionTitle}>TOP Artistes</Text>
-          <View style={styles.podium}>
-            {/* 2e place */}
-            <View style={styles.podiumItem}>
-              <Text style={styles.podiumMedal}>🥈</Text>
-              <View style={[styles.podiumAvatar, styles.podiumAvatar2]}>
-                {MOCK_TOP_ARTISTS[1]?.avatarUrl ? (
-                  <Image
-                    source={{ uri: MOCK_TOP_ARTISTS[1].avatarUrl }}
-                    style={styles.podiumAvatarImage2}
-                  />
-                ) : (
-                  <Text style={styles.podiumAvatarFallback}>🎤</Text>
-                )}
-              </View>
-              <Text style={styles.podiumName} numberOfLines={1}>
-                {MOCK_TOP_ARTISTS[1]?.name}
-              </Text>
-              <View style={[styles.podiumBase, styles.podiumBase2]}>
-                <Text style={styles.podiumRank}>2</Text>
-              </View>
-            </View>
-
-            {/* 1re place */}
-            <View style={styles.podiumItem}>
-              <Text style={styles.podiumMedal}>🥇</Text>
-              <View style={[styles.podiumAvatar, styles.podiumAvatar1]}>
-                {MOCK_TOP_ARTISTS[0]?.avatarUrl ? (
-                  <Image
-                    source={{ uri: MOCK_TOP_ARTISTS[0].avatarUrl }}
-                    style={styles.podiumAvatarImage1}
-                  />
-                ) : (
-                  <Text style={[styles.podiumAvatarFallback, { fontSize: 30 }]}>
-                    🎤
-                  </Text>
-                )}
-              </View>
-              <Text
-                style={[styles.podiumName, styles.podiumName1]}
-                numberOfLines={1}
-              >
-                {MOCK_TOP_ARTISTS[0]?.name}
-              </Text>
-              <View style={[styles.podiumBase, styles.podiumBase1]}>
-                <Text style={[styles.podiumRank, styles.podiumRank1]}>1</Text>
-              </View>
-            </View>
-
-            {/* 3e place */}
-            <View style={styles.podiumItem}>
-              <Text style={styles.podiumMedal}>🥉</Text>
-              <View style={[styles.podiumAvatar, styles.podiumAvatar3]}>
-                {MOCK_TOP_ARTISTS[2]?.avatarUrl ? (
-                  <Image
-                    source={{ uri: MOCK_TOP_ARTISTS[2].avatarUrl }}
-                    style={styles.podiumAvatarImage3}
-                  />
-                ) : (
-                  <Text style={[styles.podiumAvatarFallback, { fontSize: 18 }]}>
-                    🎤
-                  </Text>
-                )}
-              </View>
-              <Text style={styles.podiumName} numberOfLines={1}>
-                {MOCK_TOP_ARTISTS[2]?.name}
-              </Text>
-              <View style={[styles.podiumBase, styles.podiumBase3]}>
-                <Text style={styles.podiumRank}>3</Text>
-              </View>
-            </View>
-          </View>
-
-          <Text style={styles.subSectionTitle}>TOP Genres</Text>
-          {MOCK_TOP_GENRES.map((genre) => (
-            <View key={genre.id} style={styles.genreRow}>
-              <Text style={styles.genreName}>{genre.name}</Text>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${genre.percentage}%` },
-                  ]}
-                />
-              </View>
-              <Text style={styles.genrePercent}>{genre.percentage}%</Text>
-            </View>
-          ))}
         </View>
 
         {/* ── Succès & Récompenses ── */}
@@ -359,23 +243,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  settingsButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: Colors.dark.icon,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  settingsIcon: {
-    fontSize: 14,
-  },
-  settingsText: {
-    color: Colors.dark.icon,
-    fontSize: 13,
-  },
 
   // Sections
   section: {
@@ -396,13 +263,6 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     marginBottom: 14,
     textAlign: "center",
-  },
-  subSectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.dark.icon,
-    marginBottom: 10,
-    marginTop: 4,
   },
 
   // Stats
@@ -429,128 +289,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.dark.icon,
     textAlign: "center",
-  },
-
-  // Podium TOP Artistes
-  podium: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: 8,
-    marginBottom: 18,
-  },
-  podiumItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  podiumMedal: {
-    fontSize: 20,
-    marginBottom: 6,
-  },
-  podiumAvatar: {
-    borderRadius: 100,
-    backgroundColor: "#1A1A1A",
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
-  },
-  podiumAvatar1: {
-    width: 72,
-    height: 72,
-    borderColor: "#FFD700",
-  },
-  podiumAvatar2: {
-    width: 56,
-    height: 56,
-    borderColor: "#C0C0C0",
-  },
-  podiumAvatar3: {
-    width: 48,
-    height: 48,
-    borderColor: "#CD7F32",
-  },
-  podiumAvatarImage1: { width: 72, height: 72, borderRadius: 36 },
-  podiumAvatarImage2: { width: 56, height: 56, borderRadius: 28 },
-  podiumAvatarImage3: { width: 48, height: 48, borderRadius: 24 },
-  podiumAvatarFallback: {
-    fontSize: 22,
-  },
-  podiumName: {
-    fontSize: 11,
-    color: Colors.dark.text,
-    textAlign: "center",
-    fontWeight: "600",
-    marginBottom: 6,
-  },
-  podiumName1: {
-    fontSize: 12,
-    color: "#FFD700",
-  },
-  podiumBase: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-  },
-  podiumBase1: {
-    height: 70,
-    backgroundColor: "#2A2200",
-    borderTopWidth: 2,
-    borderColor: "#FFD700",
-  },
-  podiumBase2: {
-    height: 50,
-    backgroundColor: "#1E1E1E",
-    borderTopWidth: 2,
-    borderColor: "#C0C0C0",
-  },
-  podiumBase3: {
-    height: 35,
-    backgroundColor: "#1A1209",
-    borderTopWidth: 2,
-    borderColor: "#CD7F32",
-  },
-  podiumRank: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: Colors.dark.icon,
-  },
-  podiumRank1: {
-    color: "#FFD700",
-    fontSize: 20,
-  },
-
-  // Genres
-  genreRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-    gap: 10,
-  },
-  genreName: {
-    width: 72,
-    fontSize: 13,
-    color: Colors.dark.text,
-  },
-  progressBar: {
-    flex: 1,
-    height: 8,
-    backgroundColor: "#2A2A2A",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: Colors.primary.CTA,
-    borderRadius: 4,
-  },
-  genrePercent: {
-    width: 36,
-    fontSize: 12,
-    color: Colors.dark.icon,
-    textAlign: "right",
   },
 
   // Badges
