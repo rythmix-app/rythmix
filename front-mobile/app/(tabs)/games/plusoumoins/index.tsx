@@ -85,7 +85,7 @@ export default function HigherOrLowerIndexScreen() {
             Plus ou moins
           </ThemedText>
           <ThemedText style={styles.subtitle}>
-            Cet artiste a-t-il plus ou moins d&apos;auditeurs ?
+            Artistes ou Albums : lequel est le plus écouté ?
           </ThemedText>
         </View>
 
@@ -127,9 +127,8 @@ export default function HigherOrLowerIndexScreen() {
                 </ThemedText>
               </View>
               <ThemedText style={styles.text}>
-                Devinez si l&apos;artiste mystère a plus ou moins
-                d&apos;auditeurs mensuels que l&apos;artiste affiché. Testez vos
-                connaissances sur la popularité des artistes !
+                Testez votre culture musicale en devinant quel artiste a le plus
+                d&apos;auditeurs mensuels ou quel album a le plus de fans.
               </ThemedText>
             </View>
 
@@ -148,33 +147,27 @@ export default function HigherOrLowerIndexScreen() {
                 <View style={styles.listItem}>
                   <ThemedText style={styles.listNumber}>1.</ThemedText>
                   <ThemedText style={styles.listText}>
-                    Un artiste s&apos;affiche en haut avec son nombre
-                    d&apos;auditeurs
+                    Choisissez votre défi : Artistes ou Albums
                   </ThemedText>
                 </View>
                 <View style={styles.listItem}>
                   <ThemedText style={styles.listNumber}>2.</ThemedText>
                   <ThemedText style={styles.listText}>
-                    Un second artiste apparaît en bas, son score est caché
+                    Deux éléments s&apos;affichent : le score du haut est
+                    visible, celui du bas est caché
                   </ThemedText>
                 </View>
                 <View style={styles.listItem}>
                   <ThemedText style={styles.listNumber}>3.</ThemedText>
                   <ThemedText style={styles.listText}>
-                    Appuyez sur PLUS ou MOINS selon votre instinct
+                    Cliquez sur celui que vous pensez être le plus populaire (le
+                    plus haut score)
                   </ThemedText>
                 </View>
                 <View style={styles.listItem}>
                   <ThemedText style={styles.listNumber}>4.</ThemedText>
                   <ThemedText style={styles.listText}>
-                    Bonne réponse : l&apos;artiste du bas monte, un nouveau
-                    challenger arrive
-                  </ThemedText>
-                </View>
-                <View style={styles.listItem}>
-                  <ThemedText style={styles.listNumber}>5.</ThemedText>
-                  <ThemedText style={styles.listText}>
-                    Mauvaise réponse : la partie se termine
+                    Enchaînez les bonnes réponses pour battre votre record !
                   </ThemedText>
                 </View>
               </View>
@@ -224,15 +217,13 @@ export default function HigherOrLowerIndexScreen() {
         visible={isRulesModalVisible}
         onClose={() => setIsRulesModalVisible(false)}
         title="Règles — Plus ou moins"
-        objective="Devinez si l'artiste mystère a plus ou moins d'auditeurs mensuels que l'artiste affiché"
+        objective="Cliquez sur l'élément (artiste ou album) que vous pensez être le plus populaire"
         steps={[
-          { text: "Un artiste s'affiche en haut avec son nombre d'auditeurs" },
-          { text: "Un second artiste apparaît en bas, son score est caché" },
-          { text: "Appuie sur PLUS ou MOINS selon ton instinct" },
-          {
-            text: "Bonne réponse : l'artiste du bas monte, un nouveau challenger arrive",
-          },
-          { text: "Mauvaise réponse : la partie se termine" },
+          { text: "Choisissez entre le mode Artistes ou Albums" },
+          { text: "Comparez les deux éléments affichés" },
+          { text: "Cliquez sur celui qui a le score le plus élevé" },
+          { text: "Le score du challenger est révélé après votre choix" },
+          { text: "La partie s'arrête à la première erreur" },
         ]}
       />
 
