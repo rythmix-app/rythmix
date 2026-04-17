@@ -13,6 +13,8 @@ const LikedTracksController = () => import('#controllers/liked_tracks_controller
 const FavoriteGamesController = () => import('#controllers/favorite_games_controller')
 const UserAchievementsController = () => import('#controllers/user_achievements_controller')
 const ProfileController = () => import('#controllers/profile_controller')
+const SpotifyAuthController = () => import('#controllers/spotify_auth_controller')
+const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -32,6 +34,7 @@ router.get('/', async ({ response }) => {
       userAchievements: '/api/user-achievements',
       gameSessions: '/api/game-sessions',
       profile: '/api/profile',
+      me: '/api/me',
       docs: '/docs',
     },
   })
@@ -51,8 +54,21 @@ router
           .post('/resend-verification', [AuthController, 'resendVerificationEmail'])
           .use(resendVerificationThrottle)
         router.get('/me', [AuthController, 'me']).use(middleware.auth())
+        router.get('/spotify/redirect', [SpotifyAuthController, 'redirect'])
+        router.get('/spotify/callback', [SpotifyAuthController, 'callback'])
       })
       .prefix('/auth')
+
+    router
+      .group(() => {
+        router.get('/spotify/status', [MeIntegrationsController, 'spotifyStatus'])
+        router.get('/spotify/top-tracks', [MeIntegrationsController, 'topTracks'])
+        router.get('/spotify/top-artists', [MeIntegrationsController, 'topArtists'])
+        router.get('/spotify/recently-played', [MeIntegrationsController, 'recentlyPlayed'])
+        router.delete('/spotify', [MeIntegrationsController, 'unlinkSpotify'])
+      })
+      .prefix('/me')
+      .use(middleware.auth())
 
     router
       .group(() => {
