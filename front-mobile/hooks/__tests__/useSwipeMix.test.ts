@@ -145,16 +145,16 @@ describe("useSwipeMix", () => {
       total: mockTracks.length,
     });
     mockDeezerAPI.getGenres.mockResolvedValue({
-      data: [
-        { id: 132, name: "Pop" } as any,
-        { id: 116, name: "Rock" } as any,
-      ],
+      data: [{ id: 132, name: "Pop" } as any, { id: 116, name: "Rock" } as any],
     });
-    mockDeezerAPI.getAlbum.mockImplementation(async (id) => ({
-      id,
-      genre_id: id % 2 === 0 ? 132 : 116,
-      title: `Album ${id}`,
-    } as any));
+    mockDeezerAPI.getAlbum.mockImplementation(
+      async (id) =>
+        ({
+          id,
+          genre_id: id % 2 === 0 ? 132 : 116,
+          title: `Album ${id}`,
+        }) as any,
+    );
 
     mockCreateMyLikedTrack.mockResolvedValue({
       id: "liked-track-uuid",

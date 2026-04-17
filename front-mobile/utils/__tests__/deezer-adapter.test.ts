@@ -1,4 +1,7 @@
-import { deezerTrackToCardData, deezerTracksToCardData } from "../deezer-adapter";
+import {
+  deezerTrackToCardData,
+  deezerTracksToCardData,
+} from "../deezer-adapter";
 import { DeezerTrack } from "@/services/deezer-api";
 
 describe("deezer-adapter", () => {

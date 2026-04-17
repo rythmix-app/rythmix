@@ -54,9 +54,13 @@ export function deezerTracksToCardData(
 ): MusicCardData[] {
   return tracks.map((track, index) => {
     const albumGenres = albumGenresMapping?.[track.album.id];
-    const genreName = albumGenres?.[0] || (genreMapping?.[track.album.id] ? genreMapping[track.album.id] : undefined);
+    const genreName =
+      albumGenres?.[0] ||
+      (genreMapping?.[track.album.id]
+        ? genreMapping[track.album.id]
+        : undefined);
     const secondaryGenreName = albumGenres?.[1];
-    
+
     return deezerTrackToCardData(track, index, genreName, secondaryGenreName);
   });
 }
