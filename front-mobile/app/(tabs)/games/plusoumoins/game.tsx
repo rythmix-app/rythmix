@@ -349,6 +349,7 @@ export default function HigherOrLowerGameScreen() {
             onPress={() => {
               setStreak(0);
               setRounds([]);
+              setIsCorrect(null);
               setGameState("loading");
               loadInitialArtists();
             }} 
@@ -372,17 +373,19 @@ export default function HigherOrLowerGameScreen() {
       <View style={styles.gameArea}>
         {/* Zone Supérieure (Artiste A) - Clic si B < A (MOINS) */}
         <TouchableOpacity 
-          style={[styles.clickableArea, styles.areaTop]} 
+          style={styles.clickableArea} 
           activeOpacity={0.8}
           onPress={() => handleGuess("lower")}
           disabled={gameState !== "playing"}
         >
-          <View style={styles.artistContent}>
+          <View style={styles.stylizedCard}>
             <View style={styles.profileBubble}>
               <Image source={{ uri: artistA?.picture_xl }} style={styles.bubbleImage} />
             </View>
             <ThemedText style={styles.artistName}>{artistA?.name}</ThemedText>
-            <ThemedText style={styles.fansCount}>{formatNumber(artistA?.nb_fan || 0)}</ThemedText>
+            <View style={styles.scoreContainer}>
+              <ThemedText style={styles.fansCount}>{formatNumber(artistA?.nb_fan || 0)}</ThemedText>
+            </View>
             <ThemedText style={styles.fansLabel}>auditeurs mensuels</ThemedText>
           </View>
         </TouchableOpacity>
@@ -390,18 +393,20 @@ export default function HigherOrLowerGameScreen() {
         {/* Séparateur VS */}
         <View style={styles.vsContainer}>
           <View style={styles.vsLine} />
-          <ThemedText style={styles.vsText}>VS</ThemedText>
+          <View style={styles.vsCircle}>
+            <ThemedText style={styles.vsText}>VS</ThemedText>
+          </View>
           <View style={styles.vsLine} />
         </View>
 
         {/* Zone Inférieure (Artiste B) - Clic si B > A (PLUS) */}
         <TouchableOpacity 
-          style={[styles.clickableArea, styles.areaBottom]} 
+          style={styles.clickableArea} 
           activeOpacity={0.8}
           onPress={() => handleGuess("higher")}
           disabled={gameState !== "playing"}
         >
-          <View style={styles.artistContent}>
+          <View style={styles.stylizedCard}>
             <View style={styles.profileBubble}>
               <Image source={{ uri: artistB?.picture_xl }} style={styles.bubbleImage} />
               {isCorrect !== null && (
@@ -442,35 +447,47 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.primary.fondPremier,
   },
-  gameArea: {
-    flex: 1,
-    position: "relative",
-  },
-  clickableArea: {
+  centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#1A2B2C", // Bleu terne
+    backgroundColor: Colors.primary.fondPremier,
   },
-  areaTop: {
-    borderBottomWidth: 0,
+  gameArea: {
+    flex: 1,
+    paddingVertical: 10,
   },
-  areaBottom: {
-    borderTopWidth: 0,
+  clickableArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  stylizedCard: {
+    flex: 1,
+    backgroundColor: "#1A2B2C",
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   artistContent: {
     alignItems: "center",
     width: "100%",
-    paddingHorizontal: 20,
   },
   profileBubble: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     borderWidth: 3,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(79, 209, 217, 0.3)",
     overflow: "hidden",
-    marginBottom: 15,
+    marginBottom: 10,
     backgroundColor: "#2A3B3C",
     position: "relative",
   },
@@ -480,74 +497,96 @@ const styles = StyleSheet.create({
   },
   feedbackOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
   artistName: {
     color: "white",
-    fontSize: 28,
-    fontFamily: "Author-Bold", // Utilisation de la police Author
+    fontSize: 24,
+    fontFamily: "Author-Bold",
     textAlign: "center",
-    marginBottom: 5,
+    marginBottom: 2,
   },
   fansCount: {
-    color: "#4FD1D9", // Bleu clair (Primary survol ou similaire)
-    fontSize: 36,
+    color: "#4FD1D9",
+    fontSize: 32,
     fontWeight: "bold",
     textAlign: "center",
+    paddingTop: 8, // Correction du rognage
+    lineHeight: 38,
   },
   fansCountHidden: {
     color: "white",
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: "bold",
-    opacity: 0.5,
+    opacity: 0.3,
+    paddingTop: 8,
   },
   fansLabel: {
-    color: "#999",
-    fontSize: 14,
+    color: "#667A7B",
+    fontSize: 12,
     textTransform: "uppercase",
-    letterSpacing: 1,
-    marginTop: 2,
+    letterSpacing: 1.2,
+    marginTop: 0,
   },
   scoreContainer: {
-    height: 45,
+    height: 44,
     justifyContent: "center",
+    alignItems: "center",
   },
   vsContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: 40,
-    paddingHorizontal: 30,
-    backgroundColor: "#1A2B2C",
+    height: 24,
+    paddingHorizontal: 40,
   },
   vsLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.3)",
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  vsCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary.fondPremier,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 8,
   },
   vsText: {
     color: "white",
-    fontSize: 18,
+    fontSize: 12,
     fontFamily: "Bold",
-    marginHorizontal: 15,
+    opacity: 0.8,
   },
   streakBadge: {
     position: "absolute",
-    top: 20,
-    right: 20,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    top: 25,
+    right: 30,
+    backgroundColor: "rgba(0,0,0,0.7)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(79, 209, 217, 0.2)",
+    zIndex: 10,
   },
   streakText: {
     color: "#4FD1D9",
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "bold",
   },
-  // ... (rest of styles for loading/result remain similar)
+  feedbackContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 5,
+  },
   resultContent: {
     flex: 1,
     justifyContent: "center",
