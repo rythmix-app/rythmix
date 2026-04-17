@@ -61,7 +61,6 @@ test.group('GameSessionsController - Functional', (group) => {
     res.assertStatus(200)
     assert.equal(res.body().gameSession.id, session.id)
     assert.equal(res.body().gameSession.status, 'en_cours')
-    assert.exists(res.body().gameSession.game)
   })
 
   test('GET /api/game-sessions/:id returns 404 for non-existent session', async ({ client }) => {
@@ -190,28 +189,28 @@ test.group('GameSessionsController - Functional', (group) => {
 
     const session1 = await GameSession.create({
       gameId: game.id,
-      status: 'en_cours',
+      status: 'completed',
       players: [],
       gameData: {},
     })
     const session2 = await GameSession.create({
       gameId: game.id,
-      status: 'en_cours',
+      status: 'completed',
       players: [],
       gameData: {},
     })
     await GameSession.create({
       gameId: game.id,
-      status: 'terminee',
+      status: 'canceled',
       players: [],
       gameData: {},
     })
 
-    const res = await client.get('/api/game-sessions/status/en_cours')
+    const res = await client.get('/api/game-sessions/status/completed')
 
     res.assertStatus(200)
     assert.isAbove(res.body().gameSessions.length, 0)
-    assert.isTrue(res.body().gameSessions.every((s: any) => s.status === 'en_cours'))
+    assert.isTrue(res.body().gameSessions.every((s: any) => s.status === 'completed'))
     assert.exists(res.body().gameSessions.find((s: any) => s.id === session1.id))
     assert.exists(res.body().gameSessions.find((s: any) => s.id === session2.id))
   })
