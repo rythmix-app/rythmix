@@ -197,7 +197,11 @@ export default class GameSessionsController {
   @ApiResponse({ status: 500, description: 'Error while fetching game sessions' })
   public async getByGame({ params, response }: HttpContext) {
     try {
-      const gameSessions = await this.gameSessionService.getByGameId(params.gameId)
+      const gameId = Number(params.gameId)
+      if (Number.isNaN(gameId)) {
+        return response.status(400).json({ message: 'Invalid gameId' })
+      }
+      const gameSessions = await this.gameSessionService.getByGameId(gameId)
       return response.json({ gameSessions })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game sessions' })
@@ -238,6 +242,9 @@ export default class GameSessionsController {
     try {
       const userId = auth.user!.id
       const gameId = Number(params.gameId)
+      if (Number.isNaN(gameId)) {
+        return response.status(400).json({ message: 'Invalid gameId' })
+      }
       const status = request.qs().status as string | undefined
       if (
         status &&
@@ -278,6 +285,9 @@ export default class GameSessionsController {
     try {
       const userId = auth.user!.id
       const gameId = Number(params.gameId)
+      if (Number.isNaN(gameId)) {
+        return response.status(400).json({ message: 'Invalid gameId' })
+      }
       const stats = await this.gameSessionService.getGameStats(userId, gameId)
       return response.json(stats)
     } catch (error) {
@@ -299,6 +309,9 @@ export default class GameSessionsController {
     try {
       const userId = auth.user!.id
       const gameId = Number(params.gameId)
+      if (Number.isNaN(gameId)) {
+        return response.status(400).json({ message: 'Invalid gameId' })
+      }
       const gameSession = await this.gameSessionService.getMyActiveSessionByGameId(userId, gameId)
       return response.json({ gameSession: gameSession ?? null })
     } catch (error) {
@@ -320,6 +333,9 @@ export default class GameSessionsController {
   @ApiResponse({ status: 500, description: 'Error while fetching game sessions' })
   public async getByStatus({ params, response }: HttpContext) {
     try {
+      if (!Object.values(GameSessionStatus).includes(params.status as GameSessionStatus)) {
+        return response.status(400).json({ message: 'Invalid status' })
+      }
       const gameSessions = await this.gameSessionService.getByStatus(params.status)
       return response.json({ gameSessions })
     } catch (error) {
