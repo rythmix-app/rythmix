@@ -217,7 +217,7 @@ export default class GameSessionsController {
     try {
       const userId = auth.user!.id
       const status = request.qs().status as string | undefined
-      const gameSessions = await this.gameSessionService.getMySessionsByUserId(userId, status)
+      const gameSessions = await this.gameSessionService.getByUserId(userId, status)
       return response.json({ gameSessions })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game sessions' })
@@ -251,7 +251,7 @@ export default class GameSessionsController {
       }
       const page = Math.max(1, Number(request.qs().page) || 1)
       const limit = Math.min(100, Math.max(1, Number(request.qs().limit) || 20))
-      const gameSessions = await this.gameSessionService.getMyGameHistory(
+      const gameSessions = await this.gameSessionService.getGameHistory(
         userId,
         gameId,
         status,
@@ -278,7 +278,7 @@ export default class GameSessionsController {
     try {
       const userId = auth.user!.id
       const gameId = Number(params.gameId)
-      const stats = await this.gameSessionService.getMyGameStats(userId, gameId)
+      const stats = await this.gameSessionService.getGameStats(userId, gameId)
       return response.json(stats)
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game stats' })
