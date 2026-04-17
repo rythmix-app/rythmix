@@ -139,6 +139,7 @@ export interface HigherOrLowerRound {
 }
 
 export interface HigherOrLowerGameData {
+  mode?: "artist" | "album";
   totalRounds: number;
   streak: number;
   bestStreak: number;

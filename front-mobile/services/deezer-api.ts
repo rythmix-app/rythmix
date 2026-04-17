@@ -444,6 +444,10 @@ class DeezerAPI {
     return this.getGenreTopArtists(0, limit);
   }
 
+  async getTopAlbums(limit: number = 20): Promise<DeezerAlbumsResponse> {
+    return this.getGenreAlbums(0, limit);
+  }
+
   async getArtistAlbums(
     artistId: number,
     limit: number = 25,

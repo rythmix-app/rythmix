@@ -10,6 +10,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import Button from "@/components/Button";
 import Header from "@/components/Header";
+import ConfirmationModal from "@/components/ConfirmationModal";
 import RulesModal from "@/components/games/RulesModal";
 import { Colors } from "@/constants/Colors";
 import { useGameIndex } from "@/hooks/useGameIndex";
@@ -21,9 +22,13 @@ export default function HigherOrLowerIndexScreen() {
     error,
     hasSavedGame,
     hasPlayedBefore,
+    isResumeModalVisible,
+    setIsResumeModalVisible,
     isRulesModalVisible,
     setIsRulesModalVisible,
     handleStartGame,
+    handleConfirmResume,
+    handleStartNewGame,
   } = useGameIndex({
     gameName: "plus ou moins",
     gamePath: "/games/plusoumoins/game",
@@ -84,6 +89,29 @@ export default function HigherOrLowerIndexScreen() {
           </ThemedText>
         </View>
 
+        {hasSavedGame && (
+          <TouchableOpacity
+            style={styles.resumeCard}
+            onPress={() => handleStartGame(true)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.resumeInfo}>
+              <MaterialIcons
+                name="history"
+                size={24}
+                color={Colors.primary.survol}
+              />
+              <ThemedText style={styles.resumeText}>
+                Vous avez une partie en cours
+              </ThemedText>
+            </View>
+            <View style={styles.resumeBadge}>
+              <ThemedText style={styles.resumeBadgeText}>
+                Partie en cours
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {hasPlayedBefore === false && (
           <>
@@ -151,11 +179,27 @@ export default function HigherOrLowerIndexScreen() {
         )}
 
         <View style={styles.buttonContainer}>
-          <Button
-            title="Commencer à jouer"
-            onPress={() => handleStartGame(false)}
-            style={styles.playButton}
-          />
+          {hasSavedGame ? (
+            <>
+              <Button
+                title="Reprendre la partie"
+                onPress={() => handleStartGame(true)}
+                style={styles.playButton}
+              />
+              <Button
+                title="Nouvelle partie"
+                variant="outline"
+                onPress={() => handleStartGame(false)}
+                style={styles.newGameButton}
+              />
+            </>
+          ) : (
+            <Button
+              title="Commencer à jouer"
+              onPress={() => handleStartGame(false)}
+              style={styles.playButton}
+            />
+          )}
         </View>
 
         {hasPlayedBefore && (
@@ -185,6 +229,19 @@ export default function HigherOrLowerIndexScreen() {
           { text: "Mauvaise réponse : la partie se termine" },
         ]}
       />
+
+      <ConfirmationModal
+        visible={isResumeModalVisible}
+        title="Partie en cours"
+        message="Vous avez déjà une partie entamée. Souhaitez-vous la reprendre ou en commencer une nouvelle ?"
+        confirmLabel="Reprendre la partie"
+        secondaryLabel="Nouvelle partie"
+        onSecondary={handleStartNewGame}
+        cancelLabel="Annuler"
+        onConfirm={handleConfirmResume}
+        onCancel={() => setIsResumeModalVisible(false)}
+        variant="danger"
+      />
     </>
   );
 }
@@ -212,6 +269,39 @@ const styles = StyleSheet.create({
     color: "#999",
     textAlign: "center",
     fontSize: 16,
+  },
+  resumeCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  resumeInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  resumeText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  resumeBadge: {
+    backgroundColor: Colors.primary.survol,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  resumeBadgeText: {
+    color: Colors.primary.fondPremier,
+    fontSize: 10,
+    fontWeight: "bold",
+    textTransform: "uppercase",
   },
   section: {
     marginBottom: 30,
@@ -255,6 +345,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   playButton: {
+    paddingVertical: 16,
+  },
+  newGameButton: {
     paddingVertical: 16,
   },
   loadingContainer: {
