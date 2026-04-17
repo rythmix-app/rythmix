@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto'
 import { hasMany } from '@adonisjs/lucid/orm'
 import LikedTrack from '#models/liked_track'
 import FavoriteGame from '#models/favorite_game'
+import UserIntegration from '#models/user_integration'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import { ApiProperty } from '@foadonis/openapi/decorators'
 
@@ -75,6 +76,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @hasMany(() => FavoriteGame)
   declare favoriteGames: HasMany<typeof FavoriteGame>
+
+  @hasMany(() => UserIntegration)
+  declare integrations: HasMany<typeof UserIntegration>
 
   @column({ serializeAs: null })
   declare verificationToken: string | null
