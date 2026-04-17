@@ -12,6 +12,7 @@ import Button from "@/components/Button";
 import Header from "@/components/Header";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import RulesModal from "@/components/games/RulesModal";
+import GameHistory from "@/components/games/GameHistory";
 import { Colors } from "@/constants/Colors";
 import { useGameIndex } from "@/hooks/useGameIndex";
 
@@ -244,6 +245,8 @@ export default function BlindtestIndexScreen() {
             </ThemedText>
           </TouchableOpacity>
         )}
+
+        <GameHistory gameId={gameId} gameTitle="Blind Test" />
       </ScrollView>
 
       <RulesModal
