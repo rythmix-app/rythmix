@@ -435,13 +435,36 @@ export function useTracklistGame() {
         {
           text: "Oui",
           style: "destructive",
-          onPress: () => {
-            void submitAnswers();
+          onPress: async () => {
+            setIsTimerRunning(false);
+            try {
+              if (sessionId) {
+                await updateGameSession(sessionId, {
+                  status: "canceled",
+                  gameData: {
+                    answers: validatedAnswers,
+                    score: foundTrackIds.size,
+                    timeElapsed: GAME_DURATION - timeRemaining,
+                    completedAt: new Date().toISOString(),
+                  } as unknown as Record<string, unknown>,
+                });
+              }
+              if (gameId) await deleteGameState(gameId);
+            } catch (err) {
+              console.error("Failed to abandon game:", err);
+            }
+            setGameState("result");
           },
         },
       ],
     );
-  }, [submitAnswers]);
+  }, [
+    sessionId,
+    gameId,
+    validatedAnswers,
+    foundTrackIds,
+    timeRemaining,
+  ]);
 
   const resetGame = useCallback(() => {
     if (gameId) {
