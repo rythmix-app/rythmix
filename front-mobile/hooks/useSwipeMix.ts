@@ -64,8 +64,40 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         // Récupérer les morceaux tendances
         const response = await deezerAPI.getTopTracks(initialLimit, indexToUse);
 
-        // Convertir en cartes
-        const newCards = deezerTracksToCardData(response.data);
+        // Récupérer les genres et les détails des albums (pour avoir le genre_id) en parallèle
+        // Note: deezerAPI utilise déjà le cacheManager
+        const [genresResponse, ...albums] = await Promise.all([
+          deezerAPI.getGenres(),
+          ...response.data.map((track) => deezerAPI.getAlbum(track.album.id)),
+        ]);
+
+        // Créer les mappings pour l'adapter
+        const genreMapping: Record<number, string> = {};
+        genresResponse.data.forEach((genre) => {
+          genreMapping[genre.id] = genre.name.toUpperCase();
+        });
+
+        const albumGenresMapping: Record<number, string[]> = {};
+        albums.forEach((album) => {
+          if (album) {
+            // Si l'album a une liste de genres, on les récupère tous
+            if (album.genres && album.genres.data.length > 0) {
+              albumGenresMapping[album.id] = album.genres.data.map((g) =>
+                g.name.toUpperCase(),
+              );
+            } else if (album.genre_id && genreMapping[album.genre_id]) {
+              // Fallback sur le genre_id principal si la liste est absente
+              albumGenresMapping[album.id] = [genreMapping[album.genre_id]];
+            }
+          }
+        });
+
+        // Convertir en cartes avec les informations de genre
+        const newCards = deezerTracksToCardData(
+          response.data,
+          genreMapping,
+          albumGenresMapping,
+        );
 
         // Vérifier s'il y a encore des musiques à charger
         setHasMoreTracks(response.data.length === initialLimit);

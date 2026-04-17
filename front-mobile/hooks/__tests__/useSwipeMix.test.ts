@@ -113,29 +113,49 @@ describe("useSwipeMix", () => {
 
     // Setup default mocks
     mockUseAudioPlayer.mockReturnValue(mockAudioPlayer);
-    mockDeezerTracksToCardData.mockImplementation((tracks) => {
-      const colors: ("darkGreen" | "cyan" | "lightBlue")[] = [
-        "darkGreen",
-        "cyan",
-        "lightBlue",
-      ];
-      return tracks.map((track, index) => ({
-        id: track.id.toString(),
-        title: track.title,
-        artist: track.artist.name,
-        album: track.album.title,
-        coverImage: track.album.cover_big,
-        tags: {
-          primary: "MUSIQUE",
-          secondary: "DÉCOUVERTE",
-        },
-        color: colors[index % colors.length],
-      }));
-    });
+    mockDeezerTracksToCardData.mockImplementation(
+      (tracks, genreMapping, albumGenresMapping) => {
+        const colors: ("darkGreen" | "cyan" | "lightBlue")[] = [
+          "darkGreen",
+          "cyan",
+          "lightBlue",
+        ];
+        return tracks.map((track, index) => {
+          const albumGenres = albumGenresMapping?.[track.album.id];
+          const genreName = albumGenres?.[0] || "MUSIQUE";
+          const secondaryGenreName = albumGenres?.[1] || "DÉCOUVERTE";
+
+          return {
+            id: track.id.toString(),
+            title: track.title,
+            artist: track.artist.name,
+            album: track.album.title,
+            coverImage: track.album.cover_big,
+            tags: {
+              primary: genreName,
+              secondary: secondaryGenreName,
+            },
+            color: colors[index % colors.length],
+          };
+        });
+      },
+    );
     mockDeezerAPI.getTopTracks.mockResolvedValue({
       data: mockTracks,
       total: mockTracks.length,
     });
+    mockDeezerAPI.getGenres.mockResolvedValue({
+      data: [
+        { id: 132, name: "Pop" } as any,
+        { id: 116, name: "Rock" } as any,
+      ],
+    });
+    mockDeezerAPI.getAlbum.mockImplementation(async (id) => ({
+      id,
+      genre_id: id % 2 === 0 ? 132 : 116,
+      title: `Album ${id}`,
+    } as any));
+
     mockCreateMyLikedTrack.mockResolvedValue({
       id: "liked-track-uuid",
       userId: "user-1",
