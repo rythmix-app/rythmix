@@ -458,13 +458,7 @@ export function useTracklistGame() {
         },
       ],
     );
-  }, [
-    sessionId,
-    gameId,
-    validatedAnswers,
-    foundTrackIds,
-    timeRemaining,
-  ]);
+  }, [sessionId, gameId, validatedAnswers, foundTrackIds, timeRemaining]);
 
   const resetGame = useCallback(() => {
     if (gameId) {

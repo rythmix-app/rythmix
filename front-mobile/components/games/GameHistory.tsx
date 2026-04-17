@@ -182,9 +182,7 @@ export function HistoryRow({ session, currentUserId }: HistoryRowProps) {
             style={[
               styles.rowStatus,
               {
-                color: isCompleted
-                  ? Colors.game.success
-                  : Colors.game.error,
+                color: isCompleted ? Colors.game.success : Colors.game.error,
               },
             ]}
           >
