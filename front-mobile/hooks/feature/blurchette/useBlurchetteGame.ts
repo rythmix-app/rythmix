@@ -363,7 +363,7 @@ export function useBlurchetteGame() {
             try {
               if (sessionId) {
                 await updateGameSession(sessionId, {
-                  status: "completed",
+                  status: "canceled",
                   gameData: {
                     foundCorrect: false,
                     finalBlurLevel: blurLevel,

@@ -598,7 +598,7 @@ export function useBlindtestGame() {
                   0,
                 );
                 await updateGameSession(sessionId, {
-                  status: "completed",
+                  status: "canceled",
                   gameData: {
                     rounds: completedRounds,
                     totalScore,
