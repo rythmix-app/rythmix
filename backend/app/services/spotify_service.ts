@@ -24,6 +24,8 @@ interface SpotifyRefreshResponse {
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token'
 const REFRESH_LEEWAY_SECONDS = 60
+const MAX_RATE_LIMIT_RETRIES = 2
+const MAX_RETRY_DELAY_SECONDS = 30
 
 export class SpotifyService {
   async findByUserId(userId: string): Promise<UserIntegration | null> {
@@ -53,11 +55,10 @@ export class SpotifyService {
   }
 
   async unlink(userId: string): Promise<boolean> {
-    const deleted = await UserIntegration.query()
-      .where('userId', userId)
-      .where('provider', IntegrationProvider.SPOTIFY)
-      .delete()
-    return Number(deleted[0]) > 0
+    const integration = await this.findByUserId(userId)
+    if (!integration) return false
+    await integration.delete()
+    return true
   }
 
   async getValidAccessToken(userId: string): Promise<string> {
@@ -155,14 +156,35 @@ export class SpotifyService {
       url.searchParams.set(key, value)
     }
 
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt++) {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
-    if (!response.ok) {
-      throw new Error(`Spotify API error ${response.status} on ${path}`)
+      if (response.status === 429) {
+        if (attempt === MAX_RATE_LIMIT_RETRIES) {
+          throw new Error(
+            `Spotify API rate limited on ${path} after ${MAX_RATE_LIMIT_RETRIES} retries`
+          )
+        }
+        const retryAfter = Number(response.headers.get('Retry-After'))
+        const delaySeconds = Math.min(
+          Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 2 ** attempt,
+          MAX_RETRY_DELAY_SECONDS
+        )
+        await this.sleep(delaySeconds * 1000)
+        continue
+      }
+
+      if (!response.ok) {
+        throw new Error(`Spotify API error ${response.status} on ${path}`)
+      }
+
+      return response.json()
     }
+  }
 
-    return response.json()
+  protected sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 }

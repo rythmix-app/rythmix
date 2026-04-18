@@ -314,4 +314,53 @@ test.group('SpotifyService - API fetch', (group) => {
       await service.getTopTracks(user.id)
     }, /Spotify API error 401/)
   })
+
+  test('spotifyGet retries once on 429 respecting Retry-After and succeeds', async ({ assert }) => {
+    const user = await createLinkedUser('rate_limited')
+    let calls = 0
+    const sleepCalls: number[] = []
+
+    // Override sleep to avoid actual delay in tests
+    ;(service as unknown as { sleep: (ms: number) => Promise<void> }).sleep = async (
+      ms: number
+    ) => {
+      sleepCalls.push(ms)
+    }
+
+    globalThis.fetch = async () => {
+      calls += 1
+      if (calls === 1) {
+        return new Response('{"error":{"status":429}}', {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Retry-After': '1' },
+        })
+      }
+      return new Response(JSON.stringify({ items: [{ id: 'ok' }] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    const data = (await service.getTopTracks(user.id)) as {
+      items: { id: string }[]
+    }
+    assert.equal(calls, 2)
+    assert.equal(data.items[0].id, 'ok')
+    assert.deepEqual(sleepCalls, [1000])
+  })
+
+  test('spotifyGet gives up after exhausting 429 retries', async ({ assert }) => {
+    const user = await createLinkedUser('rate_limited_exhaust')
+    ;(service as unknown as { sleep: (ms: number) => Promise<void> }).sleep = async () => {}
+
+    globalThis.fetch = async () =>
+      new Response('{"error":{"status":429}}', {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    await assert.rejects(async () => {
+      await service.getTopTracks(user.id)
+    }, /rate limited/)
+  })
 })

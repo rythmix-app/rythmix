@@ -6,58 +6,47 @@ import { createAuthenticatedUser } from '../utils/auth_helpers.js'
 import { deleteUserIntegrations } from '#tests/utils/user_integration_helpers'
 import { SpotifyService } from '#services/spotify_service'
 
-test.group('SpotifyAuthController - Redirect guards', (group) => {
+test.group('SpotifyAuthController - Init guards', (group) => {
   deleteUserIntegrations(group)
 
-  test('GET /api/auth/spotify/redirect returns 401 without token', async ({ client }) => {
+  test('POST /api/auth/spotify/init returns 401 without auth', async ({ client }) => {
     const response = await client
-      .get('/api/auth/spotify/redirect')
-      .qs({ returnUrl: 'frontmobile://spotify-linked' })
-      .redirects(0)
+      .post('/api/auth/spotify/init')
+      .json({ returnUrl: 'frontmobile://spotify-linked' })
     response.assertStatus(401)
   })
 
-  test('GET /api/auth/spotify/redirect returns 401 with an invalid token', async ({ client }) => {
-    const response = await client
-      .get('/api/auth/spotify/redirect')
-      .qs({ token: 'oat_xxx_nope', returnUrl: 'frontmobile://spotify-linked' })
-      .redirects(0)
-    response.assertStatus(401)
+  test('POST /api/auth/spotify/init returns 422 when returnUrl is missing', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('spotify_init_no_return')
+    const response = await client.post('/api/auth/spotify/init').json({}).bearerToken(token)
+    response.assertStatus(422)
   })
 
-  test('GET /api/auth/spotify/redirect returns 400 when returnUrl is missing', async ({
+  test('POST /api/auth/spotify/init returns 400 when returnUrl scheme is not allowed', async ({
     client,
   }) => {
-    const { token } = await createAuthenticatedUser('spotify_redirect_no_return')
-    const response = await client.get('/api/auth/spotify/redirect').qs({ token }).redirects(0)
+    const { token } = await createAuthenticatedUser('spotify_init_bad_scheme')
+    const response = await client
+      .post('/api/auth/spotify/init')
+      .json({ returnUrl: 'https://evil.example.com/callback' })
+      .bearerToken(token)
     response.assertStatus(400)
   })
 
-  test('GET /api/auth/spotify/redirect returns 400 when returnUrl scheme is not allowed', async ({
-    client,
-  }) => {
-    const { token } = await createAuthenticatedUser('spotify_redirect_bad_scheme')
-    const response = await client
-      .get('/api/auth/spotify/redirect')
-      .qs({ token, returnUrl: 'https://evil.example.com/callback' })
-      .redirects(0)
-    response.assertStatus(400)
-  })
-
-  test('GET /api/auth/spotify/redirect issues a 302 to Spotify with valid input', async ({
+  test('POST /api/auth/spotify/init returns 200 with Spotify authorize URL', async ({
     client,
     assert,
   }) => {
-    const { token } = await createAuthenticatedUser('spotify_redirect_ok')
+    const { token } = await createAuthenticatedUser('spotify_init_ok')
     const response = await client
-      .get('/api/auth/spotify/redirect')
-      .qs({ token, returnUrl: 'frontmobile://spotify-linked' })
-      .redirects(0)
+      .post('/api/auth/spotify/init')
+      .json({ returnUrl: 'frontmobile://spotify-linked' })
+      .bearerToken(token)
 
-    response.assertStatus(302)
-    const location = response.headers().location as string
-    assert.include(location, 'accounts.spotify.com')
-    assert.include(location, 'state=')
+    response.assertStatus(200)
+    const body = response.body() as { authorizeUrl: string }
+    assert.include(body.authorizeUrl, 'accounts.spotify.com')
+    assert.include(body.authorizeUrl, 'state=')
   })
 })
 

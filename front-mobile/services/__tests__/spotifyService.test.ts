@@ -1,22 +1,24 @@
 process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
 
 import {
-  buildSpotifyAuthUrl,
   disconnectSpotify,
   getRecentlyPlayed,
   getSpotifyStatus,
   getTopArtists,
   getTopTracks,
+  initSpotifyAuth,
 } from "../spotifyService";
-import { del, get } from "../api";
+import { del, get, post } from "../api";
 
 jest.mock("../api", () => ({
   get: jest.fn(),
   del: jest.fn(),
+  post: jest.fn(),
 }));
 
 const mockGet = get as jest.MockedFunction<typeof get>;
 const mockDel = del as jest.MockedFunction<typeof del>;
+const mockPost = post as jest.MockedFunction<typeof post>;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -70,10 +72,14 @@ describe("spotifyService", () => {
     );
   });
 
-  it("buildSpotifyAuthUrl appends the user token and returnUrl", () => {
-    const url = buildSpotifyAuthUrl("my-token", "frontmobile://spotify-linked");
-    expect(url).toContain("/api/auth/spotify/redirect");
-    expect(url).toContain("token=my-token");
-    expect(url).toContain("returnUrl=frontmobile%3A%2F%2Fspotify-linked");
+  it("initSpotifyAuth posts the returnUrl to /api/auth/spotify/init", async () => {
+    mockPost.mockResolvedValueOnce({
+      authorizeUrl: "https://accounts.spotify.com/authorize?state=abc",
+    });
+    const result = await initSpotifyAuth("frontmobile://spotify-linked");
+    expect(mockPost).toHaveBeenCalledWith("/api/auth/spotify/init", {
+      returnUrl: "frontmobile://spotify-linked",
+    });
+    expect(result.authorizeUrl).toContain("accounts.spotify.com");
   });
 });

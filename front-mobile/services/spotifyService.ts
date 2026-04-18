@@ -1,4 +1,4 @@
-import { BASE_URL, del, get } from "./api";
+import { del, get, post } from "./api";
 import {
   SpotifyArtist,
   SpotifyPaged,
@@ -58,13 +58,11 @@ export const getRecentlyPlayed = (
     `/api/me/spotify/recently-played${buildQuery({ limit: options.limit })}`,
   );
 
-export const buildSpotifyAuthUrl = (
-  userToken: string,
+export interface SpotifyInitResponse {
+  authorizeUrl: string;
+}
+
+export const initSpotifyAuth = (
   returnUrl: string,
-): string => {
-  const params = new URLSearchParams({
-    token: userToken,
-    returnUrl,
-  });
-  return `${BASE_URL ?? ""}/api/auth/spotify/redirect?${params.toString()}`;
-};
+): Promise<SpotifyInitResponse> =>
+  post<SpotifyInitResponse>("/api/auth/spotify/init", { returnUrl });

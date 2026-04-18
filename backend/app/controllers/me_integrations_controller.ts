@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
+import logger from '@adonisjs/core/services/logger'
 import { ApiOperation, ApiResponse, ApiSecurity } from '@foadonis/openapi/decorators'
 import { SpotifyService } from '#services/spotify_service'
 import { spotifyRecentlyPlayedValidator, spotifyTopValidator } from '#validators/spotify_validator'
@@ -39,7 +40,7 @@ export default class MeIntegrationsController {
       const data = await this.spotifyService.getTopTracks(user.id, qs)
       return response.ok(data)
     } catch (error) {
-      return this.handleSpotifyError(error, response)
+      return this.handleSpotifyError(error, response, { userId: user.id, path: 'top-tracks' })
     }
   }
 
@@ -56,7 +57,7 @@ export default class MeIntegrationsController {
       const data = await this.spotifyService.getTopArtists(user.id, qs)
       return response.ok(data)
     } catch (error) {
-      return this.handleSpotifyError(error, response)
+      return this.handleSpotifyError(error, response, { userId: user.id, path: 'top-artists' })
     }
   }
 
@@ -75,7 +76,10 @@ export default class MeIntegrationsController {
       const data = await this.spotifyService.getRecentlyPlayed(user.id, qs)
       return response.ok(data)
     } catch (error) {
-      return this.handleSpotifyError(error, response)
+      return this.handleSpotifyError(error, response, {
+        userId: user.id,
+        path: 'recently-played',
+      })
     }
   }
 
@@ -95,13 +99,18 @@ export default class MeIntegrationsController {
     return response.ok({ message: 'Spotify integration removed' })
   }
 
-  private handleSpotifyError(error: unknown, response: HttpContext['response']) {
+  private handleSpotifyError(
+    error: unknown,
+    response: HttpContext['response'],
+    context: { userId: string; path: string }
+  ) {
     if (error instanceof Error && error.message === 'Spotify integration not found') {
       return response.notFound({ message: error.message })
     }
     if (error instanceof Error && error.message === 'Spotify refresh token missing') {
       return response.unauthorized({ message: 'Spotify session expired, please reconnect' })
     }
+    logger.error({ err: error, ...context }, 'Spotify data fetch failed')
     return response.internalServerError({
       message: 'Failed to fetch Spotify data',
     })

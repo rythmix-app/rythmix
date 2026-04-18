@@ -1,13 +1,12 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { DateTime } from 'luxon'
-import { Secret } from '@adonisjs/core/helpers'
 import encryption from '@adonisjs/core/services/encryption'
 import logger from '@adonisjs/core/services/logger'
 import env from '#start/env'
-import User from '#models/user'
 import { inject } from '@adonisjs/core'
 import { SpotifyService } from '#services/spotify_service'
-import { ApiOperation, ApiResponse } from '@foadonis/openapi/decorators'
+import { ApiOperation, ApiResponse, ApiSecurity } from '@foadonis/openapi/decorators'
+import { spotifyInitValidator } from '#validators/spotify_validator'
 
 interface SpotifyState {
   userId: string
@@ -26,37 +25,30 @@ export default class SpotifyAuthController {
   @ApiOperation({
     summary: 'Initiate Spotify OAuth flow',
     description:
-      'Redirects the authenticated user to Spotify. Expects a Rythmix bearer token and a deep-link `returnUrl` as query params so the flow can be triggered from WebBrowser (no custom headers).',
+      'Returns a Spotify authorization URL that the mobile client opens in a WebBrowser. The Rythmix identity is taken from the Authorization header — never from the query string — so the token is not leaked to logs, proxies or browser history.',
   })
-  @ApiResponse({ status: 302, description: 'Redirect to Spotify authorization page' })
-  @ApiResponse({ status: 400, description: 'Missing or invalid returnUrl' })
-  @ApiResponse({ status: 401, description: 'Missing or invalid Rythmix token' })
-  async redirect({ ally, request, response }: HttpContext) {
-    const qs = request.qs()
-    const token = qs.token as string | undefined
-    const returnUrl = qs.returnUrl as string | undefined
+  @ApiSecurity('bearerAuth')
+  @ApiResponse({ status: 200, description: 'Authorization URL returned' })
+  @ApiResponse({ status: 400, description: 'Invalid returnUrl' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async init({ ally, auth, request, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const { returnUrl } = await request.validateUsing(spotifyInitValidator)
 
-    if (!token) {
-      return response.unauthorized({ message: 'Missing Rythmix token' })
-    }
-
-    if (!returnUrl || !this.isAllowedReturnUrl(returnUrl)) {
+    if (!this.isAllowedReturnUrl(returnUrl)) {
       return response.badRequest({ message: 'Invalid returnUrl' })
     }
 
-    const accessToken = await User.accessTokens.verify(new Secret(token))
-    if (!accessToken) {
-      return response.unauthorized({ message: 'Invalid Rythmix token' })
-    }
+    const state = this.encodeState(user.id, returnUrl)
 
-    const state = this.encodeState(accessToken.tokenableId as string, returnUrl)
-
-    return ally
+    const authorizeUrl = await ally
       .use('spotify')
       .stateless()
-      .redirect((req) => {
+      .redirectUrl((req) => {
         req.param('state', state)
       })
+
+    return response.ok({ authorizeUrl })
   }
 
   @ApiOperation({

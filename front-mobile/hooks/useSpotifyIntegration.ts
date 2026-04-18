@@ -2,12 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import {
-  buildSpotifyAuthUrl,
   disconnectSpotify,
   getSpotifyStatus,
+  initSpotifyAuth,
 } from "@/services/spotifyService";
 import { SpotifyStatus } from "@/types/spotify";
-import { useAuthStore } from "@/stores/authStore";
 
 export interface UseSpotifyIntegration {
   status: SpotifyStatus | null;
@@ -71,22 +70,10 @@ export function useSpotifyIntegration(): UseSpotifyIntegration {
   > => {
     setIsConnecting(true);
     try {
-      // Warm up the access token: a 401 here triggers the apiClient
-      // refresh flow and updates the Zustand store with a fresh token.
-      try {
-        await getSpotifyStatus();
-      } catch {
-        // Ignore — we only care about forcing a token refresh.
-      }
-
-      const currentToken = useAuthStore.getState().token;
-      if (!currentToken) {
-        setError("Session expired, please log in again");
-        return "error";
-      }
+      const { authorizeUrl } = await initSpotifyAuth(returnUrl);
 
       const result = await WebBrowser.openAuthSessionAsync(
-        buildSpotifyAuthUrl(currentToken, returnUrl),
+        authorizeUrl,
         returnUrl,
       );
 

@@ -54,7 +54,7 @@ router
           .post('/resend-verification', [AuthController, 'resendVerificationEmail'])
           .use(resendVerificationThrottle)
         router.get('/me', [AuthController, 'me']).use(middleware.auth())
-        router.get('/spotify/redirect', [SpotifyAuthController, 'redirect'])
+        router.post('/spotify/init', [SpotifyAuthController, 'init']).use(middleware.auth())
         router.get('/spotify/callback', [SpotifyAuthController, 'callback'])
       })
       .prefix('/auth')
