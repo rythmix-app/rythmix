@@ -54,4 +54,14 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   LIMITER_STORE: Env.schema.enum(['database', 'memory'] as const),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Spotify OAuth integration (@adonisjs/ally)
+  |----------------------------------------------------------
+  */
+  SPOTIFY_CLIENT_ID: Env.schema.string(),
+  SPOTIFY_CLIENT_SECRET: Env.schema.string(),
+  SPOTIFY_CALLBACK_URL: Env.schema.string(),
+  SPOTIFY_DEEP_LINK_SCHEME: Env.schema.string.optional(),
 })

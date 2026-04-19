@@ -1,4 +1,5 @@
 import GameSession from '#models/game_session'
+import { GameSessionStatus } from '#enums/game_session_status'
 
 export class GameSessionService {
   public async getAll() {
@@ -15,6 +16,25 @@ export class GameSessionService {
     players: any
     gameData: any
   }) {
+    const playerIds: string[] = Array.isArray(payload.players)
+      ? payload.players.map((p: any) => p.userId).filter(Boolean)
+      : []
+
+    for (const userId of playerIds) {
+      const existing = await GameSession.query()
+        .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+        .where('game_id', payload.gameId)
+        .where('status', GameSessionStatus.Active)
+        .first()
+
+      if (existing) {
+        return {
+          error: 'An active session already exists for this game',
+          status: 409,
+        }
+      }
+    }
+
     try {
       const gameSession = await GameSession.create(payload)
       await gameSession.load('game')
@@ -52,7 +72,22 @@ export class GameSessionService {
       }
     }
 
-    gameSession.merge(payload)
+    // Shallow JSON merge on gameData so partial updates from clients don't wipe
+    // existing top-level keys (e.g. album, genre, startedAt set at creation time).
+    const mergedPayload = { ...payload }
+    if (
+      payload.gameData !== undefined &&
+      payload.gameData !== null &&
+      gameSession.gameData &&
+      typeof gameSession.gameData === 'object' &&
+      !Array.isArray(gameSession.gameData) &&
+      typeof payload.gameData === 'object' &&
+      !Array.isArray(payload.gameData)
+    ) {
+      mergedPayload.gameData = { ...gameSession.gameData, ...payload.gameData }
+    }
+
+    gameSession.merge(mergedPayload)
     try {
       await gameSession.save()
       await gameSession.load('game')
@@ -98,6 +133,49 @@ export class GameSessionService {
 
   public async getByStatus(status: string) {
     return GameSession.query().where('status', status).preload('game')
+  }
+
+  public async getMySessionsByUserId(userId: string, status?: string) {
+    const query = GameSession.query()
+      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+      .preload('game')
+    if (status) {
+      query.where('status', status)
+    }
+    return query.orderBy('created_at', 'desc')
+  }
+
+  public async getMyGameHistory(
+    userId: string,
+    gameId: number,
+    status?: string,
+    page: number = 1,
+    limit: number = 20
+  ) {
+    const allowedStatuses = [GameSessionStatus.Completed, GameSessionStatus.Canceled]
+    const query = GameSession.query()
+      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+      .where('game_id', gameId)
+      .preload('game')
+      .orderBy('created_at', 'desc')
+
+    if (status) {
+      query.where('status', status)
+    } else {
+      query.whereIn('status', allowedStatuses)
+    }
+
+    return query.paginate(page, limit)
+  }
+
+  public async getMyActiveSessionByGameId(userId: string, gameId: number) {
+    return GameSession.query()
+      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+      .where('game_id', gameId)
+      .where('status', GameSessionStatus.Active)
+      .preload('game')
+      .orderBy('created_at', 'desc')
+      .first()
   }
 }
 

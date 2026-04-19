@@ -7,6 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
+import { Colors } from "@/constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 
 type ButtonVariant =
@@ -67,7 +68,10 @@ const Button: React.FC<ButtonProps> = ({
   );
 
   if (variant === "primary" || variant === "validate" || variant === "cancel") {
-    let gradientColors: [string, string] = ["#052E30", "#0D7377"];
+    let gradientColors: [string, string] = [
+      Colors.primary.CTADark,
+      Colors.primary.CTA,
+    ];
 
     if (variant === "validate") {
       gradientColors = ["#216E00", "#40D400"];
@@ -130,7 +134,7 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "#0D7377",
+    borderColor: Colors.primary.CTA,
   },
   // Sizes
   small: {
@@ -160,7 +164,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   outlineText: {
-    color: "#0D7377",
+    color: Colors.primary.CTA,
   },
   smallText: {
     fontSize: 14,

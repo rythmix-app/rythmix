@@ -1,23 +1,22 @@
 import { test } from '@japa/runner'
 import Achievement from '#models/achievement'
+import { AchievementType } from '#enums/achievement_type'
 import { AchievementService } from '#services/achievement_service'
-import testUtils from '@adonisjs/core/services/test_utils'
+import { deleteAchievement } from '#tests/utils/achievement_helpers'
 
 test.group('AchievementService - CRUD Operations', (group) => {
   let achievementService: AchievementService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAchievement(group)
 
   group.each.setup(async () => {
     achievementService = new AchievementService()
-    await testUtils.db().truncate()
   })
 
   test('createAchievement should create a new achievement', async ({ assert }) => {
     const result = await achievementService.createAchievement({
-      type: 'gold',
+      name: 'First Achievement',
+      type: 'gold' as AchievementType,
       description: 'First achievement',
     })
 
@@ -29,8 +28,8 @@ test.group('AchievementService - CRUD Operations', (group) => {
   })
 
   test('getAll should return all achievements', async ({ assert }) => {
-    const a1 = await Achievement.create({ type: 'a', description: 'one' })
-    const a2 = await Achievement.create({ type: 'b', description: 'two' })
+    const a1 = await Achievement.create({ type: 'a' as AchievementType, description: 'one' })
+    const a2 = await Achievement.create({ type: 'b' as AchievementType, description: 'two' })
 
     const all = await achievementService.getAll()
     assert.isAtLeast(all.length, 2)
@@ -39,7 +38,7 @@ test.group('AchievementService - CRUD Operations', (group) => {
   })
 
   test('getById should return achievement when found', async ({ assert }) => {
-    const a = await Achievement.create({ type: 'x', description: 'findme' })
+    const a = await Achievement.create({ type: 'x' as AchievementType, description: 'findme' })
     const found = await achievementService.getById(a.id)
     assert.isNotNull(found)
     assert.equal(found?.id, a.id)
@@ -51,10 +50,10 @@ test.group('AchievementService - CRUD Operations', (group) => {
   })
 
   test('updateAchievement should update when exists', async ({ assert }) => {
-    const a = await Achievement.create({ type: 'old', description: 'olddesc' })
+    const a = await Achievement.create({ type: 'old' as AchievementType, description: 'olddesc' })
     const result = await achievementService.updateAchievement(a.id, {
       description: 'newdesc',
-      type: 'new',
+      type: 'new' as AchievementType,
     })
     assert.instanceOf(result, Achievement)
     if (result instanceof Achievement) {
@@ -73,7 +72,7 @@ test.group('AchievementService - CRUD Operations', (group) => {
   })
 
   test('deleteAchievement should delete existing achievement', async ({ assert }) => {
-    const a = await Achievement.create({ type: 'del', description: 'todel' })
+    const a = await Achievement.create({ type: 'del' as AchievementType, description: 'todel' })
     const result = await achievementService.deleteAchievement(a.id)
     assert.equal(result.message, `Achievement with ID: ${a.id} deleted successfully`)
     const still = await Achievement.find(a.id)
@@ -96,7 +95,8 @@ test.group('AchievementService - CRUD Operations', (group) => {
 
     try {
       const result = await achievementService.createAchievement({
-        type: 'gold',
+        name: 'Dup Achievement',
+        type: 'gold' as AchievementType,
         description: 'dup',
       })
       assert.notInstanceOf(result, Achievement)
@@ -119,7 +119,8 @@ test.group('AchievementService - CRUD Operations', (group) => {
 
     try {
       const result = await achievementService.createAchievement({
-        type: 'x'.repeat(300),
+        name: 'Big Achievement',
+        type: 'x'.repeat(300) as AchievementType,
         description: 'big',
       })
       assert.notInstanceOf(result, Achievement)
@@ -188,7 +189,11 @@ test.group('AchievementService - CRUD Operations', (group) => {
 
     try {
       try {
-        await achievementService.createAchievement({ type: 'x', description: 'y' })
+        await achievementService.createAchievement({
+          name: 'Unknown Achievement',
+          type: 'x' as AchievementType,
+          description: 'y',
+        })
         // If we get here, the error was not thrown
         assert.fail('createAchievement did not rethrow unknown error')
       } catch (err: any) {
@@ -230,7 +235,8 @@ test.group('AchievementService - CRUD Operations', (group) => {
 
     try {
       const result = await achievementService.createAchievement({
-        type: 'mocked',
+        name: 'Mocked Achievement',
+        type: 'mocked' as AchievementType,
         description: 'mock',
       })
       // should return the fake object

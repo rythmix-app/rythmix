@@ -4,33 +4,77 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useEffect } from "react";
+import { useAuthStore } from "@/stores/authStore";
+import { ToastProvider } from "@/components/Toast";
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+  const [loaded, error] = useFonts({
+    Regular: require("../assets/fonts/Author-Regular.otf"),
+    Bold: require("../assets/fonts/Author-Bold.otf"),
+    Light: require("../assets/fonts/Author-Light.otf"),
+    Medium: require("../assets/fonts/Author-Medium.otf"),
+    Semibold: require("../assets/fonts/Author-Semibold.otf"),
+    Extralight: require("../assets/fonts/Author-Extralight.otf"),
   });
 
-  if (!loaded) {
+  const { isAuthenticated, isInitializing, checkAuth } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (isInitializing || !loaded) return;
+
+    const inAuthGroup = segments[0] === "auth";
+
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace("/auth/login");
+    } else if (isAuthenticated && inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [isAuthenticated, segments, isInitializing, loaded, router]);
+
+  useEffect(() => {
+    if ((loaded || error) && !isInitializing) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error, isInitializing]);
+
+  if (!loaded && !error) {
+    return null;
+  }
+
+  if (isInitializing) {
     return null;
   }
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="auth" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="+not-found"
-          options={{ headerShown: true, title: "Page introuvable" }}
-        />
-      </Stack>
-      <StatusBar style="auto" />
+      <ToastProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="auth" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="integrations" />
+          <Stack.Screen
+            name="+not-found"
+            options={{ headerShown: true, title: "Page introuvable" }}
+          />
+        </Stack>
+        <StatusBar style="auto" />
+      </ToastProvider>
     </ThemeProvider>
   );
 }

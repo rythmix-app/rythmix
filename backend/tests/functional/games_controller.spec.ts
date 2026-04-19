@@ -1,7 +1,7 @@
 import { test } from '@japa/runner'
 import Game from '#models/game'
 import User from '#models/user'
-import testUtils from '@adonisjs/core/services/test_utils'
+import { deleteGame } from '#tests/utils/game_helpers'
 
 // Helper function to create an admin user
 const makeAdminUser = () => {
@@ -15,17 +15,7 @@ const makeAdminUser = () => {
 }
 
 test.group('GamesController - CRUD Operations', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteGame(group)
 
   test('GET /api/games should return list of games', async ({ client, assert }) => {
     await Game.create({
@@ -157,17 +147,7 @@ test.group('GamesController - CRUD Operations', (group) => {
 })
 
 test.group('GamesController - Integration Scenarios', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteGame(group)
 
   test('Complete game lifecycle (create -> read -> update -> delete)', async ({
     client,
@@ -236,17 +216,7 @@ test.group('GamesController - Integration Scenarios', (group) => {
 })
 
 test.group('GamesController - Edge Cases', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteGame(group)
 
   test('POST /api/games should handle service errors gracefully', async ({ client, assert }) => {
     const admin = await User.create(makeAdminUser())

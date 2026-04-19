@@ -1,0 +1,114 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1 class="logo">RYTHMIX</h1>
+      <p class="subtitle">Back Office</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      @if (errorMessage) {
+        <div class="error-message">
+          <i class="fas fa-exclamation-circle"></i>
+          {{ errorMessage }}
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="email">
+          <i class="fas fa-envelope"></i>
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="votreemail@exemple.com"
+          [class.error]="
+            loginForm.get('email')?.invalid && loginForm.get('email')?.touched
+          "
+        />
+        @if (
+          loginForm.get("email")?.invalid && loginForm.get("email")?.touched
+        ) {
+          <span class="field-error">
+            @if (loginForm.get("email")?.errors?.["required"]) {
+              L'email est requis
+            }
+            @if (loginForm.get("email")?.errors?.["email"]) {
+              L'email n'est pas valide
+            }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">
+          <i class="fas fa-lock"></i>
+          Mot de passe
+        </label>
+        <div class="password-input">
+          <input
+            [type]="hidePassword ? 'password' : 'text'"
+            id="password"
+            formControlName="password"
+            placeholder="••••••••"
+            [class.error]="
+              loginForm.get('password')?.invalid &&
+              loginForm.get('password')?.touched
+            "
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="
+              hidePassword
+                ? 'Afficher le mot de passe'
+                : 'Masquer le mot de passe'
+            "
+          >
+            <i
+              class="fas"
+              [class.fa-eye]="hidePassword"
+              [class.fa-eye-slash]="!hidePassword"
+            ></i>
+          </button>
+        </div>
+        @if (
+          loginForm.get("password")?.invalid &&
+          loginForm.get("password")?.touched
+        ) {
+          <span class="field-error">
+            @if (loginForm.get("password")?.errors?.["required"]) {
+              Le mot de passe est requis
+            }
+            @if (loginForm.get("password")?.errors?.["minlength"]) {
+              Le mot de passe doit contenir au moins 8 caractères
+            }
+          </span>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="login-button"
+        [disabled]="loginForm.invalid || isLoading"
+      >
+        @if (isLoading) {
+          <i class="fas fa-spinner fa-spin"></i>
+          Connexion...
+        } @else {
+          <i class="fas fa-sign-in-alt"></i>
+          Se connecter
+        }
+      </button>
+
+      <div class="register-link">
+        <p>
+          Vous n'avez pas de compte ?
+          <a routerLink="/register">Créer un compte</a>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>

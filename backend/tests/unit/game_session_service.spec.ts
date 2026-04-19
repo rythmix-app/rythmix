@@ -2,7 +2,7 @@ import { test } from '@japa/runner'
 import GameSession from '#models/game_session'
 import { GameSessionService } from '#services/game_session_service'
 import Game from '#models/game'
-import testUtils from '@adonisjs/core/services/test_utils'
+import { deleteGameSession } from '#tests/utils/game_session_helpers'
 
 type ServiceError = { error: string; status: number }
 const isServiceError = (v: any): v is ServiceError =>
@@ -18,17 +18,10 @@ async function createTestGame(tag: string) {
 test.group('GameSessionService - Unit CRUD', (group) => {
   let service: GameSessionService
 
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteGameSession(group)
 
   group.each.setup(async () => {
     service = new GameSessionService()
-    await testUtils.db().truncate()
-  })
-
-  group.teardown(async () => {
-    await testUtils.db().truncate()
   })
 
   test('createGameSession should create a record successfully', async ({ assert }) => {
@@ -149,6 +142,45 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     if (updated instanceof GameSession) {
       assert.equal(updated.status, 'terminee')
       assert.equal(updated.players[0].score, 200)
+    }
+  })
+
+  test('updateGameSession merges gameData instead of replacing it', async ({ assert }) => {
+    const game = await createTestGame('merge_gamedata')
+    const session = await GameSession.create({
+      gameId: game.id,
+      status: 'en_cours',
+      players: [{ userId: 'user-1', status: 'actif', score: 0, expGained: 0, rank: 1 }],
+      gameData: {
+        album: { id: 42, title: 'Greatest Hits' },
+        genre: { id: 132, name: 'Pop' },
+        startedAt: '2026-04-10T12:00:00.000Z',
+        maxScore: 10,
+        score: 0,
+        answers: [],
+      },
+    })
+
+    const updated = await service.updateGameSession(session.id, {
+      status: 'terminee',
+      gameData: {
+        score: 7,
+        answers: [{ userInput: 'Track 1', isCorrect: true, matchedTrackId: 1 }],
+        completedAt: '2026-04-10T12:05:00.000Z',
+        timeElapsed: 300,
+      },
+    } as any)
+
+    assert.instanceOf(updated, GameSession)
+    if (updated instanceof GameSession) {
+      assert.deepEqual(updated.gameData.album, { id: 42, title: 'Greatest Hits' })
+      assert.deepEqual(updated.gameData.genre, { id: 132, name: 'Pop' })
+      assert.equal(updated.gameData.startedAt, '2026-04-10T12:00:00.000Z')
+      assert.equal(updated.gameData.maxScore, 10)
+      assert.equal(updated.gameData.score, 7)
+      assert.equal(updated.gameData.timeElapsed, 300)
+      assert.equal(updated.gameData.completedAt, '2026-04-10T12:05:00.000Z')
+      assert.lengthOf(updated.gameData.answers, 1)
     }
   })
 
@@ -322,6 +354,79 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     // Verify our created sessions are in the results
     assert.exists(sessions.find((s: any) => s.id === session1.id))
     assert.exists(sessions.find((s: any) => s.id === session2.id))
+  })
+
+  test('createGameSession returns 409 when active session exists for same user and game', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('conflict_active')
+    const userId = `user-conflict-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const result = await service.createGameSession({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    assert.notInstanceOf(result, GameSession)
+    if (isServiceError(result)) {
+      assert.equal(result.status, 409)
+      assert.match(result.error, /active session already exists/i)
+    }
+  })
+
+  test('createGameSession allows creation when existing session is completed', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('completed_ok')
+    const userId = `user-completed-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 100, expGained: 50, rank: 1 }],
+      gameData: {},
+    })
+
+    const result = await service.createGameSession({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    assert.instanceOf(result, GameSession)
+  })
+
+  test('createGameSession allows creation when existing session is canceled', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('canceled_ok')
+    const userId = `user-canceled-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'canceled',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const result = await service.createGameSession({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    assert.instanceOf(result, GameSession)
   })
 
   test('createGameSession rethrows on unknown DB error', async ({ assert }) => {

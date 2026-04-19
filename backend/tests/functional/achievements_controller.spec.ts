@@ -1,19 +1,15 @@
 import { test } from '@japa/runner'
 import Achievement from '#models/achievement'
-import testUtils from '@adonisjs/core/services/test_utils'
+import { AchievementType } from '#enums/achievement_type'
+import { createAuthenticatedUser } from '../utils/auth_helpers.js'
+import { deleteAchievement } from '#tests/utils/achievement_helpers'
 
 test.group('AchievementsController - CRUD Functional', (group) => {
-  group.setup(async () => {
-    await testUtils.db().truncate()
-  })
-
-  group.each.setup(async () => {
-    await testUtils.db().truncate()
-  })
+  deleteAchievement(group)
 
   test('GET /api/achievements should return list', async ({ client, assert }) => {
-    await Achievement.create({ type: 't1', description: 'd1' })
-    await Achievement.create({ type: 't2', description: 'd2' })
+    await Achievement.create({ type: 't1' as AchievementType, description: 'd1' })
+    await Achievement.create({ type: 't2' as AchievementType, description: 'd2' })
 
     const response = await client.get('/api/achievements')
     response.assertStatus(200)
@@ -23,7 +19,7 @@ test.group('AchievementsController - CRUD Functional', (group) => {
   })
 
   test('GET /api/achievements/:id should return details', async ({ client, assert }) => {
-    const a = await Achievement.create({ type: 'single', description: 'detail' })
+    const a = await Achievement.create({ type: 'single' as AchievementType, description: 'detail' })
     const response = await client.get(`/api/achievements/${a.id}`)
     response.assertStatus(200)
     const achievement = response.body().achievement
@@ -38,8 +34,9 @@ test.group('AchievementsController - CRUD Functional', (group) => {
   })
 
   test('POST /api/achievements should create achievement', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('create')
     const payload = { type: 'gold', description: 'created' }
-    const response = await client.post('/api/achievements').json(payload)
+    const response = await client.post('/api/achievements').bearerToken(token).json(payload)
     response.assertStatus(201)
     const created = response.body().achievement
     assert.equal(created.type, payload.type)
@@ -47,9 +44,11 @@ test.group('AchievementsController - CRUD Functional', (group) => {
   })
 
   test('PATCH /api/achievements/:id should update', async ({ client, assert }) => {
-    const a = await Achievement.create({ type: 'old', description: 'old' })
+    const { token } = await createAuthenticatedUser('update')
+    const a = await Achievement.create({ type: 'old' as AchievementType, description: 'old' })
     const response = await client
       .patch(`/api/achievements/${a.id}`)
+      .bearerToken(token)
       .json({ description: 'updated', type: 'new' })
     response.assertStatus(200)
     const updated = response.body().achievement
@@ -58,14 +57,19 @@ test.group('AchievementsController - CRUD Functional', (group) => {
   })
 
   test('PATCH non-existent should return 404', async ({ client }) => {
-    const response = await client.patch('/api/achievements/999999').json({ description: 'x' })
+    const { token } = await createAuthenticatedUser('update404')
+    const response = await client
+      .patch('/api/achievements/999999')
+      .bearerToken(token)
+      .json({ description: 'x' })
     response.assertStatus(404)
     response.assertBodyContains({ message: 'Achievement not found' })
   })
 
   test('DELETE /api/achievements/:id should remove achievement', async ({ client, assert }) => {
-    const a = await Achievement.create({ type: 'todel', description: 'd' })
-    const response = await client.delete(`/api/achievements/${a.id}`)
+    const { token } = await createAuthenticatedUser('delete')
+    const a = await Achievement.create({ type: 'todel' as AchievementType, description: 'd' })
+    const response = await client.delete(`/api/achievements/${a.id}`).bearerToken(token)
     response.assertStatus(200)
     response.assertBodyContains({ message: `Achievement with ID: ${a.id} deleted successfully` })
     const found = await Achievement.find(a.id)
@@ -73,7 +77,8 @@ test.group('AchievementsController - CRUD Functional', (group) => {
   })
 
   test('DELETE non-existent should return 404', async ({ client }) => {
-    const response = await client.delete('/api/achievements/999999')
+    const { token } = await createAuthenticatedUser('delete404')
+    const response = await client.delete('/api/achievements/999999').bearerToken(token)
 
     response.assertStatus(404)
     response.assertBodyContains({ message: 'Achievement not found' })

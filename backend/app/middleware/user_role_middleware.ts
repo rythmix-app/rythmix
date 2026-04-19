@@ -15,7 +15,7 @@ export default class UserRoleMiddleware {
     if (!user) {
       return response.unauthorized('Authentication required')
     }
-    if (!options.roles.includes(user.role)) {
+    if (!options.roles.includes(user.role as 'admin' | 'user')) {
       return response.forbidden('Access refused')
     }
 
