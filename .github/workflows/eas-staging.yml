@@ -67,7 +67,8 @@ jobs:
           COMMIT_MSG=$(git log -1 --pretty=%s)
           UPDATE_URL="https://expo.dev/accounts/aldo26/projects/front-mobile/updates/${GROUP}"
           PREVIEW_URL="https://expo.dev/preview/update?message=$(printf %s "$COMMIT_MSG" | jq -sRr @uri)&updateRuntimeVersion=${RUNTIME_VERSION}&createdAt=$(printf %s "$CREATED_AT" | jq -sRr @uri)&slug=${SLUG}&projectId=${PROJECT_ID}&group=${GROUP}"
-          QR_URL="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=$(printf %s "$PREVIEW_URL" | jq -sRr @uri)"
+          EXPO_GO_DEEPLINK="exp://u.expo.dev/${PROJECT_ID}?channel-name=${BRANCH}&runtime-version=$(printf %s "$RUNTIME_VERSION" | jq -sRr @uri)"
+          QR_URL="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=$(printf %s "$EXPO_GO_DEEPLINK" | jq -sRr @uri)"
           {
             echo "group=$GROUP"
             echo "branch=$BRANCH"
@@ -94,8 +95,7 @@ jobs:
             `${{ steps.update.outputs.commit_msg }}`
 
             🌿 Branch : `${{ steps.update.outputs.branch }}` — commit `${{ github.sha }}`
-            🔗 Preview : ${{ steps.update.outputs.preview_url }}
             📊 Détails : ${{ steps.update.outputs.update_url }}
 
-            📷 Scanne le QR (ouvre la page preview avec boutons Expo Go / dev-client) :
+            📷 Scanne avec l'app Expo Go (aucun login requis) :
             ${{ steps.update.outputs.qr_url }}
