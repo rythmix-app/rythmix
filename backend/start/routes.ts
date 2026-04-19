@@ -9,7 +9,7 @@ const UsersController = () => import('#controllers/users_controller')
 const GamesController = () => import('#controllers/games_controller')
 const AchievementsController = () => import('#controllers/achievements_controller')
 const GameSessionsController = () => import('#controllers/game_sessions_controller')
-const LikedTracksController = () => import('#controllers/liked_tracks_controller')
+const TrackInteractionsController = () => import('#controllers/track_interactions_controller')
 const FavoriteGamesController = () => import('#controllers/favorite_games_controller')
 const UserAchievementsController = () => import('#controllers/user_achievements_controller')
 const ProfileController = () => import('#controllers/profile_controller')
@@ -29,7 +29,7 @@ router.get('/', async ({ response }) => {
       users: '/api/users',
       achievements: '/api/achievements',
       games: '/api/games',
-      likedTracks: '/api/liked-tracks',
+      trackInteractions: '/api/me/swipemix/interactions',
       favoriteGames: '/api/favorite-games',
       userAchievements: '/api/user-achievements',
       gameSessions: '/api/game-sessions',
@@ -66,6 +66,13 @@ router
         router.get('/spotify/top-artists', [MeIntegrationsController, 'topArtists'])
         router.get('/spotify/recently-played', [MeIntegrationsController, 'recentlyPlayed'])
         router.delete('/spotify', [MeIntegrationsController, 'unlinkSpotify'])
+
+        router.get('/swipemix/interactions', [TrackInteractionsController, 'index'])
+        router.post('/swipemix/interactions', [TrackInteractionsController, 'upsert'])
+        router.delete('/swipemix/interactions/:deezerTrackId', [
+          TrackInteractionsController,
+          'delete',
+        ])
       })
       .prefix('/me')
       .use(middleware.auth())
@@ -131,24 +138,6 @@ router
         router.delete('/:id', [GameSessionsController, 'delete']).use(middleware.auth())
       })
       .prefix('/game-sessions')
-    router
-      .group(() => {
-        router.get('/', [LikedTracksController, 'index']).use(middleware.role({ roles: ['admin'] }))
-        router.get('/me', [LikedTracksController, 'myLikedTracks']).use(middleware.auth())
-        router.post('/me', [LikedTracksController, 'createMyLikedTrack']).use(middleware.auth())
-        router
-          .delete('/me/:deezerTrackId', [LikedTracksController, 'deleteMyLikedTrack'])
-          .use(middleware.auth())
-        router.post('/', [LikedTracksController, 'create']).use(middleware.auth())
-        router.get('/:id', [LikedTracksController, 'show'])
-        router
-          .patch('/:id', [LikedTracksController, 'update'])
-          .use(middleware.role({ roles: ['admin'] }))
-        router
-          .delete('/:id', [LikedTracksController, 'delete'])
-          .use(middleware.role({ roles: ['admin'] }))
-      })
-      .prefix('/liked-tracks')
     router
       .group(() => {
         router
