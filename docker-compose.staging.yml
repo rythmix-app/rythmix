@@ -1,0 +1,19 @@
+services:
+  database:
+    env_file:
+      - ./backend/.env.prod
+    restart: unless-stopped
+
+  backend:
+    build:
+      target: prod
+    env_file:
+      - ./backend/.env.prod
+    restart: unless-stopped
+    labels:
+      - traefik.enable=false
+
+  ngrok:
+    restart: unless-stopped
+    healthcheck:
+      disable: true
