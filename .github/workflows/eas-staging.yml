@@ -60,11 +60,18 @@ jobs:
           cat update.json
           GROUP=$(jq -r '.[0].group' update.json)
           BRANCH=$(jq -r '.[0].branch' update.json)
+          PROJECT_ID=$(jq -r '.[0].projectId // "160a02f5-15f4-41a9-bdd9-e402672188b0"' update.json)
+          APP_SCHEME=$(jq -r '.expo.scheme' app.json)
           COMMIT_MSG=$(git log -1 --pretty=%s)
-          echo "group=$GROUP" >> "$GITHUB_OUTPUT"
-          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-          echo "update_url=https://expo.dev/accounts/aldo26/projects/front-mobile/updates/$GROUP" >> "$GITHUB_OUTPUT"
-          echo "commit_msg=$COMMIT_MSG" >> "$GITHUB_OUTPUT"
+          QR_URL="https://qr.expo.dev/eas-update?appScheme=${APP_SCHEME}&projectId=${PROJECT_ID}&groupId=${GROUP}"
+          UPDATE_URL="https://expo.dev/accounts/aldo26/projects/front-mobile/updates/${GROUP}"
+          {
+            echo "group=$GROUP"
+            echo "branch=$BRANCH"
+            echo "update_url=$UPDATE_URL"
+            echo "qr_url=$QR_URL"
+            echo "commit_msg=$COMMIT_MSG"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Docker Hub connection
         uses: docker/login-action@v3
@@ -74,7 +81,7 @@ jobs:
 
       - name: Notify Discord
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_STAGING }}
         uses: Ilshidur/action-discord@0.3.2
         with:
           args: |
@@ -82,5 +89,8 @@ jobs:
 
             `${{ steps.update.outputs.commit_msg }}`
 
-            🌿 Branch EAS : `${{ steps.update.outputs.branch }}` — commit `${{ github.sha }}`
+            🌿 Branch : `${{ steps.update.outputs.branch }}` — commit `${{ github.sha }}`
             🔗 ${{ steps.update.outputs.update_url }}
+
+            📷 Scanne avec ton dev-client :
+            ${{ steps.update.outputs.qr_url }}
