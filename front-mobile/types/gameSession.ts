@@ -67,6 +67,14 @@ export interface GetMyGameHistoryResponse {
   data: GameSession[];
 }
 
+export interface GetMyGameStatsResponse {
+  totalPlayed: number;
+  bestScore: number;
+  averageScore: number;
+  averageTimeElapsed: number;
+  lastPlayedAt: string | null;
+}
+
 export interface GetMyActiveGameSessionResponse {
   gameSession: GameSession | null;
 }

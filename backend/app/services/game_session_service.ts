@@ -3,11 +3,11 @@ import { GameSessionStatus } from '#enums/game_session_status'
 
 export class GameSessionService {
   public async getAll() {
-    return GameSession.query().preload('game')
+    return GameSession.query().select('*')
   }
 
   public async getById(gameSessionId: string) {
-    return GameSession.query().where('id', gameSessionId).preload('game').first()
+    return GameSession.query().where('id', gameSessionId).first()
   }
 
   public async createGameSession(payload: {
@@ -128,24 +128,32 @@ export class GameSessionService {
   }
 
   public async getByGameId(gameId: number) {
-    return GameSession.query().where('game_id', gameId).preload('game')
+    return GameSession.query().where('game_id', gameId)
   }
 
   public async getByStatus(status: string) {
-    return GameSession.query().where('status', status).preload('game')
+    return GameSession.query().where('status', status)
   }
 
-  public async getMySessionsByUserId(userId: string, status?: string) {
-    const query = GameSession.query()
-      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
-      .preload('game')
+  public async getByUserId(userId: string, status?: string) {
+    const query = GameSession.query().whereRaw('players::jsonb @> ?::jsonb', [
+      JSON.stringify([{ userId }]),
+    ])
     if (status) {
       query.where('status', status)
     }
     return query.orderBy('created_at', 'desc')
   }
 
-  public async getMyGameHistory(
+  public async getByUserIdAndGameId(userId: string, gameId: number, status?: string) {
+    return GameSession.query()
+      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+      .where('game_id', gameId)
+      .if(status, (query) => query.where('status', status!))
+      .orderBy('created_at', 'desc')
+  }
+
+  public async getGameHistory(
     userId: string,
     gameId: number,
     status?: string,
@@ -156,7 +164,6 @@ export class GameSessionService {
     const query = GameSession.query()
       .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
       .where('game_id', gameId)
-      .preload('game')
       .orderBy('created_at', 'desc')
 
     if (status) {
@@ -168,14 +175,38 @@ export class GameSessionService {
     return query.paginate(page, limit)
   }
 
+  public async getGameStats(userId: string, gameId: number) {
+    const sessions = await this.getByUserIdAndGameId(userId, gameId, GameSessionStatus.Completed)
+
+    if (sessions.length === 0) {
+      return {
+        totalPlayed: 0,
+        bestScore: 0,
+        averageScore: 0,
+        averageTimeElapsed: 0,
+        lastPlayedAt: null,
+      }
+    }
+
+    const totalPlayed = sessions.length
+    const bestScore = Math.max(...sessions.map((s) => Number(s.gameData?.score ?? 0)))
+    const averageScore =
+      sessions.reduce((sum, s) => sum + Number(s.gameData?.score ?? 0), 0) / totalPlayed
+    const averageTimeElapsed =
+      sessions.reduce((sum, s) => sum + Number(s.gameData?.timeElapsed ?? 0), 0) / totalPlayed
+    const lastPlayedAt = sessions[0].createdAt.toISO()
+
+    return {
+      totalPlayed,
+      bestScore,
+      averageScore: Math.round(averageScore * 100) / 100,
+      averageTimeElapsed: Math.round(averageTimeElapsed * 100) / 100,
+      lastPlayedAt,
+    }
+  }
+
   public async getMyActiveSessionByGameId(userId: string, gameId: number) {
-    return GameSession.query()
-      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
-      .where('game_id', gameId)
-      .where('status', GameSessionStatus.Active)
-      .preload('game')
-      .orderBy('created_at', 'desc')
-      .first()
+    return this.getByUserIdAndGameId(userId, gameId, GameSessionStatus.Active)
   }
 }
 
