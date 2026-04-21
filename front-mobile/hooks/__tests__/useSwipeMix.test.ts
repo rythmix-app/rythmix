@@ -3,17 +3,14 @@ import { useSwipeMix } from "../useSwipeMix";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { useAudioPlayer } from "../useAudioPlayer";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
-import {
-  createMyLikedTrack,
-  deleteMyLikedTrack,
-} from "@/services/likedTrackService";
+import { upsertMyTrackInteraction } from "@/services/trackInteractionsService";
 import { MusicCardData } from "@/components/swipe";
 
 // Mock des dépendances
 jest.mock("@/services/deezer-api");
 jest.mock("../useAudioPlayer");
 jest.mock("@/utils/deezer-adapter");
-jest.mock("@/services/likedTrackService");
+jest.mock("@/services/trackInteractionsService");
 
 const mockDeezerAPI = deezerAPI as jest.Mocked<typeof deezerAPI>;
 const mockUseAudioPlayer = useAudioPlayer as jest.MockedFunction<
@@ -21,12 +18,10 @@ const mockUseAudioPlayer = useAudioPlayer as jest.MockedFunction<
 >;
 const mockDeezerTracksToCardData =
   deezerTracksToCardData as jest.MockedFunction<typeof deezerTracksToCardData>;
-const mockCreateMyLikedTrack = createMyLikedTrack as jest.MockedFunction<
-  typeof createMyLikedTrack
->;
-const mockDeleteMyLikedTrack = deleteMyLikedTrack as jest.MockedFunction<
-  typeof deleteMyLikedTrack
->;
+const mockUpsertMyTrackInteraction =
+  upsertMyTrackInteraction as jest.MockedFunction<
+    typeof upsertMyTrackInteraction
+  >;
 
 describe("useSwipeMix", () => {
   // Helper function to create mock tracks
@@ -155,16 +150,21 @@ describe("useSwipeMix", () => {
           title: `Album ${id}`,
         }) as any,
     );
+    mockDeezerAPI.getTrack.mockImplementation(async (id) => ({
+      ...createMockTrack(id),
+      isrc: `ISRC${id}`,
+    }));
 
-    mockCreateMyLikedTrack.mockResolvedValue({
-      id: "liked-track-uuid",
+    mockUpsertMyTrackInteraction.mockResolvedValue({
+      id: 1,
       userId: "user-1",
       deezerTrackId: "1",
+      deezerArtistId: "1",
+      action: "liked",
       title: "Track 1",
       artist: "Artist 1",
-      type: "track",
+      isrc: null,
     });
-    mockDeleteMyLikedTrack.mockResolvedValue(undefined);
   });
 
   describe("initialization", () => {
@@ -224,7 +224,7 @@ describe("useSwipeMix", () => {
   });
 
   describe("swipe handlers", () => {
-    it("should handle swipe left", async () => {
+    it("should persist a disliked interaction on swipe left without blocking on Deezer backfill", async () => {
       const { result } = renderHook(() => useSwipeMix());
 
       await waitFor(() => {
@@ -233,6 +233,61 @@ describe("useSwipeMix", () => {
 
       const firstCard = result.current.cards[0];
       result.current.handlers.onSwipeLeft(firstCard);
+
+      await waitFor(() => {
+        expect(mockUpsertMyTrackInteraction).toHaveBeenCalledWith({
+          deezerTrackId: firstCard.id,
+          deezerArtistId: "1",
+          action: "disliked",
+          title: firstCard.title,
+          artist: firstCard.artist,
+          isrc: undefined,
+        });
+      });
+    });
+
+    it("should trigger a background ISRC backfill when cached track has no ISRC", async () => {
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      mockDeezerAPI.getTrack.mockClear();
+
+      const firstCard = result.current.cards[0];
+      result.current.handlers.onSwipeLeft(firstCard);
+
+      await waitFor(() => {
+        expect(mockDeezerAPI.getTrack).toHaveBeenCalledWith(
+          Number(firstCard.id),
+        );
+      });
+    });
+
+    it("should not trigger a background refetch if cached track already has ISRC", async () => {
+      mockDeezerAPI.getTopTracks.mockResolvedValueOnce({
+        data: mockTracks.map((t) => ({ ...t, isrc: `ISRC${t.id}` })),
+        total: mockTracks.length,
+      });
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      mockDeezerAPI.getTrack.mockClear();
+
+      const firstCard = result.current.cards[0];
+      result.current.handlers.onSwipeLeft(firstCard);
+
+      await waitFor(() => {
+        expect(mockUpsertMyTrackInteraction).toHaveBeenCalledWith(
+          expect.objectContaining({ isrc: "ISRC1" }),
+        );
+      });
+      expect(mockDeezerAPI.getTrack).not.toHaveBeenCalled();
     });
 
     it("should stop audio on swipe left if current track", async () => {
@@ -250,7 +305,7 @@ describe("useSwipeMix", () => {
       expect(mockAudioPlayer.stop).toHaveBeenCalled();
     });
 
-    it("should handle swipe right and call createMyLikedTrack", async () => {
+    it("should persist a liked interaction on swipe right without blocking on Deezer backfill", async () => {
       const { result } = renderHook(() => useSwipeMix());
 
       await waitFor(() => {
@@ -260,16 +315,76 @@ describe("useSwipeMix", () => {
       const firstCard = result.current.cards[0];
       await result.current.handlers.onSwipeRight(firstCard);
 
-      expect(mockCreateMyLikedTrack).toHaveBeenCalledWith({
-        deezerTrackId: firstCard.id,
-        title: firstCard.title,
-        artist: firstCard.artist,
-        type: "track",
+      await waitFor(() => {
+        expect(mockUpsertMyTrackInteraction).toHaveBeenCalledWith({
+          deezerTrackId: firstCard.id,
+          deezerArtistId: "1",
+          action: "liked",
+          title: firstCard.title,
+          artist: firstCard.artist,
+          isrc: undefined,
+        });
       });
     });
 
-    it("should not block swipe right on API error", async () => {
-      mockCreateMyLikedTrack.mockRejectedValueOnce(new Error("Network error"));
+    it("should flip action from liked to disliked when swiping left after right", async () => {
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      const firstCard = result.current.cards[0];
+      await result.current.handlers.onSwipeRight(firstCard);
+      result.current.handlers.onSwipeLeft(firstCard);
+
+      await waitFor(() => {
+        expect(mockUpsertMyTrackInteraction).toHaveBeenCalledTimes(2);
+      });
+      expect(mockUpsertMyTrackInteraction).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          deezerTrackId: firstCard.id,
+          action: "liked",
+        }),
+      );
+      expect(mockUpsertMyTrackInteraction).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          deezerTrackId: firstCard.id,
+          action: "disliked",
+        }),
+      );
+    });
+
+    it("should still persist the interaction when the background Deezer refetch fails", async () => {
+      mockDeezerAPI.getTrack.mockRejectedValueOnce(new Error("Deezer down"));
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      const firstCard = result.current.cards[0];
+      result.current.handlers.onSwipeLeft(firstCard);
+
+      await waitFor(() => {
+        expect(mockUpsertMyTrackInteraction).toHaveBeenCalledWith({
+          deezerTrackId: firstCard.id,
+          deezerArtistId: "1",
+          action: "disliked",
+          title: firstCard.title,
+          artist: firstCard.artist,
+          isrc: undefined,
+        });
+      });
+    });
+
+    it("should not block swipe right on upsert API error", async () => {
+      mockUpsertMyTrackInteraction.mockRejectedValueOnce(
+        new Error("Network error"),
+      );
 
       const { result } = renderHook(() => useSwipeMix());
 
@@ -281,7 +396,29 @@ describe("useSwipeMix", () => {
       // Should not throw
       await result.current.handlers.onSwipeRight(firstCard);
 
-      expect(mockCreateMyLikedTrack).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockUpsertMyTrackInteraction).toHaveBeenCalled();
+      });
+    });
+
+    it("should not block swipe left on upsert API error", async () => {
+      mockUpsertMyTrackInteraction.mockRejectedValueOnce(
+        new Error("Network error"),
+      );
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      const firstCard = result.current.cards[0];
+      // Should not throw
+      result.current.handlers.onSwipeLeft(firstCard);
+
+      await waitFor(() => {
+        expect(mockUpsertMyTrackInteraction).toHaveBeenCalled();
+      });
     });
 
     it("should stop audio on swipe right if current track", async () => {
@@ -297,65 +434,6 @@ describe("useSwipeMix", () => {
       await result.current.handlers.onSwipeRight(firstCard);
 
       expect(mockAudioPlayer.stop).toHaveBeenCalled();
-    });
-
-    it("should not call deleteMyLikedTrack on swipe left if track was never liked", async () => {
-      const { result } = renderHook(() => useSwipeMix());
-
-      await waitFor(() => {
-        expect(result.current.cards).toHaveLength(10);
-      });
-
-      const firstCard = result.current.cards[0];
-      result.current.handlers.onSwipeLeft(firstCard);
-
-      expect(mockDeleteMyLikedTrack).not.toHaveBeenCalled();
-    });
-
-    it("should call deleteMyLikedTrack on swipe left if track was previously liked", async () => {
-      const { result } = renderHook(() => useSwipeMix());
-
-      await waitFor(() => {
-        expect(result.current.cards).toHaveLength(10);
-      });
-
-      const firstCard = result.current.cards[0];
-      await result.current.handlers.onSwipeRight(firstCard);
-      result.current.handlers.onSwipeLeft(firstCard);
-
-      expect(mockDeleteMyLikedTrack).toHaveBeenCalledWith(firstCard.id);
-    });
-
-    it("should only delete once even on multiple consecutive swipe lefts", async () => {
-      const { result } = renderHook(() => useSwipeMix());
-
-      await waitFor(() => {
-        expect(result.current.cards).toHaveLength(10);
-      });
-
-      const firstCard = result.current.cards[0];
-      await result.current.handlers.onSwipeRight(firstCard);
-      result.current.handlers.onSwipeLeft(firstCard);
-      result.current.handlers.onSwipeLeft(firstCard);
-
-      expect(mockDeleteMyLikedTrack).toHaveBeenCalledTimes(1);
-    });
-
-    it("should not block swipe left on delete API error", async () => {
-      mockDeleteMyLikedTrack.mockRejectedValueOnce(new Error("Network error"));
-
-      const { result } = renderHook(() => useSwipeMix());
-
-      await waitFor(() => {
-        expect(result.current.cards).toHaveLength(10);
-      });
-
-      const firstCard = result.current.cards[0];
-      await result.current.handlers.onSwipeRight(firstCard);
-      // Should not throw
-      result.current.handlers.onSwipeLeft(firstCard);
-
-      expect(mockDeleteMyLikedTrack).toHaveBeenCalled();
     });
   });
 

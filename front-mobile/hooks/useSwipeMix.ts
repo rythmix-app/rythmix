@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { cacheManager } from "@/services/cache-manager";
-import {
-  createMyLikedTrack,
-  deleteMyLikedTrack,
-} from "@/services/likedTrackService";
+import { upsertMyTrackInteraction } from "@/services/trackInteractionsService";
+import { InteractionAction } from "@/types/trackInteraction";
 import { MusicCardData } from "@/components/swipe";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { useAudioPlayer } from "./useAudioPlayer";
@@ -26,8 +24,6 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   const currentPageIndexRef = useRef(0);
   // Verrou synchrone pour éviter les appels concurrents à loadTracks
   const isLoadingRef = useRef(false);
-  // Tracks likés persistés en DB — utilisé pour rollback sur un dislike qui suit un like
-  const likedTrackIdsRef = useRef<Set<string>>(new Set());
 
   const handleRetry = useCallback(
     async (track: DeezerTrack): Promise<DeezerTrack | null> => {
@@ -147,39 +143,65 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
     loadTracks();
   }, [loadTracks]);
 
+  const persistInteraction = useCallback(
+    async (card: MusicCardData, action: InteractionAction) => {
+      const cached = tracks.get(card.id);
+
+      // /chart ne retourne pas l'ISRC : on tente un backfill asynchrone pour les prochaines
+      // interactions sans bloquer le swipe courant.
+      if (cached?.isrc === undefined) {
+        void deezerAPI
+          .getTrack(Number(card.id))
+          .then((freshTrack) => {
+            setTracks((prev) => {
+              const current = prev.get(card.id);
+              if (current?.isrc === freshTrack.isrc) {
+                return prev;
+              }
+              const newMap = new Map(prev);
+              newMap.set(freshTrack.id.toString(), freshTrack);
+              return newMap;
+            });
+          })
+          .catch(() => {
+            // Best effort : ne pas impacter la persistance de l'interaction
+          });
+      }
+
+      try {
+        await upsertMyTrackInteraction({
+          deezerTrackId: card.id,
+          deezerArtistId: cached ? String(cached.artist.id) : undefined,
+          action,
+          title: card.title,
+          artist: card.artist,
+          isrc: cached?.isrc,
+        });
+      } catch {
+        // Les échecs ne sont pas mis en file d'attente : l'interaction peut être perdue
+        // en cas d'erreur réseau.
+      }
+    },
+    [tracks],
+  );
+
   // Handler pour swipe left (skip/dislike)
   const handleSwipeLeft = useCallback(
     (card: MusicCardData) => {
-      // Rollback d'un like précédent si l'utilisateur change d'avis via le bouton précédent
-      if (likedTrackIdsRef.current.has(card.id)) {
-        likedTrackIdsRef.current.delete(card.id);
-        deleteMyLikedTrack(card.id).catch(() => {
-          // Erreurs réseau ignorées silencieusement
-        });
-      }
+      persistInteraction(card, "disliked");
 
       // Arrêter la lecture si c'est le morceau actuel
       if (audioPlayer.currentTrack?.id.toString() === card.id) {
         audioPlayer.stop();
       }
     },
-    [audioPlayer],
+    [audioPlayer, persistInteraction],
   );
 
   // Handler pour swipe right (like/save)
   const handleSwipeRight = useCallback(
-    async (card: MusicCardData) => {
-      // Persister le like en arrière-plan sans bloquer l'UX
-      likedTrackIdsRef.current.add(card.id);
-      createMyLikedTrack({
-        deezerTrackId: card.id,
-        title: card.title,
-        artist: card.artist,
-        type: "track",
-      }).catch(() => {
-        // Erreurs réseau et 409 (déjà liké) ignorées silencieusement
-        likedTrackIdsRef.current.delete(card.id);
-      });
+    (card: MusicCardData) => {
+      persistInteraction(card, "liked");
 
       // Arrêter la lecture pour passer à la carte suivante
       // (la nouvelle carte démarrera automatiquement via onCardAppear)
@@ -187,7 +209,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         audioPlayer.stop();
       }
     },
-    [audioPlayer],
+    [audioPlayer, persistInteraction],
   );
 
   // Handler pour play/pause

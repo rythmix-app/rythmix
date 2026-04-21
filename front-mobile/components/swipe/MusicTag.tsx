@@ -14,7 +14,9 @@ const MusicTag: React.FC<MusicTagProps> = ({ text, color }) => {
 
   return (
     <View style={containerStyle}>
-      <Text style={styles.text}>{text}</Text>
+      <Text numberOfLines={1} ellipsizeMode="tail" style={styles.text}>
+        {text}
+      </Text>
     </View>
   );
 };
