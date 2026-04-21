@@ -146,23 +146,40 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   const persistInteraction = useCallback(
     async (card: MusicCardData, action: InteractionAction) => {
       const cached = tracks.get(card.id);
-      // /chart ne retourne pas l'ISRC — refetch /track/{id} (cached) pour l'obtenir
-      const fullTrack =
-        cached?.isrc !== undefined
-          ? cached
-          : await deezerAPI.getTrack(Number(card.id)).catch(() => cached);
+
+      // /chart ne retourne pas l'ISRC : on tente un backfill asynchrone pour les prochaines
+      // interactions sans bloquer le swipe courant.
+      if (cached?.isrc === undefined) {
+        void deezerAPI
+          .getTrack(Number(card.id))
+          .then((freshTrack) => {
+            setTracks((prev) => {
+              const current = prev.get(card.id);
+              if (current?.isrc === freshTrack.isrc) {
+                return prev;
+              }
+              const newMap = new Map(prev);
+              newMap.set(freshTrack.id.toString(), freshTrack);
+              return newMap;
+            });
+          })
+          .catch(() => {
+            // Best effort : ne pas impacter la persistance de l'interaction
+          });
+      }
 
       try {
         await upsertMyTrackInteraction({
           deezerTrackId: card.id,
-          deezerArtistId: fullTrack ? String(fullTrack.artist.id) : undefined,
+          deezerArtistId: cached ? String(cached.artist.id) : undefined,
           action,
           title: card.title,
           artist: card.artist,
-          isrc: fullTrack?.isrc,
+          isrc: cached?.isrc,
         });
       } catch {
-        // Upsert côté serveur est idempotent — les erreurs réseau seront rejouées au prochain swipe
+        // Les échecs ne sont pas mis en file d'attente : l'interaction peut être perdue
+        // en cas d'erreur réseau.
       }
     },
     [tracks],

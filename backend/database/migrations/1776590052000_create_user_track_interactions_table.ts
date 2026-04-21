@@ -44,9 +44,9 @@ export default class extends BaseSchema {
         `,
         [InteractionAction.Liked]
       )
-    })
 
-    this.schema.dropTableIfExists('liked_tracks')
+      await db.schema.dropTableIfExists('liked_tracks')
+    })
   }
 
   async down() {
@@ -79,8 +79,8 @@ export default class extends BaseSchema {
         `,
         [InteractionAction.Liked]
       )
-    })
 
-    this.schema.dropTable(this.tableName)
+      await db.schema.dropTable(this.tableName)
+    })
   }
 }

@@ -224,7 +224,7 @@ describe("useSwipeMix", () => {
   });
 
   describe("swipe handlers", () => {
-    it("should persist a disliked interaction with isrc on swipe left", async () => {
+    it("should persist a disliked interaction on swipe left without blocking on Deezer backfill", async () => {
       const { result } = renderHook(() => useSwipeMix());
 
       await waitFor(() => {
@@ -241,9 +241,53 @@ describe("useSwipeMix", () => {
           action: "disliked",
           title: firstCard.title,
           artist: firstCard.artist,
-          isrc: "ISRC1",
+          isrc: undefined,
         });
       });
+    });
+
+    it("should trigger a background ISRC backfill when cached track has no ISRC", async () => {
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      mockDeezerAPI.getTrack.mockClear();
+
+      const firstCard = result.current.cards[0];
+      result.current.handlers.onSwipeLeft(firstCard);
+
+      await waitFor(() => {
+        expect(mockDeezerAPI.getTrack).toHaveBeenCalledWith(
+          Number(firstCard.id),
+        );
+      });
+    });
+
+    it("should not trigger a background refetch if cached track already has ISRC", async () => {
+      mockDeezerAPI.getTopTracks.mockResolvedValueOnce({
+        data: mockTracks.map((t) => ({ ...t, isrc: `ISRC${t.id}` })),
+        total: mockTracks.length,
+      });
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      mockDeezerAPI.getTrack.mockClear();
+
+      const firstCard = result.current.cards[0];
+      result.current.handlers.onSwipeLeft(firstCard);
+
+      await waitFor(() => {
+        expect(mockUpsertMyTrackInteraction).toHaveBeenCalledWith(
+          expect.objectContaining({ isrc: "ISRC1" }),
+        );
+      });
+      expect(mockDeezerAPI.getTrack).not.toHaveBeenCalled();
     });
 
     it("should stop audio on swipe left if current track", async () => {
@@ -261,7 +305,7 @@ describe("useSwipeMix", () => {
       expect(mockAudioPlayer.stop).toHaveBeenCalled();
     });
 
-    it("should persist a liked interaction with isrc on swipe right", async () => {
+    it("should persist a liked interaction on swipe right without blocking on Deezer backfill", async () => {
       const { result } = renderHook(() => useSwipeMix());
 
       await waitFor(() => {
@@ -278,7 +322,7 @@ describe("useSwipeMix", () => {
           action: "liked",
           title: firstCard.title,
           artist: firstCard.artist,
-          isrc: "ISRC1",
+          isrc: undefined,
         });
       });
     });
@@ -297,25 +341,23 @@ describe("useSwipeMix", () => {
       await waitFor(() => {
         expect(mockUpsertMyTrackInteraction).toHaveBeenCalledTimes(2);
       });
-      expect(mockUpsertMyTrackInteraction).toHaveBeenNthCalledWith(1, {
-        deezerTrackId: firstCard.id,
-        deezerArtistId: "1",
-        action: "liked",
-        title: firstCard.title,
-        artist: firstCard.artist,
-        isrc: "ISRC1",
-      });
-      expect(mockUpsertMyTrackInteraction).toHaveBeenNthCalledWith(2, {
-        deezerTrackId: firstCard.id,
-        deezerArtistId: "1",
-        action: "disliked",
-        title: firstCard.title,
-        artist: firstCard.artist,
-        isrc: "ISRC1",
-      });
+      expect(mockUpsertMyTrackInteraction).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          deezerTrackId: firstCard.id,
+          action: "liked",
+        }),
+      );
+      expect(mockUpsertMyTrackInteraction).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          deezerTrackId: firstCard.id,
+          action: "disliked",
+        }),
+      );
     });
 
-    it("should fall back to cached track when Deezer /track fetch fails", async () => {
+    it("should still persist the interaction when the background Deezer refetch fails", async () => {
       mockDeezerAPI.getTrack.mockRejectedValueOnce(new Error("Deezer down"));
 
       const { result } = renderHook(() => useSwipeMix());
