@@ -103,6 +103,24 @@ test.group('AuthService - Register', (group) => {
 
     mail.restore()
   }).timeout(10000)
+
+  test('register should auto-verify email when user is admin', async ({ assert }) => {
+    const timestamp = Date.now()
+    const mailer = mail.fake()
+
+    const user = await authService.register({
+      email: `admin_${timestamp}@example.com`,
+      username: `admin_${timestamp}`,
+      password: 'password123',
+      role: 'admin',
+    })
+
+    assert.equal(user.role, 'admin')
+    assert.isNotNull(user.emailVerifiedAt)
+    mailer.messages.assertSentCount(0)
+
+    mail.restore()
+  }).timeout(10000)
 })
 
 test.group('AuthService - Login', (group) => {
