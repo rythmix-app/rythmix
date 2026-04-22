@@ -2,19 +2,7 @@ import { test } from '@japa/runner'
 import GameSessionsController from '#controllers/game_sessions_controller'
 import GameSession from '#models/game_session'
 import { HttpContext } from '@adonisjs/core/http'
-
-const makeResponse = () => ({
-  statusCode: 200,
-  body: null as any,
-  status(code: number) {
-    this.statusCode = code
-    return this
-  },
-  json(payload: any) {
-    this.body = payload
-    return this
-  },
-})
+import { makeResponse } from '#tests/utils/http_helpers'
 
 test.group('GameSessionsController - Unit', () => {
   test('index returns 200 with data on success', async ({ assert }) => {
@@ -462,5 +450,244 @@ test.group('GameSessionsController - Unit', () => {
 
     assert.equal(response.statusCode, 500)
     assert.match(response.body.message, /Error while fetching game sessions/i)
+  })
+
+  test('mySessions returns 200 with the sessions for the authenticated user', async ({
+    assert,
+  }) => {
+    const service = {
+      getByUserId: async (userId: string, status?: string) => [
+        { id: 's1', userId, status: status ?? 'active' },
+      ],
+    } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const request = { qs: () => ({ status: 'active' }) } as any
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.mySessions({ auth, request, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 200)
+    assert.lengthOf(response.body.gameSessions, 1)
+    assert.equal(response.body.gameSessions[0].status, 'active')
+  })
+
+  test('mySessions returns 500 when service throws', async ({ assert }) => {
+    const service = {
+      getByUserId: async () => {
+        throw new Error('boom')
+      },
+    } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const request = { qs: () => ({}) } as any
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.mySessions({ auth, request, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(response.body.message, /Error while fetching game sessions/i)
+  })
+
+  test('myGameHistory returns 200 with history from the service', async ({ assert }) => {
+    const captured: any = {}
+    const service = {
+      getGameHistory: async (
+        userId: string,
+        gameId: number,
+        status: string | undefined,
+        page: number,
+        limit: number
+      ) => {
+        captured.userId = userId
+        captured.gameId = gameId
+        captured.status = status
+        captured.page = page
+        captured.limit = limit
+        return { meta: { total: 0 }, data: [] }
+      },
+    } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const request = { qs: () => ({ status: 'completed', page: '2', limit: '5' }) } as any
+    const params = { gameId: '42' }
+    const auth = { user: { id: 'user-7' } }
+
+    await controller.myGameHistory({
+      auth,
+      params,
+      request,
+      response,
+    } as any as HttpContext)
+
+    assert.equal(response.statusCode, 200)
+    assert.equal(captured.userId, 'user-7')
+    assert.equal(captured.gameId, 42)
+    assert.equal(captured.status, 'completed')
+    assert.equal(captured.page, 2)
+    assert.equal(captured.limit, 5)
+  })
+
+  test('myGameHistory clamps negative pagination and limits to sane defaults', async ({
+    assert,
+  }) => {
+    const captured: any = {}
+    const service = {
+      getGameHistory: async (
+        _userId: string,
+        _gameId: number,
+        _status: string | undefined,
+        page: number,
+        limit: number
+      ) => {
+        captured.page = page
+        captured.limit = limit
+        return { data: [] }
+      },
+    } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const request = { qs: () => ({ page: '-3', limit: '500' }) } as any
+    const params = { gameId: '1' }
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.myGameHistory({
+      auth,
+      params,
+      request,
+      response,
+    } as any as HttpContext)
+
+    assert.equal(captured.page, 1)
+    assert.equal(captured.limit, 100)
+  })
+
+  test('myGameHistory returns 400 for invalid gameId', async ({ assert }) => {
+    const controller = new GameSessionsController({} as any)
+
+    const response = makeResponse()
+    const request = { qs: () => ({}) } as any
+    const params = { gameId: 'not-a-number' }
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.myGameHistory({
+      auth,
+      params,
+      request,
+      response,
+    } as any as HttpContext)
+
+    assert.equal(response.statusCode, 400)
+    assert.match(response.body.message, /Invalid gameId/i)
+  })
+
+  test('myGameHistory returns 400 when status filter is not allowed', async ({ assert }) => {
+    const controller = new GameSessionsController({} as any)
+
+    const response = makeResponse()
+    const request = { qs: () => ({ status: 'active' }) } as any
+    const params = { gameId: '1' }
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.myGameHistory({
+      auth,
+      params,
+      request,
+      response,
+    } as any as HttpContext)
+
+    assert.equal(response.statusCode, 400)
+    assert.match(response.body.message, /Invalid status filter/i)
+  })
+
+  test('myGameHistory returns 500 when service throws', async ({ assert }) => {
+    const service = {
+      getGameHistory: async () => {
+        throw new Error('boom')
+      },
+    } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const request = { qs: () => ({}) } as any
+    const params = { gameId: '1' }
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.myGameHistory({
+      auth,
+      params,
+      request,
+      response,
+    } as any as HttpContext)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(response.body.message, /Error while fetching game session history/i)
+  })
+
+  test('myActiveSession returns 200 with the active session', async ({ assert }) => {
+    const service = {
+      getMyActiveSessionByGameId: async () => ({ id: 'session-active' }),
+    } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const params = { gameId: '7' }
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.myActiveSession({ auth, params, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 200)
+    assert.equal(response.body.gameSession.id, 'session-active')
+  })
+
+  test('myActiveSession returns null when no active session exists', async ({ assert }) => {
+    const service = {
+      getMyActiveSessionByGameId: async () => null,
+    } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const params = { gameId: '7' }
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.myActiveSession({ auth, params, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 200)
+    assert.isNull(response.body.gameSession)
+  })
+
+  test('myActiveSession returns 400 for invalid gameId', async ({ assert }) => {
+    const controller = new GameSessionsController({} as any)
+
+    const response = makeResponse()
+    const params = { gameId: 'abc' }
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.myActiveSession({ auth, params, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 400)
+    assert.match(response.body.message, /Invalid gameId/i)
+  })
+
+  test('myActiveSession returns 500 when service throws', async ({ assert }) => {
+    const service = {
+      getMyActiveSessionByGameId: async () => {
+        throw new Error('boom')
+      },
+    } as any
+    const controller = new GameSessionsController(service)
+
+    const response = makeResponse()
+    const params = { gameId: '1' }
+    const auth = { user: { id: 'user-1' } }
+
+    await controller.myActiveSession({ auth, params, response } as any as HttpContext)
+
+    assert.equal(response.statusCode, 500)
+    assert.match(response.body.message, /Error while fetching active game session/i)
   })
 })

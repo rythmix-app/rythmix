@@ -144,6 +144,52 @@ test.group('SpotifyService - Token refresh', (group) => {
     assert.equal(integration!.refreshToken, 'old-refresh')
   })
 
+  test('getValidAccessToken returns stored token when integration has no expiry', async ({
+    assert,
+  }) => {
+    const user = await createUser('no_expiry')
+    await service.upsertIntegration(user.id, {
+      providerUserId: 'sp_no_expiry',
+      accessToken: 'static-token',
+      refreshToken: 'r',
+      expiresAt: null,
+    })
+
+    globalThis.fetch = async () => {
+      throw new Error('refresh should not run')
+    }
+
+    const token = await service.getValidAccessToken(user.id)
+    assert.equal(token, 'static-token')
+  })
+
+  test('getValidAccessToken updates scopes when Spotify returns a new scope', async ({
+    assert,
+  }) => {
+    const user = await createUser('refresh_scope')
+    await service.upsertIntegration(user.id, {
+      providerUserId: 'sp_scope',
+      accessToken: 'expired',
+      refreshToken: 'old-refresh',
+      expiresAt: DateTime.now().minus({ minutes: 5 }),
+      scopes: 'user-read-email',
+    })
+
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          access_token: 'fresh',
+          expires_in: 3600,
+          scope: 'user-read-email user-top-read',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+
+    await service.getValidAccessToken(user.id)
+    const integration = await service.findByUserId(user.id)
+    assert.equal(integration!.scopes, 'user-read-email user-top-read')
+  })
+
   test('getValidAccessToken stores the new refresh_token when Spotify returns one', async ({
     assert,
   }) => {
@@ -362,5 +408,41 @@ test.group('SpotifyService - API fetch', (group) => {
     await assert.rejects(async () => {
       await service.getTopTracks(user.id)
     }, /rate limited/)
+  })
+
+  test('spotifyGet falls back to exponential backoff when Retry-After header is missing', async ({
+    assert,
+  }) => {
+    const user = await createLinkedUser('rate_backoff')
+    const sleepCalls: number[] = []
+    ;(service as unknown as { sleep: (ms: number) => Promise<void> }).sleep = async (ms) => {
+      sleepCalls.push(ms)
+    }
+
+    let calls = 0
+    globalThis.fetch = async () => {
+      calls += 1
+      if (calls === 1) {
+        return new Response('{"error":{"status":429}}', {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ items: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    await service.getTopTracks(user.id)
+    assert.deepEqual(sleepCalls, [1000])
+  })
+
+  test('sleep resolves after roughly the given delay', async ({ assert }) => {
+    const freshService = new SpotifyService()
+    const start = Date.now()
+    await (freshService as unknown as { sleep: (ms: number) => Promise<void> }).sleep(20)
+    const elapsed = Date.now() - start
+    assert.isAtLeast(elapsed, 15)
   })
 })
