@@ -1,0 +1,193 @@
+<div class="session-detail-page">
+  <div class="page-header">
+    <button class="back-btn" (click)="onCancel()">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <h1 class="page-title">{{ title }}</h1>
+  </div>
+
+  <div class="page-content">
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+      </div>
+    }
+
+    @if (!isLoading && session) {
+      @if (mode === "view") {
+        <div class="detail-container">
+          <div class="session-header-card">
+            <div class="session-header-icon">
+              <i class="fas fa-history"></i>
+            </div>
+            <div class="session-header-info">
+              <h2 class="session-title">Session {{ session.id }}</h2>
+              <div class="session-header-badges">
+                <span
+                  class="badge"
+                  [class.badge-pending]="session.status === 'pending'"
+                  [class.badge-active]="session.status === 'active'"
+                  [class.badge-completed]="session.status === 'completed'"
+                  [class.badge-canceled]="session.status === 'canceled'"
+                >
+                  {{ session.status }}
+                </span>
+                <span class="badge badge-muted">
+                  Game #{{ session.gameId }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-section">
+            <h3 class="section-title">Informations système</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">ID</span>
+                <span class="info-value mono">{{ session.id }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Game ID</span>
+                <span class="info-value">{{ session.gameId }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Joueurs</span>
+                <span class="info-value">
+                  {{ session.players.length }}
+                </span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Dates</span>
+                <div class="info-dates">
+                  <div class="date-row">
+                    <span class="date-label">Création:</span>
+                    <span class="info-value">
+                      {{ session.createdAt | date: "dd/MM/yyyy HH:mm" }}
+                    </span>
+                  </div>
+                  @if (session.updatedAt) {
+                    <div class="date-row">
+                      <span class="date-label">Modification:</span>
+                      <span class="info-value">
+                        {{ session.updatedAt | date: "dd/MM/yyyy HH:mm" }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3 class="section-title">
+              Joueurs
+              <span class="section-count">
+                {{ session.players.length }}
+              </span>
+            </h3>
+            @if (session.players.length === 0) {
+              <p class="empty-state">Aucun joueur</p>
+            } @else {
+              <div class="players-list">
+                @for (player of session.players; track player.userId) {
+                  <div class="player-row">
+                    <span class="player-rank">#{{ player.rank ?? "—" }}</span>
+                    <div class="player-info">
+                      <span class="player-name">
+                        {{ getUsername(player.userId) || "—" }}
+                      </span>
+                      <span class="player-id mono">{{ player.userId }}</span>
+                      @if (player.status) {
+                        <span class="player-status">{{ player.status }}</span>
+                      }
+                    </div>
+                    <div class="player-stats">
+                      <span class="stat">
+                        <span class="stat-label">Score</span>
+                        <span class="stat-val">{{ player.score ?? 0 }}</span>
+                      </span>
+                      <span class="stat">
+                        <span class="stat-label">XP</span>
+                        <span class="stat-val">
+                          {{ player.expGained ?? 0 }}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="detail-section">
+            <h3 class="section-title">Game data</h3>
+            <pre class="json-block">{{ prettyJson(session.gameData) }}</pre>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn-edit"
+              (click)="router.navigate(['/sessions', sessionId, 'edit'])"
+            >
+              Modifier le statut
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (mode === "edit") {
+        <div class="form-container">
+          <form [formGroup]="sessionForm" (ngSubmit)="onSubmit()">
+            <div class="form-section">
+              <h2 class="section-title">Modifier le statut</h2>
+
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="status" class="field-label">
+                    Statut <span class="required">*</span>
+                  </label>
+                  <div class="select-wrapper">
+                    <select
+                      id="status"
+                      formControlName="status"
+                      class="field-select"
+                    >
+                      @for (status of statusOptions; track status) {
+                        <option [value]="status">{{ status }}</option>
+                      }
+                    </select>
+                    <span class="select-arrow">▼</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="button"
+                (click)="onCancel()"
+                [disabled]="isSubmitting"
+                class="btn-cancel"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                [disabled]="isSubmitting || sessionForm.invalid"
+                class="btn-submit"
+              >
+                @if (isSubmitting) {
+                  <i class="fas fa-spinner fa-spin"></i>
+                } @else {
+                  <i class="fas fa-check"></i>
+                }
+                <span>Enregistrer</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+    }
+  </div>
+</div>

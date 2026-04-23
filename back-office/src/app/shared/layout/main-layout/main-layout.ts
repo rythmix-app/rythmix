@@ -48,10 +48,7 @@ export class MainLayoutComponent implements OnInit {
     {
       title: 'UTILISATEURS',
       icon: 'fa-users',
-      items: [
-        { label: 'Utilisateurs', route: '/users', icon: 'fa-user' },
-        { label: 'Rôles', route: '/roles', icon: 'fa-shield-alt' },
-      ],
+      items: [{ label: 'Utilisateurs', route: '/users', icon: 'fa-user' }],
     },
     {
       title: 'CONTENU',
