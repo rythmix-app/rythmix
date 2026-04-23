@@ -18,12 +18,14 @@ test.group('GameService - CRUD Operations', (group) => {
     const result = await gameService.createGame({
       name: 'Test Game',
       description: 'Test description',
+      isEnabled: true,
     })
 
     assert.instanceOf(result, Game)
     if (result instanceof Game) {
       assert.equal(result.name, 'Test Game')
       assert.equal(result.description, 'Test description')
+      assert.isTrue(result.isEnabled)
     }
   })
 
@@ -50,16 +52,18 @@ test.group('GameService - CRUD Operations', (group) => {
   })
 
   test('updateGame should update game successfully', async ({ assert }) => {
-    const g = await Game.create({ name: 'Old', description: 'Old desc' })
+    const g = await Game.create({ name: 'Old', description: 'Old desc', isEnabled: false })
     const result = await gameService.updateGame(g.id, {
       name: 'New',
       description: 'New desc',
+      isEnabled: true,
     })
 
     assert.instanceOf(result, Game)
     if (result instanceof Game) {
       assert.equal(result.name, 'New')
       assert.equal(result.description, 'New desc')
+      assert.isTrue(result.isEnabled)
     }
   })
 
