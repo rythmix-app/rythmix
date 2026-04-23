@@ -130,6 +130,16 @@ test.group('TrackInteractionsController - index', (group) => {
     assert.equal(response.body().interactions[0].userId, userA.id)
   })
 
+  test('returns 422 when the action query param is invalid', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('ti_invalid_filter')
+
+    const response = await client
+      .get('/api/me/swipemix/interactions?action=maybe')
+      .bearerToken(token)
+
+    response.assertStatus(422)
+  })
+
   test('filters by action query param', async ({ client, assert }) => {
     const { token } = await createAuthenticatedUser('ti_filter')
 
