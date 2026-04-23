@@ -1,7 +1,7 @@
 import { getToken, getRefreshToken } from "./storage";
 import { ApiError } from "@/types/auth";
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // Gestion du refresh en cours
 let isRefreshing = false;

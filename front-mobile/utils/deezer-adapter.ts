@@ -2,16 +2,6 @@ import { DeezerTrack } from "@/services/deezer-api";
 import { MusicCardData } from "@/components/swipe";
 
 /**
- * Mapping des genres vers des tags appropriés
- * Note: L'API Deezer ne retourne pas toujours les genres directement,
- * donc on utilise des tags génériques pour le moment
- */
-const DEFAULT_TAGS = {
-  primary: "MUSIQUE",
-  secondary: "DÉCOUVERTE",
-};
-
-/**
  * Détermine une couleur pour la carte en fonction de l'index
  * On alterne entre les couleurs disponibles
  */
@@ -30,6 +20,8 @@ function getColorForCard(index: number): "darkGreen" | "cyan" | "lightBlue" {
 export function deezerTrackToCardData(
   track: DeezerTrack,
   index: number = 0,
+  genreName?: string,
+  secondaryGenreName?: string,
 ): MusicCardData {
   return {
     id: track.id.toString(),
@@ -41,14 +33,34 @@ export function deezerTrackToCardData(
     title: track.title_short || track.title,
     artist: track.artist.name,
     album: track.album.title,
-    tags: DEFAULT_TAGS,
+    tags: {
+      primary: genreName || "MUSIQUE",
+      secondary: secondaryGenreName || "DÉCOUVERTE",
+    },
     color: getColorForCard(index),
   };
 }
 
 /**
  * Convertit un tableau de DeezerTrack en tableau de MusicCardData
+ * @param tracks Liste des morceaux
+ * @param genreMapping Optionnel: Mapping genreId -> Nom du genre
+ * @param albumGenresMapping Optionnel: Mapping albumId -> Liste des noms de genres
  */
-export function deezerTracksToCardData(tracks: DeezerTrack[]): MusicCardData[] {
-  return tracks.map((track, index) => deezerTrackToCardData(track, index));
+export function deezerTracksToCardData(
+  tracks: DeezerTrack[],
+  genreMapping?: Record<number, string>,
+  albumGenresMapping?: Record<number, string[]>,
+): MusicCardData[] {
+  return tracks.map((track, index) => {
+    const albumGenres = albumGenresMapping?.[track.album.id];
+    const genreName =
+      albumGenres?.[0] ||
+      (genreMapping?.[track.album.id]
+        ? genreMapping[track.album.id]
+        : undefined);
+    const secondaryGenreName = albumGenres?.[1];
+
+    return deezerTrackToCardData(track, index, genreName, secondaryGenreName);
+  });
 }

@@ -79,6 +79,9 @@ export interface DeezerAlbum {
   cover_xl: string;
   md5_image: string;
   genre_id: number;
+  genres?: {
+    data: DeezerGenre[];
+  };
   release_date: string;
   record_type: string;
   tracklist: string;

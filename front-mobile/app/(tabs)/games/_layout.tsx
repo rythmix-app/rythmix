@@ -33,6 +33,13 @@ export default function GamesLayout() {
           presentation: "card",
         }}
       />
+      <Stack.Screen
+        name="history/[gameId]"
+        options={{
+          headerShown: false,
+          presentation: "card",
+        }}
+      />
     </Stack>
   );
 }

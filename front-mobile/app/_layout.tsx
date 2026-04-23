@@ -66,6 +66,8 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="auth" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="integrations" />
           <Stack.Screen
             name="+not-found"
             options={{ headerShown: true, title: "Page introuvable" }}

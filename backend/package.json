@@ -9,7 +9,7 @@
     "build": "node ace build",
     "dev": "node ace serve --hmr",
     "test": "node ace test",
-    "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura node ace test",
+    "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura --check-coverage --statements=100 --branches=100 --functions=100 --lines=100 node ace test",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -60,6 +60,7 @@
     "typescript": "~5.8"
   },
   "dependencies": {
+    "@adonisjs/ally": "^5.1.1",
     "@adonisjs/auth": "^9.4.0",
     "@adonisjs/core": "^6.18.0",
     "@adonisjs/cors": "^2.2.1",
@@ -80,7 +81,8 @@
     ]
   },
   "overrides": {
-    "@stylistic/eslint-plugin-ts": "npm:@stylistic/eslint-plugin@^5.6.1"
+    "@stylistic/eslint-plugin-ts": "npm:@stylistic/eslint-plugin@^5.6.1",
+    "@poppinss/oauth-client": "7.0.1"
   },
   "prettier": "@adonisjs/prettier-config"
 }

@@ -1,4 +1,6 @@
-import { ScrollView, StyleSheet, Switch, View } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
 import Header from "@/components/Header";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
@@ -33,6 +35,25 @@ export default function SettingsScreen() {
             thumbColor={errorAnimationsEnabled ? Colors.primary.survol : "#888"}
           />
         </View>
+
+        <ThemedText style={styles.sectionTitle}>Intégrations</ThemedText>
+
+        <Pressable
+          style={styles.row}
+          onPress={() => router.push("/integrations")}
+        >
+          <View style={styles.rowText}>
+            <ThemedText style={styles.rowLabel}>Services musicaux</ThemedText>
+            <ThemedText style={styles.rowDescription}>
+              Connecte Spotify pour enrichir ton expérience
+            </ThemedText>
+          </View>
+          <MaterialIcons
+            name="chevron-right"
+            size={22}
+            color={Colors.dark.icon}
+          />
+        </Pressable>
       </ScrollView>
     </View>
   );

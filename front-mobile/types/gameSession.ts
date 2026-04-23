@@ -2,6 +2,10 @@ export type GameSessionStatus = "pending" | "active" | "completed" | "canceled";
 
 export interface GameSessionPlayer {
   userId: string;
+  status?: string;
+  score?: number;
+  expGained?: number;
+  rank?: number;
 }
 
 export interface GameSession {
@@ -61,6 +65,14 @@ export interface GetMyGameHistoryResponse {
     firstPage: number;
   };
   data: GameSession[];
+}
+
+export interface GetMyGameStatsResponse {
+  totalPlayed: number;
+  bestScore: number;
+  averageScore: number;
+  averageTimeElapsed: number;
+  lastPlayedAt: string | null;
 }
 
 export interface GetMyActiveGameSessionResponse {
