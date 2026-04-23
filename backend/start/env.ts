@@ -64,4 +64,13 @@ export default await Env.create(new URL('../', import.meta.url), {
   SPOTIFY_CLIENT_SECRET: Env.schema.string(),
   SPOTIFY_CALLBACK_URL: Env.schema.string(),
   SPOTIFY_DEEP_LINK_SCHEME: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Google OAuth sign-in (@adonisjs/ally)
+  |----------------------------------------------------------
+  */
+  GOOGLE_CLIENT_ID: Env.schema.string(),
+  GOOGLE_CLIENT_SECRET: Env.schema.string(),
+  GOOGLE_CALLBACK_URL: Env.schema.string(),
 })
