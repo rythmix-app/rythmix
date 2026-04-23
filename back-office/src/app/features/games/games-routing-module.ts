@@ -13,6 +13,11 @@ const routes: Routes = [
     component: GameDetail,
     data: { mode: 'view' },
   },
+  {
+    path: ':id/edit',
+    component: GameDetail,
+    data: { mode: 'edit' },
+  },
 ];
 
 @NgModule({

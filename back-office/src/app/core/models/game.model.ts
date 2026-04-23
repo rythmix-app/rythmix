@@ -7,3 +7,9 @@ export interface Game {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface UpdateGameDto {
+  name?: string;
+  description?: string;
+  isEnabled?: boolean;
+}

@@ -2,13 +2,12 @@ import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Game } from '../../../../core/models/game.model';
 import { GameService } from '../../../../core/services/game.service';
-import {DatePipe} from '@angular/common';
 
 @Component({
+  standalone: false,
   selector: 'app-games-list',
   templateUrl: './games-list.html',
   styleUrls: ['./games-list.scss'],
-  imports: [DatePipe],
 })
 export class GamesList implements OnInit {
   allGames: Game[] = [];
@@ -150,6 +149,10 @@ export class GamesList implements OnInit {
 
   viewGame(game: Game): void {
     this.router.navigate(['/games', game.id]);
+  }
+
+  editGame(game: Game): void {
+    this.router.navigate(['/games', game.id, 'edit']);
   }
 
   private showSnackbar(

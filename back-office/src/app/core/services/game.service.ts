@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
-import { Game } from '../models/game.model';
+import { Game, UpdateGameDto } from '../models/game.model';
 
 @Injectable({
   providedIn: 'root',
@@ -19,6 +19,12 @@ export class GameService {
   getGameById(id: number): Observable<Game> {
     return this.api
       .get<{ game: Game }>(`${this.endpoint}/${id}`)
+      .pipe(map((response) => response.game));
+  }
+
+  updateGame(id: number, dto: UpdateGameDto): Observable<Game> {
+    return this.api
+      .patch<{ game: Game }>(`${this.endpoint}/${id}`, dto)
       .pipe(map((response) => response.game));
   }
 }

@@ -1,9 +1,9 @@
 <div class="game-detail-page">
   <div class="page-header">
-    <button class="back-btn" (click)="onBack()">
+    <button class="back-btn" (click)="onCancel()">
       <i class="fas fa-arrow-left"></i>
     </button>
-    <h1 class="page-title">DÉTAILS DU JEU</h1>
+    <h1 class="page-title">{{ title }}</h1>
   </div>
 
   <div class="page-content">
@@ -14,78 +14,204 @@
     }
 
     @if (!isLoading && game) {
-      <div class="detail-container">
-        <div class="game-header-card">
-          <div class="game-header-icon">
-            <i class="fas fa-dice"></i>
-          </div>
-          <div class="game-header-info">
-            <h2 class="game-title-name">{{ game.name }}</h2>
-            <div class="game-header-badges">
-              <span
-                class="badge"
-                [class.badge-type]="game.isMultiplayer"
-                [class.badge-muted]="!game.isMultiplayer"
-              >
-                {{ game.isMultiplayer ? "Multijoueur" : "Solo" }}
-              </span>
-              <span
-                class="badge"
-                [class.badge-success]="game.isEnabled"
-                [class.badge-muted]="!game.isEnabled"
-              >
-                {{ game.isEnabled ? "Activé" : "Désactivé" }}
-              </span>
+      @if (mode === "view") {
+        <div class="detail-container">
+          <div class="game-header-card">
+            <div class="game-header-icon">
+              <i class="fas fa-dice"></i>
             </div>
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <h3 class="section-title">Description</h3>
-          <p class="description-text">{{ game.description || "—" }}</p>
-        </div>
-
-        <div class="info-section">
-          <h3 class="section-title">Informations système</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">ID</span>
-              <span class="info-value">{{ game.id }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Multijoueur</span>
-              <span class="info-value">
-                {{ game.isMultiplayer ? "Oui" : "Non" }}
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Activé sur mobile</span>
-              <span class="info-value">
-                {{ game.isEnabled ? "Oui" : "Non" }}
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Dates</span>
-              <div class="info-dates">
-                <div class="date-row">
-                  <span class="date-label">Création:</span>
-                  <span class="info-value">
-                    {{ game.createdAt | date: "dd/MM/yyyy HH:mm" }}
-                  </span>
-                </div>
-                @if (game.updatedAt) {
-                  <div class="date-row">
-                    <span class="date-label">Modification:</span>
-                    <span class="info-value">
-                      {{ game.updatedAt | date: "dd/MM/yyyy HH:mm" }}
-                    </span>
-                  </div>
-                }
+            <div class="game-header-info">
+              <h2 class="game-title-name">{{ game.name }}</h2>
+              <div class="game-header-badges">
+                <span
+                  class="badge"
+                  [class.badge-type]="game.isMultiplayer"
+                  [class.badge-muted]="!game.isMultiplayer"
+                >
+                  {{ game.isMultiplayer ? "Multijoueur" : "Solo" }}
+                </span>
+                <span
+                  class="badge"
+                  [class.badge-success]="game.isEnabled"
+                  [class.badge-muted]="!game.isEnabled"
+                >
+                  {{ game.isEnabled ? "Activé" : "Désactivé" }}
+                </span>
               </div>
             </div>
           </div>
+
+          <div class="detail-section">
+            <h3 class="section-title">Description</h3>
+            <p class="description-text">{{ game.description || "—" }}</p>
+          </div>
+
+          <div class="info-section">
+            <h3 class="section-title">Informations système</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">ID</span>
+                <span class="info-value">{{ game.id }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Multijoueur</span>
+                <span class="info-value">
+                  {{ game.isMultiplayer ? "Oui" : "Non" }}
+                </span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Activé sur mobile</span>
+                <span class="info-value">
+                  {{ game.isEnabled ? "Oui" : "Non" }}
+                </span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Dates</span>
+                <div class="info-dates">
+                  <div class="date-row">
+                    <span class="date-label">Création:</span>
+                    <span class="info-value">
+                      {{ game.createdAt | date: "dd/MM/yyyy HH:mm" }}
+                    </span>
+                  </div>
+                  @if (game.updatedAt) {
+                    <div class="date-row">
+                      <span class="date-label">Modification:</span>
+                      <span class="info-value">
+                        {{ game.updatedAt | date: "dd/MM/yyyy HH:mm" }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn-edit"
+              (click)="router.navigate(['/games', gameId, 'edit'])"
+            >
+              Modifier
+            </button>
+          </div>
         </div>
-      </div>
+      }
+
+      @if (mode === "edit") {
+        <div class="form-container">
+          <form [formGroup]="gameForm" (ngSubmit)="onSubmit()">
+            <div class="form-section">
+              <h2 class="section-title">Informations</h2>
+
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="name" class="field-label">
+                    Nom <span class="required">*</span>
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    formControlName="name"
+                    class="field-input"
+                    placeholder="Nom du jeu"
+                    [class.error]="
+                      gameForm.get('name')?.invalid &&
+                      gameForm.get('name')?.touched
+                    "
+                  />
+                  @if (
+                    gameForm.get("name")?.hasError("required") &&
+                    gameForm.get("name")?.touched
+                  ) {
+                    <span class="field-error">Le nom est requis</span>
+                  }
+                  @if (
+                    gameForm.get("name")?.hasError("minlength") &&
+                    gameForm.get("name")?.touched
+                  ) {
+                    <span class="field-error">Au moins 2 caractères</span>
+                  }
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="description" class="field-label">
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    formControlName="description"
+                    class="field-textarea"
+                    rows="3"
+                    placeholder="Description du jeu..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-field">
+                  <fieldset class="onoff-fieldset">
+                    <legend class="field-label">
+                      Activé sur l'application mobile
+                    </legend>
+                    <div class="onoff-toggle">
+                      <button
+                        type="button"
+                        class="onoff-btn"
+                        [class.active]="
+                          gameForm.get('isEnabled')?.value === true
+                        "
+                        (click)="gameForm.get('isEnabled')?.setValue(true)"
+                        [disabled]="isSubmitting"
+                      >
+                        ON
+                      </button>
+                      <button
+                        type="button"
+                        class="onoff-btn"
+                        [class.active]="
+                          gameForm.get('isEnabled')?.value === false
+                        "
+                        (click)="gameForm.get('isEnabled')?.setValue(false)"
+                        [disabled]="isSubmitting"
+                      >
+                        OFF
+                      </button>
+                    </div>
+                  </fieldset>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="button"
+                (click)="onCancel()"
+                [disabled]="isSubmitting"
+                class="btn-cancel"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                [disabled]="isSubmitting || gameForm.invalid"
+                class="btn-submit"
+              >
+                @if (isSubmitting) {
+                  <i class="fas fa-spinner fa-spin"></i>
+                }
+                @if (!isSubmitting) {
+                  <i class="fas fa-check"></i>
+                }
+                <span>Enregistrer</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      }
     }
   </div>
 </div>
