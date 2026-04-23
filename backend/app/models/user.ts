@@ -6,7 +6,7 @@ import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { randomUUID } from 'node:crypto'
 import { hasMany } from '@adonisjs/lucid/orm'
-import LikedTrack from '#models/liked_track'
+import UserTrackInteraction from '#models/user_track_interaction'
 import FavoriteGame from '#models/favorite_game'
 import UserIntegration from '#models/user_integration'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
@@ -71,8 +71,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime()
   declare emailVerifiedAt: DateTime | null
 
-  @hasMany(() => LikedTrack)
-  declare likedTracks: HasMany<typeof LikedTrack>
+  @hasMany(() => UserTrackInteraction)
+  declare trackInteractions: HasMany<typeof UserTrackInteraction>
 
   @hasMany(() => FavoriteGame)
   declare favoriteGames: HasMany<typeof FavoriteGame>
