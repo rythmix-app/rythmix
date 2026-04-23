@@ -488,6 +488,197 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     }
   })
 
+  test('getGameStats returns neutral values when no completed sessions', async ({ assert }) => {
+    const game = await createTestGame('stats_empty')
+    const userId = `user-stats-empty-${Date.now()}`
+
+    const stats = await service.getGameStats(userId, game.id)
+
+    assert.equal(stats.totalPlayed, 0)
+    assert.equal(stats.bestScore, 0)
+    assert.equal(stats.averageScore, 0)
+    assert.equal(stats.averageTimeElapsed, 0)
+    assert.isNull(stats.lastPlayedAt)
+  })
+
+  test('getGameStats defaults missing score and timeElapsed to zero', async ({ assert }) => {
+    const game = await createTestGame('stats_no_fields')
+    const userId = `user-stats-missing-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const stats = await service.getGameStats(userId, game.id)
+
+    assert.equal(stats.totalPlayed, 1)
+    assert.equal(stats.bestScore, 0)
+    assert.equal(stats.averageScore, 0)
+    assert.equal(stats.averageTimeElapsed, 0)
+    assert.isNotNull(stats.lastPlayedAt)
+  })
+
+  test('getGameStats computes aggregates from completed sessions', async ({ assert }) => {
+    const game = await createTestGame('stats_agg')
+    const userId = `user-stats-agg-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: { score: 10, maxScore: 18, timeElapsed: 30 },
+    })
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: { score: 16, maxScore: 18, timeElapsed: 60 },
+    })
+    // Canceled session should be excluded
+    await GameSession.create({
+      gameId: game.id,
+      status: 'canceled',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: { score: 0, maxScore: 18, timeElapsed: 5 },
+    })
+
+    const stats = await service.getGameStats(userId, game.id)
+
+    assert.equal(stats.totalPlayed, 2)
+    assert.equal(stats.bestScore, 16)
+    assert.equal(stats.averageScore, 13)
+    assert.equal(stats.averageTimeElapsed, 45)
+    assert.isNotNull(stats.lastPlayedAt)
+  })
+
+  test('createGameSession treats non-array players as having no player ids', async ({ assert }) => {
+    const game = await createTestGame('non_array_players')
+    const created = await service.createGameSession({
+      gameId: game.id,
+      status: 'en_cours',
+      players: {} as any,
+      gameData: {},
+    })
+    assert.instanceOf(created, GameSession)
+  })
+
+  test('getByUserId returns sessions for the user sorted by creation time', async ({ assert }) => {
+    const game = await createTestGame('by_user')
+    const userId = `user-by-${Date.now()}`
+
+    const older = await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+    const newer = await GameSession.create({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const all = await service.getByUserId(userId)
+    assert.equal(all.length, 2)
+    assert.equal(all[0].id, newer.id)
+    assert.equal(all[1].id, older.id)
+
+    const filtered = await service.getByUserId(userId, 'completed')
+    assert.equal(filtered.length, 1)
+    assert.equal(filtered[0].id, older.id)
+  })
+
+  test('getGameHistory paginates completed and canceled sessions by default', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('history')
+    const otherGame = await createTestGame('history_other')
+    const userId = `user-history-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 10, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+    await GameSession.create({
+      gameId: game.id,
+      status: 'canceled',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+    // Active session should not be in history
+    await GameSession.create({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+    // Other game should not leak
+    await GameSession.create({
+      gameId: otherGame.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 5, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const history = await service.getGameHistory(userId, game.id)
+    assert.equal(history.all().length, 2)
+    assert.isTrue(history.all().every((s: any) => ['completed', 'canceled'].includes(s.status)))
+  })
+
+  test('getGameHistory filters by the provided status and respects pagination', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('history_filter')
+    const userId = `user-history-filter-${Date.now()}`
+
+    for (let i = 0; i < 3; i++) {
+      await GameSession.create({
+        gameId: game.id,
+        status: 'completed',
+        players: [{ userId, status: 'done', score: i, expGained: 0, rank: 1 }],
+        gameData: {},
+      })
+    }
+    await GameSession.create({
+      gameId: game.id,
+      status: 'canceled',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const completedOnly = await service.getGameHistory(userId, game.id, 'completed', 1, 2)
+    assert.equal(completedOnly.all().length, 2)
+    assert.isTrue(completedOnly.all().every((s: any) => s.status === 'completed'))
+  })
+
+  test('getMyActiveSessionByGameId returns the active session for the user', async ({ assert }) => {
+    const game = await createTestGame('active_session')
+    const userId = `user-active-${Date.now()}`
+
+    await GameSession.create({
+      gameId: game.id,
+      status: 'completed',
+      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+    const activeSession = await GameSession.create({
+      gameId: game.id,
+      status: 'active',
+      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const sessions = await service.getMyActiveSessionByGameId(userId, game.id)
+    assert.equal(sessions.length, 1)
+    assert.equal(sessions[0].id, activeSession.id)
+  })
+
   test('JSON fields are properly serialized and deserialized', async ({ assert }) => {
     const game = await createTestGame('json')
     const complexPlayers = [

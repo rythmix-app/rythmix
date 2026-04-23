@@ -197,7 +197,11 @@ export default class GameSessionsController {
   @ApiResponse({ status: 500, description: 'Error while fetching game sessions' })
   public async getByGame({ params, response }: HttpContext) {
     try {
-      const gameSessions = await this.gameSessionService.getByGameId(params.gameId)
+      const gameId = Number(params.gameId)
+      if (Number.isNaN(gameId)) {
+        return response.status(400).json({ message: 'Invalid gameId' })
+      }
+      const gameSessions = await this.gameSessionService.getByGameId(gameId)
       return response.json({ gameSessions })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game sessions' })
@@ -217,7 +221,7 @@ export default class GameSessionsController {
     try {
       const userId = auth.user!.id
       const status = request.qs().status as string | undefined
-      const gameSessions = await this.gameSessionService.getMySessionsByUserId(userId, status)
+      const gameSessions = await this.gameSessionService.getByUserId(userId, status)
       return response.json({ gameSessions })
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game sessions' })
@@ -238,6 +242,9 @@ export default class GameSessionsController {
     try {
       const userId = auth.user!.id
       const gameId = Number(params.gameId)
+      if (Number.isNaN(gameId)) {
+        return response.status(400).json({ message: 'Invalid gameId' })
+      }
       const status = request.qs().status as string | undefined
       if (
         status &&
@@ -251,7 +258,7 @@ export default class GameSessionsController {
       }
       const page = Math.max(1, Number(request.qs().page) || 1)
       const limit = Math.min(100, Math.max(1, Number(request.qs().limit) || 20))
-      const gameSessions = await this.gameSessionService.getMyGameHistory(
+      const gameSessions = await this.gameSessionService.getGameHistory(
         userId,
         gameId,
         status,
@@ -261,6 +268,30 @@ export default class GameSessionsController {
       return response.json(gameSessions)
     } catch (error) {
       return response.status(500).json({ message: 'Error while fetching game session history' })
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Get my game stats for a specific game',
+    description:
+      'Retrieve aggregated statistics (total played, best score, average score, average time, last played) from completed sessions of the authenticated user for a specific game.',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiParam({ name: 'gameId', description: 'Game ID', required: true })
+  @ApiResponse({ status: 200, description: 'Game stats retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Error while fetching game stats' })
+  public async myGameStats({ auth, params, response }: HttpContext) {
+    try {
+      const userId = auth.user!.id
+      const gameId = Number(params.gameId)
+      if (Number.isNaN(gameId)) {
+        return response.status(400).json({ message: 'Invalid gameId' })
+      }
+      const stats = await this.gameSessionService.getGameStats(userId, gameId)
+      return response.json(stats)
+    } catch (error) {
+      return response.status(500).json({ message: 'Error while fetching game stats' })
     }
   }
 
@@ -278,6 +309,9 @@ export default class GameSessionsController {
     try {
       const userId = auth.user!.id
       const gameId = Number(params.gameId)
+      if (Number.isNaN(gameId)) {
+        return response.status(400).json({ message: 'Invalid gameId' })
+      }
       const gameSession = await this.gameSessionService.getMyActiveSessionByGameId(userId, gameId)
       return response.json({ gameSession: gameSession ?? null })
     } catch (error) {
@@ -299,6 +333,9 @@ export default class GameSessionsController {
   @ApiResponse({ status: 500, description: 'Error while fetching game sessions' })
   public async getByStatus({ params, response }: HttpContext) {
     try {
+      if (!Object.values(GameSessionStatus).includes(params.status as GameSessionStatus)) {
+        return response.status(400).json({ message: 'Invalid status' })
+      }
       const gameSessions = await this.gameSessionService.getByStatus(params.status)
       return response.json({ gameSessions })
     } catch (error) {

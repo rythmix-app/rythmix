@@ -9,7 +9,7 @@
     "build": "node ace build",
     "dev": "node ace serve --hmr",
     "test": "node ace test",
-    "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura node ace test",
+    "test:coverage": "c8 --include='app/controllers/**' --include='app/services/**' --reporter=html --reporter=text --reporter=lcov --reporter=cobertura --check-coverage --statements=100 --branches=100 --functions=100 --lines=100 node ace test",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

@@ -1,5 +1,7 @@
 import { test } from '@japa/runner'
 import Game from '#models/game'
+import FavoriteGame from '#models/favorite_game'
+import User from '#models/user'
 import { GameService } from '#services/game_service'
 import { deleteGame } from '#tests/utils/game_helpers'
 
@@ -16,12 +18,14 @@ test.group('GameService - CRUD Operations', (group) => {
     const result = await gameService.createGame({
       name: 'Test Game',
       description: 'Test description',
+      isEnabled: true,
     })
 
     assert.instanceOf(result, Game)
     if (result instanceof Game) {
       assert.equal(result.name, 'Test Game')
       assert.equal(result.description, 'Test description')
+      assert.isTrue(result.isEnabled)
     }
   })
 
@@ -48,16 +52,18 @@ test.group('GameService - CRUD Operations', (group) => {
   })
 
   test('updateGame should update game successfully', async ({ assert }) => {
-    const g = await Game.create({ name: 'Old', description: 'Old desc' })
+    const g = await Game.create({ name: 'Old', description: 'Old desc', isEnabled: false })
     const result = await gameService.updateGame(g.id, {
       name: 'New',
       description: 'New desc',
+      isEnabled: true,
     })
 
     assert.instanceOf(result, Game)
     if (result instanceof Game) {
       assert.equal(result.name, 'New')
       assert.equal(result.description, 'New desc')
+      assert.isTrue(result.isEnabled)
     }
   })
 
@@ -199,6 +205,39 @@ test.group('GameService - CRUD Operations', (group) => {
       g.save = originalSave
       Game.query = originalQuery
     }
+  })
+
+  test('getAll with userId annotates games with isFavorite flag', async ({ assert }) => {
+    const user = await User.create({
+      username: `fav_all_${Date.now()}`,
+      email: `fav_all_${Date.now()}@example.com`,
+      password: 'password123',
+    })
+    const favorited = await Game.create({ name: 'FavAll', description: 'Fav' })
+    const other = await Game.create({ name: 'NoFavAll', description: 'No' })
+    await FavoriteGame.create({ userId: user.id, gameId: favorited.id })
+
+    const games = await gameService.getAll(user.id)
+
+    const favRow = games.find((g) => g.id === favorited.id)
+    const otherRow = games.find((g) => g.id === other.id)
+    assert.isTrue(favRow?.$extras.isFavorite)
+    assert.isFalse(otherRow?.$extras.isFavorite)
+  })
+
+  test('getById with userId annotates the game with isFavorite flag', async ({ assert }) => {
+    const user = await User.create({
+      username: `fav_one_${Date.now()}`,
+      email: `fav_one_${Date.now()}@example.com`,
+      password: 'password123',
+    })
+    const game = await Game.create({ name: 'FavOne', description: 'Fav' })
+    await FavoriteGame.create({ userId: user.id, gameId: game.id })
+
+    const found = await gameService.getById(game.id, user.id)
+
+    assert.isNotNull(found)
+    assert.isTrue(found?.$extras.isFavorite)
   })
 
   test('updateGame should rethrow unknown save errors', async ({ assert }) => {

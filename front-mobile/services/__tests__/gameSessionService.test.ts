@@ -8,6 +8,7 @@ import {
   getGameSessionsByStatus,
   getMyGameSessions,
   getMyGameHistory,
+  getMyGameStats,
   getMyActiveSession,
 } from "../gameSessionService";
 
@@ -174,6 +175,22 @@ describe("getMyGameHistory", () => {
     expect(mockGet).toHaveBeenCalledWith(
       "/api/game-sessions/me/game/1?status=completed&page=2&limit=10",
     );
+  });
+});
+
+describe("getMyGameStats", () => {
+  it("should return stats for a game", async () => {
+    const mockStats = {
+      totalPlayed: 5,
+      bestScore: 18,
+      averageScore: 72.5,
+      averageTimeElapsed: 45.3,
+      lastPlayedAt: "2026-04-15T10:00:00Z",
+    };
+    mockGet.mockResolvedValueOnce(mockStats);
+    const result = await getMyGameStats(1);
+    expect(result).toEqual(mockStats);
+    expect(mockGet).toHaveBeenCalledWith("/api/game-sessions/me/game/1/stats");
   });
 });
 

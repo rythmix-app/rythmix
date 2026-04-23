@@ -500,4 +500,30 @@ test.group('UserService - Edge Cases', (group) => {
       User.create = originalCreate
     }
   })
+
+  test('createUser should map value-too-long error (22001) to 400', async ({ assert }) => {
+    const originalCreate = User.create
+    User.create = (async () => {
+      const error: any = new Error('value too long for type character varying')
+      error.code = '22001'
+      throw error
+    }) as typeof User.create
+
+    try {
+      const timestamp = Date.now()
+      const result = await userService.createUser({
+        username: `too_long_${timestamp}`,
+        email: `too_long_${timestamp}@example.com`,
+        password: 'password123',
+      })
+
+      assert.notInstanceOf(result, User)
+      if (!(result instanceof User)) {
+        assert.equal(result.error, 'One or more fields exceed maximum length')
+        assert.equal(result.status, 400)
+      }
+    } finally {
+      User.create = originalCreate
+    }
+  })
 })

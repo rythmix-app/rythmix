@@ -185,4 +185,32 @@ test.group('MeIntegrationsController - Spotify data fetch', (group) => {
     response.assertStatus(500)
     response.assertBodyContains({ message: 'Failed to fetch Spotify data' })
   })
+
+  test('GET /top-artists returns 500 on generic Spotify API error', async ({ client }) => {
+    const { token } = await linkUser('spotify_ta_500')
+
+    globalThis.fetch = async () =>
+      new Response('{"error":{"status":500}}', {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    const response = await client.get('/api/me/spotify/top-artists').bearerToken(token)
+    response.assertStatus(500)
+    response.assertBodyContains({ message: 'Failed to fetch Spotify data' })
+  })
+
+  test('GET /recently-played returns 500 on generic Spotify API error', async ({ client }) => {
+    const { token } = await linkUser('spotify_rp_500')
+
+    globalThis.fetch = async () =>
+      new Response('{"error":{"status":500}}', {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    const response = await client.get('/api/me/spotify/recently-played').bearerToken(token)
+    response.assertStatus(500)
+    response.assertBodyContains({ message: 'Failed to fetch Spotify data' })
+  })
 })

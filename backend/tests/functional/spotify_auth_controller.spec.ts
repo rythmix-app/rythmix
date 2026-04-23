@@ -33,6 +33,17 @@ test.group('SpotifyAuthController - Init guards', (group) => {
     response.assertStatus(400)
   })
 
+  test('POST /api/auth/spotify/init returns 400 when returnUrl has no scheme', async ({
+    client,
+  }) => {
+    const { token } = await createAuthenticatedUser('spotify_init_no_scheme')
+    const response = await client
+      .post('/api/auth/spotify/init')
+      .json({ returnUrl: 'no-scheme-here' })
+      .bearerToken(token)
+    response.assertStatus(400)
+  })
+
   test('POST /api/auth/spotify/init returns 200 with Spotify authorize URL', async ({
     client,
     assert,
@@ -52,13 +63,9 @@ test.group('SpotifyAuthController - Init guards', (group) => {
 
 interface AllyMockScenario {
   denied?: boolean
-  accessTokenResponse?: {
-    token: string
-    refreshToken?: string
-    expiresIn?: number
-    scope?: string
-  }
-  throwOnAccessToken?: Error
+  accessTokenResponse?: Record<string, unknown>
+  accessToken?: () => unknown | Promise<unknown>
+  throwOnAccessToken?: unknown
 }
 
 function buildFakeAlly(scenario: AllyMockScenario) {
@@ -72,7 +79,8 @@ function buildFakeAlly(scenario: AllyMockScenario) {
           return scenario.denied === true
         },
         async accessToken() {
-          if (scenario.throwOnAccessToken) throw scenario.throwOnAccessToken
+          if (scenario.accessToken) return scenario.accessToken()
+          if ('throwOnAccessToken' in scenario) throw scenario.throwOnAccessToken
           return scenario.accessTokenResponse ?? { token: 'fake-access', expiresIn: 3600 }
         },
       }
@@ -139,6 +147,18 @@ test.group('SpotifyAuthController - Callback', (group) => {
     response.assertStatus(302)
     const location = response.headers().location as string
     assert.include(location, 'frontmobile://spotify-linked')
+    assert.include(location, 'reason=access_denied')
+  })
+
+  test('callback falls back to the deep link URL on access_denied without state', async ({
+    client,
+    assert,
+  }) => {
+    installAllyMock({ denied: true })
+
+    const response = await client.get('/api/auth/spotify/callback').redirects(0)
+    response.assertStatus(302)
+    const location = response.headers().location as string
     assert.include(location, 'reason=access_denied')
   })
 
@@ -255,5 +275,191 @@ test.group('SpotifyAuthController - Callback', (group) => {
     const location = response.headers().location as string
     assert.include(location, 'status=error')
     assert.include(location, 'reason=invalid_grant')
+  })
+
+  test('callback redirects with unknown_error when a non-Error is thrown', async ({
+    client,
+    assert,
+  }) => {
+    const { user } = await createAuthenticatedUser('cb_token_throws_string')
+    installAllyMock({ throwOnAccessToken: 'plain string failure' })
+
+    const state = buildValidState(user.id)
+    const response = await client.get('/api/auth/spotify/callback').qs({ state }).redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'reason=unknown_error')
+  })
+
+  test('callback stores a null refresh_token when Spotify omits it', async ({ client, assert }) => {
+    const { user } = await createAuthenticatedUser('cb_no_refresh')
+    installAllyMock({
+      accessTokenResponse: {
+        token: 'tok-only',
+        expiresIn: 3600,
+        scope: 'user-read-email',
+      },
+    })
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ id: 'spotify_no_refresh' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    const state = buildValidState(user.id)
+    const response = await client.get('/api/auth/spotify/callback').qs({ state }).redirects(0)
+
+    response.assertStatus(302)
+    const integration = await new SpotifyService().findByUserId(user.id)
+    assert.isNotNull(integration)
+    assert.isNull(integration!.refreshToken)
+  })
+
+  test('callback uses token.expiresAt when expiresIn is missing and reads scope from token.original', async ({
+    client,
+    assert,
+  }) => {
+    const { user } = await createAuthenticatedUser('cb_expires_at')
+    const expiresAt = new Date(Date.now() + 3_600_000)
+
+    installAllyMock({
+      accessTokenResponse: {
+        token: 'tok',
+        refreshToken: 'ref',
+        expiresAt,
+        original: { scope: 'user-read-email user-top-read' },
+      },
+    })
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ id: 'spotify_expires_at' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    const state = buildValidState(user.id)
+    const response = await client.get('/api/auth/spotify/callback').qs({ state }).redirects(0)
+
+    response.assertStatus(302)
+    const integration = await new SpotifyService().findByUserId(user.id)
+    assert.isNotNull(integration)
+    assert.equal(integration!.scopes, 'user-read-email user-top-read')
+    assert.isNotNull(integration!.expiresAt)
+  })
+
+  test('callback redirects with invalid_state when state cannot be decrypted', async ({
+    client,
+    assert,
+  }) => {
+    installAllyMock({ denied: false })
+
+    const response = await client
+      .get('/api/auth/spotify/callback')
+      .qs({ state: 'not-a-valid-encrypted-state' })
+      .redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'reason=invalid_state')
+  })
+
+  test('callback redirects with invalid_state when decoded returnUrl has a disallowed scheme', async ({
+    client,
+    assert,
+  }) => {
+    installAllyMock({ denied: false })
+    const stateWithBadReturn = encryption.encrypt({
+      userId: 'any',
+      returnUrl: 'https://attacker.example.com/cb',
+      expiresAt: DateTime.now().plus({ minutes: 5 }).toISO(),
+    })
+
+    const response = await client
+      .get('/api/auth/spotify/callback')
+      .qs({ state: stateWithBadReturn })
+      .redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'reason=invalid_state')
+  })
+
+  test('callback appends status with & when returnUrl already has a query string', async ({
+    client,
+    assert,
+  }) => {
+    const { user } = await createAuthenticatedUser('cb_query_string')
+    installAllyMock({
+      accessTokenResponse: {
+        token: 'tok',
+        refreshToken: 'ref',
+        expiresIn: 3600,
+        scope: 'user-top-read',
+      },
+    })
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ id: 'spotify_qs' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    const state = buildValidState(user.id, 'frontmobile://spotify-linked?existing=1')
+    const response = await client.get('/api/auth/spotify/callback').qs({ state }).redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'frontmobile://spotify-linked?existing=1&status=ok')
+  })
+
+  test('callback joins array-valued scope with a space', async ({ client, assert }) => {
+    const { user } = await createAuthenticatedUser('cb_array_scope')
+
+    installAllyMock({
+      accessTokenResponse: {
+        token: 'tok',
+        refreshToken: 'ref',
+        expiresIn: 3600,
+        scope: ['user-read-email', 'user-top-read'],
+      },
+    })
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ id: 'spotify_array_scope' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    const state = buildValidState(user.id)
+    const response = await client.get('/api/auth/spotify/callback').qs({ state }).redirects(0)
+
+    response.assertStatus(302)
+    const integration = await new SpotifyService().findByUserId(user.id)
+    assert.equal(integration!.scopes, 'user-read-email user-top-read')
+  })
+
+  test('callback stores a null expiresAt when neither expiresIn nor expiresAt are present', async ({
+    client,
+    assert,
+  }) => {
+    const { user } = await createAuthenticatedUser('cb_no_expiry')
+
+    installAllyMock({ accessTokenResponse: { token: 'tok', refreshToken: 'ref' } })
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ id: 'spotify_no_expiry' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    const state = buildValidState(user.id)
+    const response = await client.get('/api/auth/spotify/callback').qs({ state }).redirects(0)
+
+    response.assertStatus(302)
+    const integration = await new SpotifyService().findByUserId(user.id)
+    assert.isNotNull(integration)
+    assert.isNull(integration!.expiresAt)
   })
 })

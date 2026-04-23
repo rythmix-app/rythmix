@@ -56,6 +56,8 @@ export default defineConfig({
             id: { type: 'integer', example: 1 },
             name: { type: 'string', example: 'Guess the Song' },
             description: { type: 'string', example: 'Players guess songs from audio clips' },
+            isMultiplayer: { type: 'boolean', example: false },
+            isEnabled: { type: 'boolean', example: true },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },

@@ -65,6 +65,7 @@ test.group('GamesController - CRUD Operations', (group) => {
     const response = await client.post('/api/games').bearerToken(token.value!.release()).json({
       name: 'New Game',
       description: 'New Game Description',
+      isEnabled: true,
     })
 
     response.assertStatus(201)
@@ -72,6 +73,7 @@ test.group('GamesController - CRUD Operations', (group) => {
     const createdGame = response.body().game
     assert.equal(createdGame.name, 'New Game')
     assert.equal(createdGame.description, 'New Game Description')
+    assert.isTrue(createdGame.isEnabled)
   })
 
   test('PATCH /api/games/:id should update game', async ({ client, assert }) => {
@@ -81,6 +83,7 @@ test.group('GamesController - CRUD Operations', (group) => {
     const game = await Game.create({
       name: 'Original Name',
       description: 'Original Description',
+      isEnabled: false,
     })
 
     const response = await client
@@ -89,6 +92,7 @@ test.group('GamesController - CRUD Operations', (group) => {
       .json({
         name: 'Updated Name',
         description: 'Updated Description',
+        isEnabled: true,
       })
 
     response.assertStatus(200)
@@ -96,6 +100,27 @@ test.group('GamesController - CRUD Operations', (group) => {
     const updatedGame = response.body().game
     assert.equal(updatedGame.name, 'Updated Name')
     assert.equal(updatedGame.description, 'Updated Description')
+    assert.isTrue(updatedGame.isEnabled)
+  })
+
+  test('PATCH /api/games/:id should toggle isEnabled independently', async ({ client, assert }) => {
+    const admin = await User.create(makeAdminUser())
+    const token = await User.accessTokens.create(admin)
+
+    const game = await Game.create({
+      name: 'Toggle Game',
+      description: 'Toggle Description',
+      isEnabled: true,
+    })
+
+    const response = await client
+      .patch(`/api/games/${game.id}`)
+      .bearerToken(token.value!.release())
+      .json({ isEnabled: false })
+
+    response.assertStatus(200)
+    assert.isFalse(response.body().game.isEnabled)
+    assert.equal(response.body().game.name, 'Toggle Game')
   })
 
   test('PATCH /api/games/:id should return 404 for non-existent game', async ({ client }) => {
