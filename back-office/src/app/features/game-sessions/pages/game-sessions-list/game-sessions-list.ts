@@ -84,8 +84,9 @@ export class GameSessionsList implements OnInit {
   }
 
   onStatusFilterChange(event: Event): void {
-    this.statusFilter = (event.target as HTMLSelectElement)
-      .value as GameSessionStatus | '';
+    this.statusFilter = (event.target as HTMLSelectElement).value as
+      | GameSessionStatus
+      | '';
     this.applyFilters();
   }
 
@@ -125,10 +126,12 @@ export class GameSessionsList implements OnInit {
     }
 
     this.filteredSessions.sort((a, b) => {
-      let aValue: string | number | Date | null | undefined =
-        a[column as keyof GameSession] as string | number | Date | undefined;
-      let bValue: string | number | Date | null | undefined =
-        b[column as keyof GameSession] as string | number | Date | undefined;
+      let aValue: string | number | Date | null | undefined = a[
+        column as keyof GameSession
+      ] as string | number | Date | undefined;
+      let bValue: string | number | Date | null | undefined = b[
+        column as keyof GameSession
+      ] as string | number | Date | undefined;
 
       if (aValue === null || aValue === undefined) return 1;
       if (bValue === null || bValue === undefined) return -1;

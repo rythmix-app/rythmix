@@ -118,7 +118,9 @@ export class GameSessionDetail implements OnInit {
   }
 
   get title(): string {
-    return this.mode === 'edit' ? 'MODIFIER LA SESSION' : 'DÉTAILS DE LA SESSION';
+    return this.mode === 'edit'
+      ? 'MODIFIER LA SESSION'
+      : 'DÉTAILS DE LA SESSION';
   }
 
   prettyJson(value: unknown): string {

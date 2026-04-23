@@ -1,8 +1,4 @@
-export type GameSessionStatus =
-  | 'pending'
-  | 'active'
-  | 'completed'
-  | 'canceled';
+export type GameSessionStatus = 'pending' | 'active' | 'completed' | 'canceled';
 
 export const GAME_SESSION_STATUSES: GameSessionStatus[] = [
   'pending',

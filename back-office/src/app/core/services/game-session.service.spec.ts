@@ -148,12 +148,14 @@ describe('GameSessionService', () => {
       const error = new Error('Update failed');
       apiService.patch.and.returnValue(throwError(() => error));
 
-      service.updateGameSession(mockSession.id, { status: 'canceled' }).subscribe({
-        error: (err) => {
-          expect(err).toBe(error);
-          done();
-        },
-      });
+      service
+        .updateGameSession(mockSession.id, { status: 'canceled' })
+        .subscribe({
+          error: (err) => {
+            expect(err).toBe(error);
+            done();
+          },
+        });
     });
   });
 
