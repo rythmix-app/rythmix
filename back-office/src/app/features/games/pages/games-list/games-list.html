@@ -1,0 +1,179 @@
+<div class="games-page">
+  <div class="page-header">
+    <h1 class="page-title">JEUX</h1>
+  </div>
+
+  <div class="page-content">
+    <div class="filters-bar">
+      <div class="search-field">
+        <input
+          type="text"
+          placeholder="Rechercher par nom ou description..."
+          (input)="applyFilter($event)"
+          class="search-input"
+        />
+        <i class="fas fa-search search-icon"></i>
+      </div>
+    </div>
+
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+      </div>
+    }
+
+    @if (!isLoading) {
+      <div class="table-wrapper">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th (click)="sortBy('name')" class="sortable">
+                  NOM
+                  <i
+                    class="fas"
+                    [class.fa-sort]="sortColumn !== 'name'"
+                    [class.fa-sort-up]="
+                      sortColumn === 'name' && sortDirection === 'asc'
+                    "
+                    [class.fa-sort-down]="
+                      sortColumn === 'name' && sortDirection === 'desc'
+                    "
+                  ></i>
+                </th>
+                <th>DESCRIPTION</th>
+                <th (click)="sortBy('isMultiplayer')" class="sortable">
+                  MODE
+                  <i
+                    class="fas"
+                    [class.fa-sort]="sortColumn !== 'isMultiplayer'"
+                    [class.fa-sort-up]="
+                      sortColumn === 'isMultiplayer' && sortDirection === 'asc'
+                    "
+                    [class.fa-sort-down]="
+                      sortColumn === 'isMultiplayer' && sortDirection === 'desc'
+                    "
+                  ></i>
+                </th>
+                <th (click)="sortBy('isEnabled')" class="sortable">
+                  ACTIVÉ
+                  <i
+                    class="fas"
+                    [class.fa-sort]="sortColumn !== 'isEnabled'"
+                    [class.fa-sort-up]="
+                      sortColumn === 'isEnabled' && sortDirection === 'asc'
+                    "
+                    [class.fa-sort-down]="
+                      sortColumn === 'isEnabled' && sortDirection === 'desc'
+                    "
+                  ></i>
+                </th>
+                <th (click)="sortBy('createdAt')" class="sortable">
+                  DATE DE CRÉATION
+                  <i
+                    class="fas"
+                    [class.fa-sort]="sortColumn !== 'createdAt'"
+                    [class.fa-sort-up]="
+                      sortColumn === 'createdAt' && sortDirection === 'asc'
+                    "
+                    [class.fa-sort-down]="
+                      sortColumn === 'createdAt' && sortDirection === 'desc'
+                    "
+                  ></i>
+                </th>
+                <th class="actions-header"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (game of paginatedGames; track game.id) {
+                <tr>
+                  <td>{{ game.name }}</td>
+                  <td>{{ game.description || "—" }}</td>
+                  <td>
+                    <span
+                      class="badge"
+                      [class.badge-type]="game.isMultiplayer"
+                      [class.badge-muted]="!game.isMultiplayer"
+                    >
+                      {{ game.isMultiplayer ? "Multi" : "Solo" }}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      class="badge"
+                      [class.badge-success]="game.isEnabled"
+                      [class.badge-muted]="!game.isEnabled"
+                    >
+                      {{ game.isEnabled ? "Oui" : "Non" }}
+                    </span>
+                  </td>
+                  <td>{{ game.createdAt | date: "dd/MM/yyyy HH:mm" }}</td>
+                  <td class="actions-cell">
+                    <button
+                      class="action-btn"
+                      title="Consulter"
+                      (click)="viewGame(game)"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button
+                      class="action-btn"
+                      title="Modifier"
+                      (click)="editGame(game)"
+                    >
+                      <i class="fas fa-pen"></i>
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr class="no-data-row">
+                  <td colspan="6">Aucun jeu trouvé</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination-wrapper">
+          <div class="pagination-info">
+            <span>{{ getPaginationInfo() }}</span>
+          </div>
+
+          <div class="pagination-controls">
+            <button
+              class="pagination-btn"
+              (click)="goToFirstPage()"
+              [disabled]="currentPage === 0"
+            >
+              <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button
+              class="pagination-btn"
+              (click)="previousPage()"
+              [disabled]="currentPage === 0"
+            >
+              <i class="fas fa-angle-left"></i>
+            </button>
+            <span class="page-number"
+              >{{ currentPage + 1 }} / {{ totalPages }}</span
+            >
+            <button
+              class="pagination-btn"
+              (click)="nextPage()"
+              [disabled]="currentPage >= totalPages - 1"
+            >
+              <i class="fas fa-angle-right"></i>
+            </button>
+            <button
+              class="pagination-btn"
+              (click)="goToLastPage()"
+              [disabled]="currentPage >= totalPages - 1"
+            >
+              <i class="fas fa-angle-double-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
