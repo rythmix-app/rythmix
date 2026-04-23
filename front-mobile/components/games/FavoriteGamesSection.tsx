@@ -15,7 +15,7 @@ import { Game } from "@/types/games";
 import { getGameIcon } from "@/utils/games";
 import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
-function FavoriteGameCard({ game }: { game: Game }) {
+function FavoriteGameCard({ game }: Readonly<{ game: Game }>) {
   const scale = useSharedValue(1);
   const gameIcon = getGameIcon(game.name);
   const playedGameIds = usePlayedGamesStore((state) => state.playedGameIds);

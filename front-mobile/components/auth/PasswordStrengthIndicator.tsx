@@ -19,9 +19,9 @@ interface StrengthResult {
   criteria: Criteria;
 }
 
-const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
-  password,
-}) => {
+const PasswordStrengthIndicator: React.FC<
+  Readonly<PasswordStrengthIndicatorProps>
+> = ({ password }) => {
   const progressAnim = React.useRef(new Animated.Value(0)).current;
 
   const calculateStrength = (): StrengthResult => {

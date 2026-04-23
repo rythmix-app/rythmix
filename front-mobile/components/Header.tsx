@@ -33,7 +33,7 @@ export default function Header({
   variant = "simple",
   style,
   titleStyle,
-}: HeaderProps) {
+}: Readonly<HeaderProps>) {
   const { top } = useSafeAreaInsets();
 
   const hasBack =

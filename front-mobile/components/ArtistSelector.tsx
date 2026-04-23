@@ -25,7 +25,7 @@ export default function ArtistSelector({
   onQueryChange,
   onSelect,
   disabled = false,
-}: ArtistSelectorProps) {
+}: Readonly<ArtistSelectorProps>) {
   const { topArtists, searchResults, isSearching, isInitialLoading, hasQuery } =
     useArtistSearch(query);
 

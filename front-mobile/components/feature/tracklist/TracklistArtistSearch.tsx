@@ -21,7 +21,7 @@ export default function TracklistArtistSearch({
   loadingAlbum,
   onSelectArtist,
   onSave,
-}: TracklistArtistSearchProps) {
+}: Readonly<TracklistArtistSearchProps>) {
   return (
     <GameLayout title="Tracklist" sessionId={sessionId} onSave={onSave}>
       <View style={styles.container}>

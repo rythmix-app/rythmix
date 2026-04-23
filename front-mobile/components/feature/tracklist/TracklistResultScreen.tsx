@@ -20,7 +20,7 @@ export default function TracklistResultScreen({
   selectedArtist,
   foundTrackIds,
   onReplay,
-}: TracklistResultScreenProps) {
+}: Readonly<TracklistResultScreenProps>) {
   const score = foundTrackIds.size;
   const maxScore = currentAlbum.tracks.length;
   const percentage = Math.round((score / maxScore) * 100);

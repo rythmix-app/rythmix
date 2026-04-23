@@ -20,7 +20,10 @@ interface GameHistoryProps {
   gameTitle: string;
 }
 
-export default function GameHistory({ gameId, gameTitle }: GameHistoryProps) {
+export default function GameHistory({
+  gameId,
+  gameTitle,
+}: Readonly<GameHistoryProps>) {
   const [sessions, setSessions] = useState<GameSession[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -149,7 +152,10 @@ interface HistoryRowProps {
   currentUserId?: string;
 }
 
-export function HistoryRow({ session, currentUserId }: HistoryRowProps) {
+export function HistoryRow({
+  session,
+  currentUserId,
+}: Readonly<HistoryRowProps>) {
   const playerEntry = currentUserId
     ? session.players?.find((p) => p.userId === currentUserId)
     : undefined;

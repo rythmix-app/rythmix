@@ -16,7 +16,7 @@ export default function GameLayout({
   onSave,
   onBack: customOnBack,
   children,
-}: GameLayoutProps) {
+}: Readonly<GameLayoutProps>) {
   const { onBack: guardOnBack, backGuardModal } = useBackGuard({
     enabled: sessionId != null,
     onSave,

@@ -54,7 +54,7 @@ export default function TracklistPlayingScreen({
   onSubmitAnswer,
   onAbandon,
   onSave,
-}: TracklistPlayingScreenProps) {
+}: Readonly<TracklistPlayingScreenProps>) {
   const foundCount = foundTrackIds.size;
   const totalCount = currentAlbum.tracks.length;
 

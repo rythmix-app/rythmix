@@ -29,7 +29,7 @@ export default function TracklistAlbumStep({
   onSelectAlbum,
   onBack,
   onSave,
-}: TracklistAlbumStepProps) {
+}: Readonly<TracklistAlbumStepProps>) {
   const artistName = selectedArtist?.name ?? "cet artiste";
   return (
     <GameLayout
