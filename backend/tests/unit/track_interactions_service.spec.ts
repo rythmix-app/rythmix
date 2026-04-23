@@ -103,4 +103,119 @@ test.group('TrackInteractionsService', (group) => {
       .first()
     assert.isNull(exists)
   })
+
+  test('upsertInteraction maps Postgres 22001 (string too long) to 400', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('svc_22001')
+
+    const originalUpdateOrCreate = UserTrackInteraction.updateOrCreate
+    UserTrackInteraction.updateOrCreate = (async () => {
+      const error: any = new Error('value too long for type character varying')
+      error.code = '22001'
+      throw error
+    }) as typeof UserTrackInteraction.updateOrCreate
+
+    try {
+      const result = await service.upsertInteraction({
+        userId: user.id,
+        deezerTrackId: '1',
+        action: InteractionAction.Liked,
+      })
+
+      assert.notInstanceOf(result, UserTrackInteraction)
+      if (!(result instanceof UserTrackInteraction)) {
+        assert.equal(result.error, 'One or more fields exceed maximum length')
+        assert.equal(result.status, 400)
+      }
+    } finally {
+      UserTrackInteraction.updateOrCreate = originalUpdateOrCreate
+    }
+  })
+
+  test('upsertInteraction rethrows unknown database errors', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('svc_rethrow')
+
+    const originalUpdateOrCreate = UserTrackInteraction.updateOrCreate
+    UserTrackInteraction.updateOrCreate = (async () => {
+      const error: any = new Error('unexpected db failure')
+      error.code = '42P01'
+      throw error
+    }) as typeof UserTrackInteraction.updateOrCreate
+
+    try {
+      await service.upsertInteraction({
+        userId: user.id,
+        deezerTrackId: '1',
+        action: InteractionAction.Liked,
+      })
+      assert.fail('Should have thrown')
+    } catch (error: any) {
+      assert.equal(error.message, 'unexpected db failure')
+    } finally {
+      UserTrackInteraction.updateOrCreate = originalUpdateOrCreate
+    }
+  })
+
+  test('deleteInteraction handles array-shaped delete count (driver quirk)', async ({ assert }) => {
+    const originalQuery = UserTrackInteraction.query
+    UserTrackInteraction.query = (() =>
+      ({
+        where() {
+          return this
+        },
+        async delete() {
+          return [1] as unknown as number
+        },
+      }) as any) as typeof UserTrackInteraction.query
+
+    try {
+      const result = await service.deleteInteraction('user-id', '42')
+      assert.notProperty(result, 'error')
+    } finally {
+      UserTrackInteraction.query = originalQuery
+    }
+  })
+
+  test('deleteInteraction returns 404 when array-shaped delete count is empty', async ({
+    assert,
+  }) => {
+    const originalQuery = UserTrackInteraction.query
+    UserTrackInteraction.query = (() =>
+      ({
+        where() {
+          return this
+        },
+        async delete() {
+          return [] as unknown as number
+        },
+      }) as any) as typeof UserTrackInteraction.query
+
+    try {
+      const result = await service.deleteInteraction('user-id', '42')
+      assert.containsSubset(result, { status: 404 })
+    } finally {
+      UserTrackInteraction.query = originalQuery
+    }
+  })
+
+  test('deleteInteraction handles number-shaped delete count (driver quirk)', async ({
+    assert,
+  }) => {
+    const originalQuery = UserTrackInteraction.query
+    UserTrackInteraction.query = (() =>
+      ({
+        where() {
+          return this
+        },
+        async delete() {
+          return 1
+        },
+      }) as any) as typeof UserTrackInteraction.query
+
+    try {
+      const result = await service.deleteInteraction('user-id', '42')
+      assert.notProperty(result, 'error')
+    } finally {
+      UserTrackInteraction.query = originalQuery
+    }
+  })
 })
