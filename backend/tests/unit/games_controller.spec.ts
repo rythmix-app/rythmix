@@ -406,6 +406,53 @@ test.group('GamesController - Unit Tests for Edge Cases', () => {
     await controller.index(mockContext)
   })
 
+  test('index should pass the authenticated user id to the service', async ({ assert }) => {
+    let capturedUserId: string | undefined
+    const mockService = {
+      getAll: async (userId?: string) => {
+        capturedUserId = userId
+        return [] as Game[]
+      },
+    } as unknown as GameService
+
+    const controller = new GamesController(mockService)
+
+    const mockResponse = {
+      json: () => undefined,
+    } as any
+
+    await controller.index({
+      response: mockResponse,
+      auth: { user: { id: 'user-42' } },
+    } as any)
+
+    assert.equal(capturedUserId, 'user-42')
+  })
+
+  test('show should pass the authenticated user id to the service', async ({ assert }) => {
+    let capturedUserId: string | undefined
+    const mockService = {
+      getById: async (_gameId: number, userId?: string) => {
+        capturedUserId = userId
+        return { id: 1 } as Game
+      },
+    } as unknown as GameService
+
+    const controller = new GamesController(mockService)
+
+    const mockResponse = {
+      json: () => undefined,
+    } as any
+
+    await controller.show({
+      response: mockResponse,
+      params: { id: 1 },
+      auth: { user: { id: 'user-77' } },
+    } as any)
+
+    assert.equal(capturedUserId, 'user-77')
+  })
+
   test('destroy should return 500 with fallback error when thrown error has no message', async ({
     assert,
   }) => {

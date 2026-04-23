@@ -41,6 +41,40 @@ test.group('UsersController - Unit Tests for Edge Cases', () => {
     assert.equal(mockResponse.statusCode, 500)
   })
 
+  test('index should call getAllWithTrashed when includeDeleted=true', async ({ assert }) => {
+    let getAllCalled = false
+    let getAllWithTrashedCalled = false
+
+    const mockUserService = {
+      getAll: async () => {
+        getAllCalled = true
+        return []
+      },
+      getAllWithTrashed: async () => {
+        getAllWithTrashedCalled = true
+        return []
+      },
+    } as any
+
+    const controller = new UsersController(mockUserService)
+
+    const mockResponse = {
+      json: () => undefined,
+    }
+
+    const mockRequest = {
+      input: (key: string) => (key === 'includeDeleted' ? 'true' : undefined),
+    }
+
+    await controller.index({
+      request: mockRequest,
+      response: mockResponse,
+    } as any as HttpContext)
+
+    assert.isTrue(getAllWithTrashedCalled)
+    assert.isFalse(getAllCalled)
+  })
+
   test('update should use 500 status when error has no status field', async ({ assert }) => {
     const mockUserService = {
       updateUser: async () => ({

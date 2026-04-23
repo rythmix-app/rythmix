@@ -351,4 +351,109 @@ test.group('UserAchievementService', (group) => {
       assert.equal(result.status, 404)
     }
   })
+
+  test('startTracking returns 400 when requiredProgress is not positive', async ({ assert }) => {
+    const result = await service.startTracking(user.id, achievement.id, 0)
+
+    assert.notInstanceOf(result, UserAchievement)
+    if (!(result instanceof UserAchievement)) {
+      assert.equal(result.error, 'requiredProgress must be a positive number')
+      assert.equal(result.status, 400)
+    }
+  })
+
+  test('startTracking maps FK violation (23503) to 404', async ({ assert }) => {
+    const originalCreate = UserAchievement.create
+    UserAchievement.create = (async () => {
+      const e: any = new Error('fk')
+      e.code = '23503'
+      throw e
+    }) as typeof UserAchievement.create
+
+    try {
+      const result = await service.startTracking(user.id, achievement.id)
+      assert.notInstanceOf(result, UserAchievement)
+      if (!(result instanceof UserAchievement)) {
+        assert.equal(result.error, 'Achievement not found')
+        assert.equal(result.status, 404)
+      }
+    } finally {
+      UserAchievement.create = originalCreate
+    }
+  })
+
+  test('startTracking rethrows unknown errors', async ({ assert }) => {
+    const originalCreate = UserAchievement.create
+    UserAchievement.create = (async () => {
+      const e: any = new Error('weird db error')
+      e.code = 'WEIRD'
+      throw e
+    }) as typeof UserAchievement.create
+
+    try {
+      await service.startTracking(user.id, achievement.id)
+      assert.fail('Should have thrown')
+    } catch (error: any) {
+      assert.equal(error.message, 'weird db error')
+    } finally {
+      UserAchievement.create = originalCreate
+    }
+  })
+
+  test('incrementProgress rolls back and rethrows when save fails', async ({ assert }) => {
+    const userAchievement = await UserAchievement.create({
+      userId: user.id,
+      achievementId: achievement.id,
+      currentProgress: 10,
+      requiredProgress: 100,
+      currentTier: 1,
+      progressData: {},
+    })
+
+    const originalSave = UserAchievement.prototype.save
+    UserAchievement.prototype.save = async function () {
+      throw new Error('save boom')
+    } as typeof UserAchievement.prototype.save
+
+    try {
+      await service.incrementProgress(userAchievement.id, user.id, 5)
+      assert.fail('Should have thrown')
+    } catch (error: any) {
+      assert.equal(error.message, 'save boom')
+    } finally {
+      UserAchievement.prototype.save = originalSave
+    }
+
+    await userAchievement.refresh()
+    assert.equal(userAchievement.currentProgress, 10)
+  })
+
+  test('resetProgress rolls back and rethrows when save fails', async ({ assert }) => {
+    const userAchievement = await UserAchievement.create({
+      userId: user.id,
+      achievementId: achievement.id,
+      currentProgress: 50,
+      requiredProgress: 100,
+      currentTier: 2,
+      progressData: {},
+    })
+
+    const originalSave = UserAchievement.prototype.save
+    UserAchievement.prototype.save = async function () {
+      throw new Error('reset save boom')
+    } as typeof UserAchievement.prototype.save
+
+    try {
+      await service.resetProgress(userAchievement.id)
+      assert.fail('Should have thrown')
+    } catch (error: any) {
+      assert.equal(error.message, 'reset save boom')
+    } finally {
+      UserAchievement.prototype.save = originalSave
+    }
+
+    await userAchievement.refresh()
+    assert.equal(userAchievement.currentProgress, 50)
+    assert.equal(userAchievement.currentTier, 2)
+  })
 })

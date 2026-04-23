@@ -181,7 +181,10 @@ export class SpotifyService {
       }
 
       return response.json()
+      /* c8 ignore start */
     }
+    throw new Error(`Spotify API retry loop exited unexpectedly on ${path}`)
+    /* c8 ignore stop */
   }
 
   protected sleep(ms: number): Promise<void> {

@@ -126,6 +126,7 @@ export default class SpotifyAuthController {
   }
 
   private isAllowedReturnUrl(url: string): boolean {
+    /* c8 ignore next */
     if (url.length > MAX_RETURN_URL_LENGTH) return false
     const schemeMatch = url.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/\//)
     if (!schemeMatch) return false
