@@ -7,7 +7,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
+import Animated, {
+  SharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import GameLayout from "@/components/GameLayout";
