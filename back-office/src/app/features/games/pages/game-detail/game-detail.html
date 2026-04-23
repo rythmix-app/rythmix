@@ -1,0 +1,91 @@
+<div class="game-detail-page">
+  <div class="page-header">
+    <button class="back-btn" (click)="onBack()">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <h1 class="page-title">DÉTAILS DU JEU</h1>
+  </div>
+
+  <div class="page-content">
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+      </div>
+    }
+
+    @if (!isLoading && game) {
+      <div class="detail-container">
+        <div class="game-header-card">
+          <div class="game-header-icon">
+            <i class="fas fa-dice"></i>
+          </div>
+          <div class="game-header-info">
+            <h2 class="game-title-name">{{ game.name }}</h2>
+            <div class="game-header-badges">
+              <span
+                class="badge"
+                [class.badge-type]="game.isMultiplayer"
+                [class.badge-muted]="!game.isMultiplayer"
+              >
+                {{ game.isMultiplayer ? "Multijoueur" : "Solo" }}
+              </span>
+              <span
+                class="badge"
+                [class.badge-success]="game.isEnabled"
+                [class.badge-muted]="!game.isEnabled"
+              >
+                {{ game.isEnabled ? "Activé" : "Désactivé" }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3 class="section-title">Description</h3>
+          <p class="description-text">{{ game.description || "—" }}</p>
+        </div>
+
+        <div class="info-section">
+          <h3 class="section-title">Informations système</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">ID</span>
+              <span class="info-value">{{ game.id }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Multijoueur</span>
+              <span class="info-value">
+                {{ game.isMultiplayer ? "Oui" : "Non" }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Activé sur mobile</span>
+              <span class="info-value">
+                {{ game.isEnabled ? "Oui" : "Non" }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Dates</span>
+              <div class="info-dates">
+                <div class="date-row">
+                  <span class="date-label">Création:</span>
+                  <span class="info-value">
+                    {{ game.createdAt | date: "dd/MM/yyyy HH:mm" }}
+                  </span>
+                </div>
+                @if (game.updatedAt) {
+                  <div class="date-row">
+                    <span class="date-label">Modification:</span>
+                    <span class="info-value">
+                      {{ game.updatedAt | date: "dd/MM/yyyy HH:mm" }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
