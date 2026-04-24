@@ -2,32 +2,34 @@ import { Stack } from "expo-router";
 
 export default function GamesLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen
         name="index"
         options={{
-          headerShown: false,
           title: "Jeux",
         }}
       />
       <Stack.Screen
         name="blurchette"
         options={{
-          headerShown: false,
           presentation: "card",
         }}
       />
       <Stack.Screen
         name="tracklist"
         options={{
-          headerShown: false,
           presentation: "card",
         }}
       />
       <Stack.Screen
         name="blindtest"
         options={{
-          headerShown: false,
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="plusoumoins"
+        options={{
           presentation: "card",
         }}
       />

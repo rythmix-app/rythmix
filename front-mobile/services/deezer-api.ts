@@ -295,6 +295,21 @@ class DeezerAPI {
     return await this.fetchWithRetry<DeezerTrack>(url);
   }
 
+  async getArtist(id: number): Promise<DeezerArtist> {
+    const cacheKey = `artist:${id}`;
+    const url = `${this.baseUrl}/artist/${id}`;
+
+    if (this.enableCache) {
+      return await cacheManager.getOrSet(
+        cacheKey,
+        () => this.fetchWithRetry<DeezerArtist>(url),
+        DEFAULT_TTL.TRACKS,
+      );
+    }
+
+    return await this.fetchWithRetry<DeezerArtist>(url);
+  }
+
   async getGenres(): Promise<DeezerGenresResponse> {
     const cacheKey = "genres";
     const url = `${this.baseUrl}/genre`;
@@ -432,6 +447,10 @@ class DeezerAPI {
 
   async getTopArtists(limit: number = 20): Promise<DeezerArtistsResponse> {
     return this.getGenreTopArtists(0, limit);
+  }
+
+  async getTopAlbums(limit: number = 20): Promise<DeezerAlbumsResponse> {
+    return this.getGenreAlbums(0, limit);
   }
 
   async getArtistAlbums(

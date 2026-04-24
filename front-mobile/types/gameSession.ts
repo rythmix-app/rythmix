@@ -138,6 +138,28 @@ export interface TracklistGameData {
   completedAt: string;
 }
 
+// Types spécifiques pour le jeu Higher or Lower
+export interface HigherOrLowerRound {
+  artistAId: number;
+  artistAName: string;
+  artistAFans: number;
+  artistBId: number;
+  artistBName: string;
+  artistBFans: number;
+  playerAnswer: "higher" | "lower";
+  isCorrect: boolean;
+}
+
+export interface HigherOrLowerGameData {
+  mode?: "artist" | "album";
+  totalRounds: number;
+  streak: number;
+  bestStreak: number;
+  rounds: HigherOrLowerRound[];
+  startedAt: string;
+  completedAt: string | null;
+}
+
 // Types spécifiques pour le jeu Blind Test
 export interface BlindtestRound {
   trackId: number;
