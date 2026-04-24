@@ -65,7 +65,7 @@ jobs:
           PROJECT_ID=$(jq -r '.[0].projectId // "160a02f5-15f4-41a9-bdd9-e402672188b0"' update.json)
           SLUG=$(jq -r '.expo.slug' app.json)
           COMMIT_MSG=$(git log -1 --pretty=%s)
-          UPDATE_URL="https://expo.dev/accounts/aldo26/projects/front-mobile/updates/${GROUP}"
+          UPDATE_URL="https://expo.dev/accounts/rythmix/projects/front-mobile/updates/${GROUP}"
           PREVIEW_URL="https://expo.dev/preview/update?message=$(printf %s "$COMMIT_MSG" | jq -sRr @uri)&updateRuntimeVersion=${RUNTIME_VERSION}&createdAt=$(printf %s "$CREATED_AT" | jq -sRr @uri)&slug=${SLUG}&projectId=${PROJECT_ID}&group=${GROUP}"
           QR_URL="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=$(printf %s "$PREVIEW_URL" | jq -sRr @uri)"
           {
