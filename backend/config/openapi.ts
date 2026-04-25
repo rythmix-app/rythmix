@@ -56,6 +56,8 @@ export default defineConfig({
             id: { type: 'integer', example: 1 },
             name: { type: 'string', example: 'Guess the Song' },
             description: { type: 'string', example: 'Players guess songs from audio clips' },
+            isMultiplayer: { type: 'boolean', example: false },
+            isEnabled: { type: 'boolean', example: true },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
@@ -82,7 +84,7 @@ export default defineConfig({
             updatedAt: { type: 'string', format: 'date-time' },
           },
         },
-        LikedTrack: {
+        UserTrackInteraction: {
           type: 'object',
           properties: {
             id: { type: 'integer', example: 1 },
@@ -92,9 +94,11 @@ export default defineConfig({
               example: '550e8400-e29b-41d4-a716-446655440000',
             },
             deezerTrackId: { type: 'string', example: '3135556' },
-            title: { type: 'string', example: 'Bohemian Rhapsody' },
-            artist: { type: 'string', example: 'Queen' },
-            type: { type: 'string', example: 'song' },
+            deezerArtistId: { type: 'string', example: '27', nullable: true },
+            action: { type: 'string', enum: ['liked', 'disliked'], example: 'liked' },
+            title: { type: 'string', example: 'Bohemian Rhapsody', nullable: true },
+            artist: { type: 'string', example: 'Queen', nullable: true },
+            isrc: { type: 'string', example: 'USUG11904206', nullable: true },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },
@@ -124,7 +128,7 @@ export default defineConfig({
       { name: 'Games', description: 'Game management endpoints (admin)' },
       { name: 'Achievements', description: 'Achievement management endpoints' },
       { name: 'GameSessions', description: 'Game session management endpoints' },
-      { name: 'LikedTracks', description: 'User liked tracks endpoints' },
+      { name: 'TrackInteractions', description: 'User track interaction endpoints (like/dislike)' },
     ],
     externalDocs: {
       description: 'Rythmix Project Documentation',

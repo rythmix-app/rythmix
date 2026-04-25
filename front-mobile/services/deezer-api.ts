@@ -15,6 +15,8 @@ export interface DeezerTrack {
   explicit_content_cover: number;
   preview: string;
   md5_image: string;
+  // ISRC n'est retourné que par /track/{id} (pas par /chart/0/tracks)
+  isrc?: string;
   artist: {
     id: number;
     name: string;

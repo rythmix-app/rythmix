@@ -1,9 +1,9 @@
-import LikedTrack from '#models/liked_track'
+import UserTrackInteraction from '#models/user_track_interaction'
 import User from '#models/user'
 import { Group } from '@japa/runner/core'
 import { DateTime } from 'luxon'
 
-export function deleteLikedTrack(group: Group) {
+export function deleteTrackInteractions(group: Group) {
   let testStartTime: DateTime
 
   group.setup(() => {
@@ -11,10 +11,11 @@ export function deleteLikedTrack(group: Group) {
   })
 
   group.each.teardown(async () => {
-    await LikedTrack.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
+    await UserTrackInteraction.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 
   group.teardown(async () => {
+    await UserTrackInteraction.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
     await User.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 }

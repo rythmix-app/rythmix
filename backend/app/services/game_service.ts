@@ -32,7 +32,7 @@ export class GameService {
     return query.where('id', gameId).first()
   }
 
-  public async createGame(payload: { name: string; description: string }) {
+  public async createGame(payload: { name: string; description: string; isEnabled?: boolean }) {
     try {
       return await Game.create(payload)
     } catch (error: any) {

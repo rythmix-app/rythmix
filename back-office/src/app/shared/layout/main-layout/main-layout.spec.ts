@@ -328,7 +328,7 @@ describe('MainLayoutComponent', () => {
       );
 
       expect(userSection).toBeDefined();
-      expect(userSection?.items.length).toBe(2);
+      expect(userSection?.items.length).toBe(1);
     });
 
     it('should have CONTENU section', () => {
