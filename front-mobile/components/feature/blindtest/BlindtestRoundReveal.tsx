@@ -32,7 +32,7 @@ export default function BlindtestRoundReveal({
   titleCorrect,
   isLastRound,
   onNext,
-}: BlindtestRoundRevealProps) {
+}: Readonly<BlindtestRoundRevealProps>) {
   const coverUrl = track.album.cover_xl || track.album.cover_big;
 
   return (
@@ -79,7 +79,10 @@ export default function BlindtestRoundReveal({
   );
 }
 
-function ScoreRow({ label, correct }: { label: string; correct: boolean }) {
+function ScoreRow({
+  label,
+  correct,
+}: Readonly<{ label: string; correct: boolean }>) {
   return (
     <View style={styles.scoreRow}>
       <MaterialIcons

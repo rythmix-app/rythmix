@@ -66,7 +66,7 @@ export default function BlindtestPlayingScreen({
   onSubmitAnswer,
   onAbandon,
   onSave,
-}: BlindtestPlayingScreenProps) {
+}: Readonly<BlindtestPlayingScreenProps>) {
   const inputRef = useRef<TextInput>(null);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const keyboardAnim = useRef(new Animated.Value(0)).current;
@@ -285,11 +285,11 @@ function AnswerChip({
   label,
   found,
   foundLabel,
-}: {
+}: Readonly<{
   label: string;
   found: boolean;
   foundLabel?: string;
-}) {
+}>) {
   return (
     <View style={[styles.chip, found ? styles.chipFound : styles.chipDefault]}>
       {found && <MaterialIcons name="check" size={14} color={FOUND_COLOR} />}

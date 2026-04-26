@@ -56,7 +56,7 @@ const TOAST_CONFIG = {
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
-const SuccessIcon = ({ color }: { color: string }) => (
+const SuccessIcon = ({ color }: Readonly<{ color: string }>) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.8" />
     <Path
@@ -69,7 +69,7 @@ const SuccessIcon = ({ color }: { color: string }) => (
   </Svg>
 );
 
-const WarningIcon = ({ color }: { color: string }) => (
+const WarningIcon = ({ color }: Readonly<{ color: string }>) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
     <Path
       d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
@@ -90,7 +90,7 @@ const WarningIcon = ({ color }: { color: string }) => (
   </Svg>
 );
 
-const ErrorIcon = ({ color }: { color: string }) => (
+const ErrorIcon = ({ color }: Readonly<{ color: string }>) => (
   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.8" />
     <Path
@@ -123,10 +123,10 @@ export const useToast = (): ToastContextValue => {
 function ToastDisplay({
   toast,
   onDismiss,
-}: {
+}: Readonly<{
   toast: ToastState;
   onDismiss: () => void;
-}) {
+}>) {
   const insets = useSafeAreaInsets();
   const duration = toast.duration ?? 5000;
   const config = TOAST_CONFIG[toast.type];
@@ -215,7 +215,9 @@ function ToastDisplay({
 
 let toastIdCounter = 0;
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const [toast, setToast] = useState<ToastState | null>(null);
 
   const show = useCallback((options: ToastOptions) => {

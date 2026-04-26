@@ -21,7 +21,7 @@ export default function BlurchetteGenreSelection({
   loadingTrack,
   onSelectGenre,
   onSave,
-}: BlurchetteGenreSelectionProps) {
+}: Readonly<BlurchetteGenreSelectionProps>) {
   return (
     <GameLayout title="Blurchette" sessionId={sessionId} onSave={onSave}>
       <View style={styles.container}>

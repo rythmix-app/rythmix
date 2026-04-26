@@ -21,7 +21,7 @@ export default function BlindtestGenreSelection({
   loadingTracks,
   onSelectGenre,
   onSave,
-}: BlindtestGenreSelectionProps) {
+}: Readonly<BlindtestGenreSelectionProps>) {
   return (
     <GameLayout title="Blind Test" sessionId={sessionId} onSave={onSave}>
       <View style={styles.container}>

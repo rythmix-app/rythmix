@@ -32,7 +32,10 @@ const TAB_CONFIG: Record<string, TabConfig> = {
   profile: { icon: IconlyProfile, label: "Profil", edge: "right" },
 };
 
-export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+export function CustomTabBar({
+  state,
+  navigation,
+}: Readonly<BottomTabBarProps>) {
   const insets = useSafeAreaInsets();
 
   // 1 Animated.Value par route (persistant)

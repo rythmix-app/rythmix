@@ -17,7 +17,7 @@ export function GameErrorFeedback({
   borderOpacity,
   errorMessage,
   animationsEnabled = true,
-}: GameErrorFeedbackProps) {
+}: Readonly<GameErrorFeedbackProps>) {
   return (
     <View style={styles.container}>
       <Animated.View

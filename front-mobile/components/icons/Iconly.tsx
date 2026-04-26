@@ -9,7 +9,7 @@ export type IconlyIconProps = {
 export const IconlyHome = ({
   size = 24,
   color = "#000000",
-}: IconlyIconProps) => (
+}: Readonly<IconlyIconProps>) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M9.07874 16.1354H14.8937"
@@ -33,7 +33,7 @@ export const IconlyHome = ({
 export const IconlyHeart = ({
   size = 24,
   color = "#000000",
-}: IconlyIconProps) => (
+}: Readonly<IconlyIconProps>) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <G
       stroke={color}
@@ -52,7 +52,7 @@ export const IconlyHeart = ({
 export const IconlyGame = ({
   size = 24,
   color = "#000000",
-}: IconlyIconProps) => (
+}: Readonly<IconlyIconProps>) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <G
       stroke={color}
@@ -75,7 +75,7 @@ export const IconlyGame = ({
 export const IconlyProfile = ({
   size = 24,
   color = "#000000",
-}: IconlyIconProps) => (
+}: Readonly<IconlyIconProps>) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       fillRule="evenodd"
