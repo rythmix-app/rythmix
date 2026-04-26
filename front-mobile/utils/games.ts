@@ -18,6 +18,8 @@ export function getGameIcon(gameName: string): GameIconConfig {
   const gameIcons: Record<string, GameIconConfig> = {
     blurchette: { name: "blur-on" },
     tracklist: { name: "queue-music" },
+    "higher or lower": { name: "swap-vert" },
+    "plus ou moins": { name: "swap-vert" },
     // Add more games here as needed
   };
 
