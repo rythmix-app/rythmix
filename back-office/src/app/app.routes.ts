@@ -45,4 +45,12 @@ export const routes: Routes = [
       import('./features/games/games-module').then((m) => m.GamesModule),
     canActivate: [authGuard],
   },
+  {
+    path: 'sessions',
+    loadChildren: () =>
+      import('./features/game-sessions/game-sessions-module').then(
+        (m) => m.GameSessionsModule,
+      ),
+    canActivate: [authGuard],
+  },
 ];
