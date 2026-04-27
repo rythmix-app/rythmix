@@ -16,7 +16,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Game } from "@/types/games";
 import MaskedView from "@react-native-masked-view/masked-view";
-import { getGameIcon } from "@/utils/games";
+import { GameIcon } from "@/components/games/GameIcon";
 import { Colors } from "@/constants/Colors";
 
 export interface GameCardProps {
@@ -35,7 +35,6 @@ export function GameCard({
   const { width } = useWindowDimensions();
   const cardScale = useSharedValue(1);
   const favoriteScale = useSharedValue(1);
-  const gameIcon = getGameIcon(game.name);
 
   const cardWidth = useMemo(() => {
     const horizontalPadding = 20 * 2;
@@ -83,7 +82,7 @@ export function GameCard({
       <Animated.View style={[styles.card, cardAnimatedStyle]}>
         <View style={styles.media}>
           <View style={styles.placeholder}>
-            <MaterialIcons name={gameIcon.name} size={40} color="#D8E7E7" />
+            <GameIcon gameName={game.name} size={70} fallbackColor="#D8E7E7" />
           </View>
           <LinearGradient
             colors={["rgba(0,0,0,0.25)", "rgba(0,0,0,0.55)"]}

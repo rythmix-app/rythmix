@@ -13,8 +13,11 @@ import Header from "@/components/Header";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import RulesModal from "@/components/games/RulesModal";
 import GameHistory from "@/components/games/GameHistory";
+import { GameIcon } from "@/components/games/GameIcon";
 import { Colors } from "@/constants/Colors";
 import { useGameIndex } from "@/hooks/useGameIndex";
+
+const GAME_NAME = "blind test";
 
 export default function BlindtestIndexScreen() {
   const {
@@ -31,7 +34,7 @@ export default function BlindtestIndexScreen() {
     handleConfirmResume,
     handleStartNewGame,
   } = useGameIndex({
-    gameName: "blind test",
+    gameName: GAME_NAME,
     gamePath: "/games/blindtest/game",
   });
 
@@ -77,10 +80,10 @@ export default function BlindtestIndexScreen() {
         contentContainerStyle={styles.content}
       >
         <View style={styles.header}>
-          <MaterialIcons
-            name="headset"
-            size={80}
-            color={Colors.primary.survol}
+          <GameIcon
+            gameName={GAME_NAME}
+            size={120}
+            fallbackColor={Colors.primary.survol}
           />
           <ThemedText type="title" style={styles.title}>
             Blind Test
