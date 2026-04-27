@@ -36,6 +36,25 @@ export class AuthService {
     return user
   }
 
+  async loginOrCreateFromGoogle(profile: { email: string; name?: string | null }) {
+    let user = await User.findBy('email', profile.email)
+
+    if (!user) {
+      const parts = (profile.name ?? '').trim().split(/\s+/).filter(Boolean)
+      user = await User.create({
+        email: profile.email,
+        username: await this.generateUniqueUsername(profile.email),
+        password: randomBytes(32).toString('hex'),
+        firstName: parts[0] ?? null,
+        lastName: parts.length > 1 ? parts.slice(1).join(' ') : null,
+        role: 'user',
+        emailVerifiedAt: DateTime.now(),
+      })
+    }
+
+    return this.issueTokens(user)
+  }
+
   async login(email: string, password: string) {
     const user = await User.findBy('email', email)
 
@@ -58,17 +77,7 @@ export class AuthService {
       throw new Error('Email not verified')
     }
 
-    const accessToken = await User.accessTokens.create(user, ['*'], {
-      expiresIn: '15 minutes',
-    })
-
-    const refreshToken = await this.generateRefreshToken(user)
-
-    return {
-      user,
-      accessToken: accessToken.value!.release(),
-      refreshToken: refreshToken.token,
-    }
+    return this.issueTokens(user)
   }
 
   async refresh(refreshTokenValue: string) {
@@ -203,6 +212,33 @@ export class AuthService {
 
   async cleanExpiredTokens() {
     await RefreshToken.query().where('expiresAt', '<', DateTime.now().toSQL()).delete()
+  }
+
+  private async issueTokens(user: User) {
+    const accessToken = await User.accessTokens.create(user, ['*'], {
+      expiresIn: '15 minutes',
+    })
+    const refreshToken = await this.generateRefreshToken(user)
+
+    return {
+      user,
+      accessToken: accessToken.value!.release(),
+      refreshToken: refreshToken.token,
+    }
+  }
+
+  private async generateUniqueUsername(email: string): Promise<string> {
+    const sanitized = email
+      .split('@')[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+    const base = sanitized.length >= 3 ? sanitized : `${sanitized}user`
+    const candidate = base.slice(0, 50)
+
+    const existing = await User.findBy('username', candidate)
+    if (!existing) return candidate
+
+    return `${candidate.slice(0, 43)}_${randomBytes(3).toString('hex')}`
   }
 
   private async generateRefreshToken(user: User) {
