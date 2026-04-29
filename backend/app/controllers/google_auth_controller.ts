@@ -14,7 +14,7 @@ export default class GoogleAuthController {
   })
   @ApiResponse({ status: 302, description: 'Redirect to Google' })
   async redirect({ ally, response }: HttpContext) {
-    const url = await ally.use('google').redirectUrl()
+    const url = await ally.use('google').stateless().redirectUrl()
     return response.redirect(url)
   }
 
@@ -28,7 +28,7 @@ export default class GoogleAuthController {
   @ApiResponse({ status: 401, description: 'User cancelled the Google sign-in' })
   @ApiResponse({ status: 500, description: 'Unexpected failure during token exchange' })
   async callback({ ally, response }: HttpContext) {
-    const google = ally.use('google')
+    const google = ally.use('google').stateless()
 
     if (google.accessDenied()) {
       return response.unauthorized({ message: 'Google sign-in was cancelled' })

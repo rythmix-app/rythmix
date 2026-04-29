@@ -37,13 +37,14 @@ export class AuthService {
   }
 
   async loginOrCreateFromGoogle(profile: { email: string; name?: string | null }) {
-    let user = await User.findBy('email', profile.email)
+    const normalizedEmail = profile.email.trim().toLowerCase()
+    let user = await User.findBy('email', normalizedEmail)
 
     if (!user) {
       const parts = (profile.name ?? '').trim().split(/\s+/).filter(Boolean)
       user = await User.create({
-        email: profile.email,
-        username: await this.generateUniqueUsername(profile.email),
+        email: normalizedEmail,
+        username: await this.generateUniqueUsername(normalizedEmail),
         password: randomBytes(32).toString('hex'),
         firstName: parts[0] ?? null,
         lastName: parts.length > 1 ? parts.slice(1).join(' ') : null,
@@ -238,7 +239,13 @@ export class AuthService {
     const existing = await User.findBy('username', candidate)
     if (!existing) return candidate
 
-    return `${candidate.slice(0, 43)}_${randomBytes(3).toString('hex')}`
+    let username = candidate
+
+    while (await User.findBy('username', username)) {
+      username = `${candidate.slice(0, 43)}_${randomBytes(3).toString('hex')}`
+    }
+
+    return username
   }
 
   private async generateRefreshToken(user: User) {

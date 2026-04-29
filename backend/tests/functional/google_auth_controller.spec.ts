@@ -14,7 +14,10 @@ interface AllyMockScenario {
 function buildFakeAlly(scenario: AllyMockScenario) {
   return {
     use() {
-      return {
+      const driver = {
+        stateless() {
+          return driver
+        },
         async redirectUrl() {
           return 'https://accounts.google.com/o/oauth2/v2/auth?client_id=test'
         },
@@ -29,6 +32,7 @@ function buildFakeAlly(scenario: AllyMockScenario) {
           return scenario.userResponse ?? { email: 'default@example.com', name: 'Default User' }
         },
       }
+      return driver
     },
   }
 }
