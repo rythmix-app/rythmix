@@ -8,6 +8,12 @@ const allyConfig = defineConfig({
     callbackUrl: env.get('SPOTIFY_CALLBACK_URL'),
     scopes: ['user-read-email', 'user-top-read', 'user-read-recently-played'],
   }),
+  google: services.google({
+    clientId: env.get('GOOGLE_CLIENT_ID'),
+    clientSecret: env.get('GOOGLE_CLIENT_SECRET'),
+    callbackUrl: env.get('GOOGLE_CALLBACK_URL'),
+    scopes: ['userinfo.email', 'userinfo.profile'],
+  }),
 })
 
 export default allyConfig

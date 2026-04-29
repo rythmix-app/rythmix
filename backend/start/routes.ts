@@ -14,6 +14,7 @@ const FavoriteGamesController = () => import('#controllers/favorite_games_contro
 const UserAchievementsController = () => import('#controllers/user_achievements_controller')
 const ProfileController = () => import('#controllers/profile_controller')
 const SpotifyAuthController = () => import('#controllers/spotify_auth_controller')
+const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
@@ -56,6 +57,8 @@ router
         router.get('/me', [AuthController, 'me']).use(middleware.auth())
         router.post('/spotify/init', [SpotifyAuthController, 'init']).use(middleware.auth())
         router.get('/spotify/callback', [SpotifyAuthController, 'callback'])
+        router.get('/google/redirect', [GoogleAuthController, 'redirect'])
+        router.get('/google/callback', [GoogleAuthController, 'callback'])
       })
       .prefix('/auth')
 
