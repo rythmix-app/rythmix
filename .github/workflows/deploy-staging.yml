@@ -1,0 +1,59 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - 'backend/**'
+      - 'docker-compose*.yml'
+      - '.github/workflows/deploy-staging.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: SSH and deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script_stop: true
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+
+            cd "${{ secrets.STAGING_REPO_PATH }}"
+
+            echo "Fetching latest staging branch"
+            git fetch --all --prune
+            git reset --hard origin/staging
+
+            echo "Building and starting containers"
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.staging.yml \
+              --profile ngrok \
+              up -d --build --remove-orphans --wait \
+              database backend ngrok
+
+            echo "Running migrations"
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.staging.yml \
+              exec -T backend node build/ace.js migration:run --force
+
+            echo "Pruning unused Docker resources"
+            docker image prune -af
+            docker builder prune -af --filter "until=168h"
+
+            echo "Deploy complete"
