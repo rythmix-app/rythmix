@@ -178,9 +178,10 @@ export interface BlindtestRound {
 }
 
 export interface BlindtestGameData {
-  genre: {
+  playlist: {
     id: number;
     name: string;
+    genreLabel: string;
   };
   totalRounds: number;
   rounds: BlindtestRound[];
