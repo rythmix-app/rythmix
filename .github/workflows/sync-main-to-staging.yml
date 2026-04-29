@@ -1,0 +1,44 @@
+name: Sync main → staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: sync-main-to-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  sync:
+    name: Merge main into staging and trigger deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge main into staging
+        run: |
+          set -euo pipefail
+          git fetch origin staging:staging
+          git checkout staging
+          git merge --no-ff origin/main -m "deploy: auto-merge main into staging"
+          git push origin staging
+
+      - name: Trigger deploy-staging workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy-staging.yml --ref staging
