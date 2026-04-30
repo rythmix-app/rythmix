@@ -58,8 +58,20 @@ export class DeezerPlaylistFetchError extends Error {
 const DEEZER_API_BASE = 'https://api.deezer.com'
 const DEFAULT_TRACK_COUNT = 50
 const PAGE_SIZE = 500
+const CACHE_TTL_MS = 5 * 60 * 1000
+
+interface CacheEntry {
+  tracks: DeezerPlaylistTrack[]
+  expiresAt: number
+}
 
 export class CuratedPlaylistService {
+  private static cache = new Map<number, CacheEntry>()
+
+  static clearCache() {
+    CuratedPlaylistService.cache.clear()
+  }
+
   async listPlaylists(): Promise<CuratedPlaylist[]> {
     return CuratedPlaylist.query().orderBy('id', 'asc')
   }
@@ -77,10 +89,25 @@ export class CuratedPlaylistService {
       throw new PlaylistNotFoundError(playlistId)
     }
 
-    const tracks = await this.fetchDeezerPlaylistTracks(playlist.deezerPlaylistId)
-    const unique = this.dedupeById(tracks)
+    const unique = await this.getUniqueDeezerTracks(playlist.deezerPlaylistId)
     const shuffled = this.shuffle(unique)
     return shuffled.slice(0, Math.max(0, count))
+  }
+
+  protected async getUniqueDeezerTracks(deezerPlaylistId: number): Promise<DeezerPlaylistTrack[]> {
+    const now = Date.now()
+    const cached = CuratedPlaylistService.cache.get(deezerPlaylistId)
+    if (cached && cached.expiresAt > now) {
+      return cached.tracks
+    }
+
+    const tracks = await this.fetchDeezerPlaylistTracks(deezerPlaylistId)
+    const unique = this.dedupeById(tracks)
+    CuratedPlaylistService.cache.set(deezerPlaylistId, {
+      tracks: unique,
+      expiresAt: now + CACHE_TTL_MS,
+    })
+    return unique
   }
 
   protected dedupeById(tracks: DeezerPlaylistTrack[]): DeezerPlaylistTrack[] {
@@ -97,26 +124,27 @@ export class CuratedPlaylistService {
   protected async fetchDeezerPlaylistTracks(
     deezerPlaylistId: number
   ): Promise<DeezerPlaylistTrack[]> {
-    // Deezer paginates /playlist/:id/tracks (default limit=25, max=500). To make every
-    // track of the playlist eligible we probe for the total, then fetch every page in
-    // parallel.
-    const probe = await this.requestDeezer(
+    // Deezer paginates /playlist/:id/tracks (default limit=25, max=500). The first page
+    // also returns `total`, so we use it both to seed the result and to compute the
+    // remaining pages — saves one round-trip vs. a dedicated probe call.
+    const firstPage = await this.requestDeezer(
       deezerPlaylistId,
-      `${DEEZER_API_BASE}/playlist/${deezerPlaylistId}/tracks?limit=1`
+      `${DEEZER_API_BASE}/playlist/${deezerPlaylistId}/tracks?limit=${PAGE_SIZE}&index=0`
     )
-    const total = probe.total ?? 0
-    if (total === 0) return []
+    const data = firstPage.data ?? []
+    const total = firstPage.total ?? data.length
+    if (total <= PAGE_SIZE) return data
 
-    const pageCount = Math.ceil(total / PAGE_SIZE)
+    const remainingPages = Math.ceil(total / PAGE_SIZE) - 1
     const pages = await Promise.all(
-      Array.from({ length: pageCount }, (_, page) =>
+      Array.from({ length: remainingPages }, (_, i) =>
         this.requestDeezer(
           deezerPlaylistId,
-          `${DEEZER_API_BASE}/playlist/${deezerPlaylistId}/tracks?limit=${PAGE_SIZE}&index=${page * PAGE_SIZE}`
+          `${DEEZER_API_BASE}/playlist/${deezerPlaylistId}/tracks?limit=${PAGE_SIZE}&index=${(i + 1) * PAGE_SIZE}`
         )
       )
     )
-    return pages.flatMap((p) => p.data)
+    return [data, ...pages.map((p) => p.data ?? [])].flat()
   }
 
   protected async requestDeezer(

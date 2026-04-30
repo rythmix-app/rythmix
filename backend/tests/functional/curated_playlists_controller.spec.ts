@@ -1,5 +1,6 @@
 import { test } from '@japa/runner'
 import CuratedPlaylist from '#models/curated_playlist'
+import { CuratedPlaylistService } from '#services/curated_playlist_service'
 import { createAuthenticatedUser } from '#tests/utils/auth_helpers'
 import { deleteCuratedPlaylists } from '#tests/utils/curated_playlist_helpers'
 
@@ -30,10 +31,12 @@ test.group('CuratedPlaylistsController - GET /api/games/blindtest/playlists', (g
 
   group.each.setup(() => {
     originalFetch = globalThis.fetch
+    CuratedPlaylistService.clearCache()
   })
 
   group.each.teardown(() => {
     globalThis.fetch = originalFetch
+    CuratedPlaylistService.clearCache()
   })
 
   test('requires authentication', async ({ client }) => {
@@ -70,10 +73,12 @@ test.group(
 
     group.each.setup(() => {
       originalFetch = globalThis.fetch
+      CuratedPlaylistService.clearCache()
     })
 
     group.each.teardown(() => {
       globalThis.fetch = originalFetch
+      CuratedPlaylistService.clearCache()
     })
 
     test('requires authentication', async ({ client }) => {

@@ -42,10 +42,12 @@ test.group('CuratedPlaylistService', (group) => {
   group.each.setup(() => {
     service = new CuratedPlaylistService()
     originalFetch = globalThis.fetch
+    CuratedPlaylistService.clearCache()
   })
 
   group.each.teardown(() => {
     globalThis.fetch = originalFetch
+    CuratedPlaylistService.clearCache()
   })
 
   test('listPlaylists returns playlists ordered by id', async ({ assert }) => {
