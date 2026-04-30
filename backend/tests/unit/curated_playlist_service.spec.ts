@@ -267,4 +267,34 @@ test.group('CuratedPlaylistService', (group) => {
       await service.getRandomTracks(playlist.id)
     }, /Failed to fetch Deezer playlist/)
   })
+
+  test('getRandomTracks hits the cache on the second call for the same playlist', async ({
+    assert,
+  }) => {
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 1070,
+      name: 'Cached',
+      genreLabel: 'Hits',
+      coverUrl: null,
+    })
+
+    let fetchCallCount = 0
+    globalThis.fetch = async () => {
+      fetchCallCount += 1
+      return new Response(
+        JSON.stringify({ data: sampleDeezerTracks, total: sampleDeezerTracks.length }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    await service.getRandomTracks(playlist.id, 2)
+    const firstCallCount = fetchCallCount
+
+    await service.getRandomTracks(playlist.id, 2)
+    assert.equal(fetchCallCount, firstCallCount)
+
+    CuratedPlaylistService.clearCache()
+    await service.getRandomTracks(playlist.id, 2)
+    assert.isAbove(fetchCallCount, firstCallCount)
+  })
 })

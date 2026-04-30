@@ -144,7 +144,7 @@ export class CuratedPlaylistService {
         )
       )
     )
-    return [data, ...pages.map((p) => p.data ?? [])].flat()
+    return [data, ...pages.map((p) => p.data)].flat()
   }
 
   protected async requestDeezer(
