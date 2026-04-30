@@ -1,6 +1,6 @@
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useBlindtestGame, getFeaturing } from "../useBlindtestGame";
-import { deezerAPI, DeezerGenre, DeezerTrack } from "@/services/deezer-api";
+import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { useLocalSearchParams } from "expo-router";
 import {
   createGameSession,
@@ -11,22 +11,27 @@ import {
   getGameState,
   deleteGameState,
 } from "@/services/gameStorageService";
+import {
+  CuratedPlaylist,
+  CuratedPlaylistTrack,
+  getCuratedPlaylists,
+  getCuratedPlaylistTracks,
+} from "@/services/curatedPlaylistService";
 import { useAuthStore } from "@/stores/authStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToast } from "@/components/Toast";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
-import { useGenres } from "@/hooks/useGenres";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 
 jest.mock("@/services/deezer-api");
 jest.mock("@/services/cache-manager");
 jest.mock("@/services/gameSessionService");
 jest.mock("@/services/gameStorageService");
+jest.mock("@/services/curatedPlaylistService");
 jest.mock("@/stores/authStore");
 jest.mock("@/stores/settingsStore");
 jest.mock("@/components/Toast");
 jest.mock("@/hooks/useErrorFeedback");
-jest.mock("@/hooks/useGenres");
 jest.mock("@/hooks/useAudioPlayer");
 jest.mock("expo-router", () => ({
   useLocalSearchParams: jest.fn(),
@@ -52,13 +57,19 @@ const mockGetGameState = getGameState as jest.MockedFunction<
 const mockDeleteGameState = deleteGameState as jest.MockedFunction<
   typeof deleteGameState
 >;
+const mockGetCuratedPlaylists = getCuratedPlaylists as jest.MockedFunction<
+  typeof getCuratedPlaylists
+>;
+const mockGetCuratedPlaylistTracks =
+  getCuratedPlaylistTracks as jest.MockedFunction<
+    typeof getCuratedPlaylistTracks
+  >;
 const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
 const mockUseSettingsStore = useSettingsStore as unknown as jest.Mock;
 const mockUseToast = useToast as jest.MockedFunction<typeof useToast>;
 const mockUseErrorFeedback = useErrorFeedback as jest.MockedFunction<
   typeof useErrorFeedback
 >;
-const mockUseGenres = useGenres as jest.MockedFunction<typeof useGenres>;
 const mockUseAudioPlayer = useAudioPlayer as jest.MockedFunction<
   typeof useAudioPlayer
 >;
@@ -93,15 +104,16 @@ const buildTrack = (
     type: "track",
   }) as unknown as DeezerTrack;
 
-const sampleGenre: DeezerGenre = {
-  id: 132,
-  name: "Pop",
-  picture: "",
-  picture_small: "",
-  picture_medium: "",
-  picture_big: "",
-  picture_xl: "",
-} as unknown as DeezerGenre;
+const samplePlaylist: CuratedPlaylist = {
+  id: 1,
+  deezerPlaylistId: 1996494362,
+  name: "Top France",
+  genreLabel: "Hits FR",
+  coverUrl: "https://cover.example/fr.jpg",
+  trackCount: 1500,
+  createdAt: "2026-04-29T10:00:00.000Z",
+  updatedAt: "2026-04-29T10:00:00.000Z",
+};
 
 const sampleTracks = [
   buildTrack(1, "Bohemian Rhapsody", "Queen"),
@@ -110,6 +122,16 @@ const sampleTracks = [
   buildTrack(4, "Smells Like Teen Spirit", "Nirvana"),
   buildTrack(5, "Hotel California", "Eagles"),
 ];
+
+const samplePlaylistTracks: CuratedPlaylistTrack[] = sampleTracks.map((t) => ({
+  id: t.id,
+  title: t.title,
+  title_short: t.title_short,
+  preview: t.preview,
+  duration: t.duration,
+  artist: { id: t.artist.id, name: t.artist.name },
+  album: { id: t.album.id, title: t.album.title },
+}));
 
 describe("getFeaturing", () => {
   it("returns featuring names from contributors", () => {
@@ -156,11 +178,6 @@ describe("useBlindtestGame", () => {
       errorMessage: null,
       triggerError: mockTriggerError,
     });
-    mockUseGenres.mockReturnValue({
-      genres: [sampleGenre],
-      loadingGenres: false,
-      reloadGenres: jest.fn(),
-    });
     mockUseAudioPlayer.mockReturnValue({
       play: mockAudioPlay,
       stop: mockAudioStop,
@@ -177,10 +194,8 @@ describe("useBlindtestGame", () => {
       error: null,
     });
 
-    mockDeezerAPI.getGenreTracks.mockResolvedValue({
-      data: sampleTracks,
-    } as never);
-    // getTrack returns the same track (enriched with contributors in real API)
+    mockGetCuratedPlaylists.mockResolvedValue([samplePlaylist]);
+    mockGetCuratedPlaylistTracks.mockResolvedValue(samplePlaylistTracks);
     mockDeezerAPI.getTrack.mockImplementation(
       async (id: number) =>
         sampleTracks.find((t) => t.id === id) as DeezerTrack,
@@ -196,21 +211,32 @@ describe("useBlindtestGame", () => {
     jest.useRealTimers();
   });
 
-  it("starts in genreSelection state", () => {
+  it("starts in playlistSelection state and loads curated playlists", async () => {
     const { result } = renderHook(() => useBlindtestGame());
-    expect(result.current.gameState).toBe("genreSelection");
+    expect(result.current.gameState).toBe("playlistSelection");
     expect(result.current.currentTrack).toBeNull();
     expect(result.current.totalRounds).toBe(0);
+
+    await waitFor(() => {
+      expect(mockGetCuratedPlaylists).toHaveBeenCalled();
+      expect(result.current.playlists).toEqual([samplePlaylist]);
+      expect(result.current.loadingPlaylists).toBe(false);
+    });
   });
 
   it("startGame transitions to ready state after fetching tracks", async () => {
     const { result } = renderHook(() => useBlindtestGame());
 
+    await waitFor(() => expect(result.current.loadingPlaylists).toBe(false));
+
     await act(async () => {
-      await result.current.startGame(sampleGenre);
+      await result.current.startGame(samplePlaylist);
     });
 
-    expect(mockDeezerAPI.getGenreTracks).toHaveBeenCalledWith(132, 50);
+    expect(mockGetCuratedPlaylistTracks).toHaveBeenCalledWith(
+      samplePlaylist.id,
+      50,
+    );
     expect(mockDeezerAPI.getTrack).toHaveBeenCalledTimes(5);
     expect(mockCreateGameSession).toHaveBeenCalledWith(
       expect.objectContaining({ gameId: 556, status: "active" }),
@@ -218,13 +244,16 @@ describe("useBlindtestGame", () => {
     expect(result.current.sessionId).toBe("session-bt");
     expect(result.current.gameState).toBe("ready");
     expect(result.current.totalRounds).toBe(5);
+    expect(result.current.selectedPlaylist).toEqual(samplePlaylist);
   });
 
   it("beginPlaying transitions from ready to playing", async () => {
     const { result } = renderHook(() => useBlindtestGame());
 
+    await waitFor(() => expect(result.current.loadingPlaylists).toBe(false));
+
     await act(async () => {
-      await result.current.startGame(sampleGenre);
+      await result.current.startGame(samplePlaylist);
     });
 
     expect(result.current.gameState).toBe("ready");
@@ -239,21 +268,38 @@ describe("useBlindtestGame", () => {
   });
 
   it("shows error when no tracks have valid previews", async () => {
-    const noPreviewTracks = sampleTracks.map((t) => ({
+    const noPreviewTracks = samplePlaylistTracks.map((t) => ({
       ...t,
       preview: "",
     }));
-    mockDeezerAPI.getGenreTracks.mockResolvedValue({
-      data: noPreviewTracks,
-    } as never);
+    mockGetCuratedPlaylistTracks.mockResolvedValue(noPreviewTracks);
 
     const { result } = renderHook(() => useBlindtestGame());
 
+    await waitFor(() => expect(result.current.loadingPlaylists).toBe(false));
+
     await act(async () => {
-      await result.current.startGame(sampleGenre);
+      await result.current.startGame(samplePlaylist);
     });
 
-    expect(result.current.gameState).toBe("genreSelection");
+    expect(result.current.gameState).toBe("playlistSelection");
+    expect(mockShow).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "error" }),
+    );
+  });
+
+  it("shows error when curated playlist tracks endpoint returns nothing", async () => {
+    mockGetCuratedPlaylistTracks.mockResolvedValue([]);
+
+    const { result } = renderHook(() => useBlindtestGame());
+
+    await waitFor(() => expect(result.current.loadingPlaylists).toBe(false));
+
+    await act(async () => {
+      await result.current.startGame(samplePlaylist);
+    });
+
+    expect(result.current.gameState).toBe("playlistSelection");
     expect(mockShow).toHaveBeenCalledWith(
       expect.objectContaining({ type: "error" }),
     );
@@ -262,8 +308,10 @@ describe("useBlindtestGame", () => {
   it("submitAnswer with correct artist sets artistFound", async () => {
     const { result } = renderHook(() => useBlindtestGame());
 
+    await waitFor(() => expect(result.current.loadingPlaylists).toBe(false));
+
     await act(async () => {
-      await result.current.startGame(sampleGenre);
+      await result.current.startGame(samplePlaylist);
     });
     act(() => {
       result.current.beginPlaying();
@@ -285,8 +333,10 @@ describe("useBlindtestGame", () => {
   it("submitAnswer with wrong answer clears input and triggers error", async () => {
     const { result } = renderHook(() => useBlindtestGame());
 
+    await waitFor(() => expect(result.current.loadingPlaylists).toBe(false));
+
     await act(async () => {
-      await result.current.startGame(sampleGenre);
+      await result.current.startGame(samplePlaylist);
     });
     act(() => {
       result.current.beginPlaying();
@@ -308,8 +358,10 @@ describe("useBlindtestGame", () => {
   it("resetGame clears state and deletes saved storage", async () => {
     const { result } = renderHook(() => useBlindtestGame());
 
+    await waitFor(() => expect(result.current.loadingPlaylists).toBe(false));
+
     await act(async () => {
-      await result.current.startGame(sampleGenre);
+      await result.current.startGame(samplePlaylist);
     });
 
     mockDeleteGameState.mockClear();
@@ -318,9 +370,10 @@ describe("useBlindtestGame", () => {
       result.current.resetGame();
     });
 
-    expect(result.current.gameState).toBe("genreSelection");
+    expect(result.current.gameState).toBe("playlistSelection");
     expect(result.current.currentTrack).toBeNull();
     expect(result.current.sessionId).toBeNull();
+    expect(result.current.selectedPlaylist).toBeNull();
     expect(result.current.completedRounds).toEqual([]);
     expect(mockDeleteGameState).toHaveBeenCalledWith("556");
     expect(mockAudioStop).toHaveBeenCalled();
@@ -333,7 +386,7 @@ describe("useBlindtestGame", () => {
     });
     mockGetGameState.mockResolvedValue({
       gameState: "playing",
-      selectedGenre: sampleGenre,
+      selectedPlaylist: samplePlaylist,
       tracks: sampleTracks,
       currentRoundIndex: 2,
       timeRemaining: 20,
@@ -371,5 +424,18 @@ describe("useBlindtestGame", () => {
 
     expect(result.current.getRoundMaxScore(regularTrack)).toBe(2);
     expect(result.current.getRoundMaxScore(featTrack)).toBe(3);
+  });
+
+  it("shows toast when curated playlists fail to load", async () => {
+    mockGetCuratedPlaylists.mockRejectedValueOnce(new Error("network"));
+
+    const { result } = renderHook(() => useBlindtestGame());
+
+    await waitFor(() => expect(result.current.loadingPlaylists).toBe(false));
+
+    expect(mockShow).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "error" }),
+    );
+    expect(result.current.playlists).toEqual([]);
   });
 });

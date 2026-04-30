@@ -1,36 +1,36 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import GameLayout from "@/components/GameLayout";
-import GenreSelector from "@/components/GenreSelector";
+import PlaylistSelector from "@/components/feature/blindtest/PlaylistSelector";
 import { Colors } from "@/constants/Colors";
-import { DeezerGenre } from "@/services/deezer-api";
+import { CuratedPlaylist } from "@/services/curatedPlaylistService";
 
-interface BlindtestGenreSelectionProps {
+interface BlindtestPlaylistSelectionProps {
   sessionId: string | null;
-  genres: DeezerGenre[];
-  loadingGenres: boolean;
+  playlists: CuratedPlaylist[];
+  loadingPlaylists: boolean;
   loadingTracks: boolean;
-  onSelectGenre: (genre: DeezerGenre) => void;
+  onSelectPlaylist: (playlist: CuratedPlaylist) => void;
   onSave: () => Promise<void>;
 }
 
-export default function BlindtestGenreSelection({
+export default function BlindtestPlaylistSelection({
   sessionId,
-  genres,
-  loadingGenres,
+  playlists,
+  loadingPlaylists,
   loadingTracks,
-  onSelectGenre,
+  onSelectPlaylist,
   onSave,
-}: BlindtestGenreSelectionProps) {
+}: BlindtestPlaylistSelectionProps) {
   return (
     <GameLayout title="Blind Test" sessionId={sessionId} onSave={onSave}>
       <View style={styles.container}>
         <View style={styles.setupContainer}>
-          <GenreSelector
-            genres={genres}
-            loading={loadingGenres}
+          <PlaylistSelector
+            playlists={playlists}
+            loading={loadingPlaylists}
             disabled={loadingTracks}
-            onSelect={onSelectGenre}
+            onSelect={onSelectPlaylist}
           />
 
           {loadingTracks && (
