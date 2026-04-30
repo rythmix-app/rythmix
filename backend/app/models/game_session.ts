@@ -11,7 +11,6 @@ export interface PlayerData {
   userId: string
   status: string
   score: number
-  expGained: number
   rank: number
 }
 
@@ -42,7 +41,6 @@ export default class GameSession extends BaseModel {
         userId: '123e4567-e89b-12d3-a456-426614174000',
         status: 'playing',
         score: 1500,
-        expGained: 120,
         rank: 1,
       },
     ],
