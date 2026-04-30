@@ -6,7 +6,6 @@ import {
   Platform,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
@@ -14,6 +13,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import GameLayout from "@/components/GameLayout";
 import { GameErrorFeedback } from "@/components/GameErrorFeedback";
+import { GameAnswerInput } from "@/components/games/GameAnswerInput";
 import { Colors } from "@/constants/Colors";
 
 interface BlindtestPlayingScreenProps {
@@ -246,34 +246,13 @@ export default function BlindtestPlayingScreen({
                 <ThemedText style={styles.warmText}>{warmMessage}</ThemedText>
               </View>
             )}
-            <View style={styles.inputRow}>
-              <TextInput
-                ref={inputRef}
-                style={styles.input}
-                value={answerInput}
-                onChangeText={setAnswerInput}
-                placeholder="Artiste, featuring ou titre..."
-                placeholderTextColor="#666"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="send"
-                onSubmitEditing={onSubmitAnswer}
-              />
-              <TouchableOpacity
-                style={[
-                  styles.sendButton,
-                  !answerInput.trim() && styles.sendButtonDisabled,
-                ]}
-                onPress={onSubmitAnswer}
-                disabled={!answerInput.trim()}
-              >
-                <MaterialIcons
-                  name="send"
-                  size={20}
-                  color={answerInput.trim() ? "white" : "#666"}
-                />
-              </TouchableOpacity>
-            </View>
+            <GameAnswerInput
+              ref={inputRef}
+              value={answerInput}
+              onChangeText={setAnswerInput}
+              onSubmit={onSubmitAnswer}
+              placeholder="Artiste, featuring ou titre..."
+            />
           </View>
         </KeyboardAvoidingView>
       </GameLayout>
@@ -294,7 +273,11 @@ function AnswerChip({
     <View style={[styles.chip, found ? styles.chipFound : styles.chipDefault]}>
       {found && <MaterialIcons name="check" size={14} color={FOUND_COLOR} />}
       <ThemedText
-        style={[styles.chipText, { color: found ? FOUND_COLOR : "#888" }]}
+        style={[
+          styles.chipText,
+          { color: found ? FOUND_COLOR : "#888" },
+          found && styles.chipTextFound,
+        ]}
         numberOfLines={1}
       >
         {found && foundLabel ? foundLabel : label}
@@ -378,6 +361,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
+  chipTextFound: {
+    fontFamily: "Bold",
+    textTransform: "uppercase",
+  },
   audioSection: {
     flex: 1,
     justifyContent: "center",
@@ -416,32 +403,5 @@ const styles = StyleSheet.create({
     color: "#FF9800",
     fontSize: 15,
     fontWeight: "600",
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: "white",
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.primary.survol,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sendButtonDisabled: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
 });
