@@ -3,7 +3,7 @@ import Game from '#models/game'
 
 export default class extends BaseSeeder {
   async run() {
-    await Game.createMany([
+    const games = [
       {
         name: 'Blind Test',
         description: 'Devinez les morceaux le plus rapidement possible en temps réel.',
@@ -52,6 +52,10 @@ export default class extends BaseSeeder {
         isMultiplayer: false,
         isEnabled: false,
       },
-    ])
+    ]
+
+    for (const game of games) {
+      await Game.updateOrCreate({ name: game.name }, game)
+    }
   }
 }
