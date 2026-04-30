@@ -122,10 +122,13 @@ const styles = StyleSheet.create({
   artistName: {
     textAlign: "center",
     marginBottom: 4,
+    textTransform: "uppercase",
   },
   trackTitle: {
     color: "#999",
     fontSize: 18,
+    fontFamily: "Bold",
+    textTransform: "uppercase",
     textAlign: "center",
     marginBottom: 30,
   },
@@ -152,6 +155,8 @@ const styles = StyleSheet.create({
   scoreLabel: {
     color: "#CCC",
     fontSize: 16,
+    fontFamily: "Bold",
+    textTransform: "uppercase",
     flex: 1,
   },
   scorePoints: {

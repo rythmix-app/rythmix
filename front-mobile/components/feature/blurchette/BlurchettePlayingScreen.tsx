@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
@@ -15,6 +14,7 @@ import { ThemedText } from "@/components/ThemedText";
 import GameLayout from "@/components/GameLayout";
 import { GameErrorFeedback } from "@/components/GameErrorFeedback";
 import { Colors } from "@/constants/Colors";
+import { GameAnswerInput } from "@/components/games/GameAnswerInput";
 import {
   BlurLevel,
   GameTrack,
@@ -106,29 +106,13 @@ export default function BlurchettePlayingScreen({
           </TouchableWithoutFeedback>
 
           <View style={styles.answerSection}>
-            <View style={styles.answerRow}>
-              <TextInput
-                style={styles.answerInput}
-                placeholder="Entrez votre réponse..."
-                placeholderTextColor="#666"
-                value={answer}
-                onChangeText={setAnswer}
-                autoCorrect={false}
-                autoCapitalize="words"
-                onSubmitEditing={onSubmitAnswer}
-                returnKeyType="send"
-              />
-              <TouchableOpacity
-                style={[
-                  styles.sendButton,
-                  !answer.trim() && styles.sendButtonDisabled,
-                ]}
-                onPress={onSubmitAnswer}
-                disabled={!answer.trim()}
-              >
-                <MaterialIcons name="send" size={22} color="white" />
-              </TouchableOpacity>
-            </View>
+            <GameAnswerInput
+              value={answer}
+              onChangeText={setAnswer}
+              onSubmit={onSubmitAnswer}
+              placeholder="Entrez votre réponse..."
+              autoCapitalize="words"
+            />
           </View>
         </KeyboardAvoidingView>
       </GameLayout>
@@ -189,32 +173,5 @@ const styles = StyleSheet.create({
   answerSection: {
     padding: 20,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  answerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  answerInput: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 12,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    color: "white",
-    fontSize: 16,
-    borderWidth: 2,
-    borderColor: Colors.primary.survol,
-  },
-  sendButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: Colors.primary.survol,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sendButtonDisabled: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
 });

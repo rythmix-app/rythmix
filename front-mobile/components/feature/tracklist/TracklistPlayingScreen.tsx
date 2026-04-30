@@ -5,7 +5,6 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -19,6 +18,7 @@ import {
   AnswerFeedback,
   GameAlbum,
 } from "@/hooks/feature/tracklist/useTracklistGame";
+import { GameAnswerInput } from "@/components/games/GameAnswerInput";
 
 interface TracklistPlayingScreenProps {
   sessionId: string | null;
@@ -175,32 +175,15 @@ export default function TracklistPlayingScreen({
               </View>
             )}
             <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.singleInput}
-                placeholder="Tape un son..."
-                placeholderTextColor={Colors.game.textSubtle}
+              <GameAnswerInput
                 value={currentInput}
                 onChangeText={setCurrentInput}
-                onSubmitEditing={onSubmitAnswer}
-                autoCorrect={false}
+                onSubmit={onSubmitAnswer}
+                placeholder="Tape un son..."
                 autoCapitalize="words"
-                returnKeyType="send"
-                blurOnSubmit={false}
                 accessibilityLabel="Saisir un titre de l'album"
                 accessibilityHint="Entrez un titre de chanson de l'album pour valider votre réponse"
               />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={onSubmitAnswer}
-                accessibilityLabel="Valider la réponse"
-                accessibilityRole="button"
-              >
-                <MaterialIcons
-                  name="send"
-                  size={22}
-                  color={Colors.primary.survol}
-                />
-              </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -304,7 +287,8 @@ const styles = StyleSheet.create({
   trackFound: {
     color: Colors.game.success,
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: "Bold",
+    textTransform: "uppercase",
     flex: 1,
   },
   trackHidden: {
@@ -334,29 +318,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  singleInput: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    color: "white",
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    justifyContent: "center",
-    alignItems: "center",
   },
 });
