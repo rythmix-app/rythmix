@@ -55,8 +55,8 @@ export default function BlindtestResultScreen({
             Récapitulatif
           </ThemedText>
 
-          {completedRounds.map((round) => (
-            <View key={round.trackId} style={styles.roundRow}>
+          {completedRounds.map((round, index) => (
+            <View key={`${round.trackId}-${index}`} style={styles.roundRow}>
               <Image
                 source={{ uri: round.coverUrl }}
                 style={styles.roundCover}
