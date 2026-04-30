@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
@@ -17,6 +11,7 @@ import { GameCard } from "@/components/games/GameCard";
 import { useToast } from "@/components/Toast";
 import { hasGameState } from "@/services/gameStorageService";
 import { usePlayedGamesStore } from "@/stores/playedGamesStore";
+import { SkeletonRectangle, SkeletonSquare } from "@/components/ui/Skeleton";
 
 export default function GamesScreen() {
   const [games, setGames] = useState<Game[]>([]);
@@ -28,6 +23,8 @@ export default function GamesScreen() {
   useEffect(() => {
     const fetchGames = async () => {
       try {
+        // Simulation d'un chargement pour voir le skeleton
+        await new Promise((resolve) => setTimeout(resolve, 200));
         const g = await gameService.getAllGames();
         setGames(g);
       } catch (error) {
@@ -116,9 +113,45 @@ export default function GamesScreen() {
     return (
       <>
         <Header title="Jeux" variant="withMenu" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary.survol} />
-        </View>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+        >
+          <View style={styles.section}>
+            <SkeletonRectangle
+              width={200}
+              height={40}
+              style={{ marginBottom: 20 }}
+            />
+            <View style={styles.cardGrid}>
+              {[1, 2, 3, 4].map((i) => (
+                <SkeletonSquare
+                  key={i}
+                  width="48%"
+                  height={164}
+                  style={{ borderRadius: 18 }}
+                />
+              ))}
+            </View>
+          </View>
+          <View style={styles.section}>
+            <SkeletonRectangle
+              width={200}
+              height={40}
+              style={{ marginBottom: 20 }}
+            />
+            <View style={styles.cardGrid}>
+              {[1, 2, 3, 4].map((i) => (
+                <SkeletonSquare
+                  key={i}
+                  width="48%"
+                  height={164}
+                  style={{ borderRadius: 18 }}
+                />
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </>
     );
   }
