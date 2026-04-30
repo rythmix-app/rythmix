@@ -4,7 +4,6 @@ export interface GameSessionPlayer {
   userId: string;
   status?: string;
   score?: number;
-  expGained?: number;
   rank?: number;
 }
 
