@@ -96,6 +96,9 @@ router
         router
           .post('/:id/restore', [UsersController, 'restore'])
           .use(middleware.role({ roles: ['admin'] }))
+        router
+          .post('/:id/verify', [UsersController, 'verify'])
+          .use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/users')
     router
