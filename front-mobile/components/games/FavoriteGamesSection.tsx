@@ -10,14 +10,13 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Colors } from "@/constants/Colors";
+import { GameIcon } from "@/components/games/GameIcon";
 import * as gameService from "@/services/gameService";
 import { Game } from "@/types/games";
-import { getGameIcon } from "@/utils/games";
 import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
 function FavoriteGameCard({ game }: { game: Game }) {
   const scale = useSharedValue(1);
-  const gameIcon = getGameIcon(game.name);
   const playedGameIds = usePlayedGamesStore((state) => state.playedGameIds);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -67,10 +66,10 @@ function FavoriteGameCard({ game }: { game: Game }) {
             colors={["#1a3a3a", "#0d2233"]}
             style={StyleSheet.absoluteFillObject}
           />
-          <MaterialIcons
-            name={gameIcon.name}
-            size={40}
-            color={Colors.primary.survol}
+          <GameIcon
+            gameName={game.name}
+            size={60}
+            fallbackColor={Colors.primary.survol}
           />
         </View>
 
