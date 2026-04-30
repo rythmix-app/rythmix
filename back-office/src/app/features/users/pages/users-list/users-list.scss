@@ -327,6 +327,12 @@ $pagination-height: 52px;
           color: var(--text-secondary);
           border: 1px solid var(--border);
         }
+
+        &.badge-danger {
+          background: var(--danger-dim);
+          color: var(--danger);
+          border: 1px solid rgba(224, 85, 85, 0.25);
+        }
       }
 
       .actions-cell {
