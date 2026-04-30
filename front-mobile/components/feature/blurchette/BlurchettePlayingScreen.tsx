@@ -111,7 +111,6 @@ export default function BlurchettePlayingScreen({
               onChangeText={setAnswer}
               onSubmit={onSubmitAnswer}
               placeholder="Entrez votre réponse..."
-              autoCapitalize="words"
             />
           </View>
         </KeyboardAvoidingView>

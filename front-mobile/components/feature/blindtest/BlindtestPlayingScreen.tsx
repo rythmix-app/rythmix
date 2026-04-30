@@ -252,7 +252,6 @@ export default function BlindtestPlayingScreen({
               onChangeText={setAnswerInput}
               onSubmit={onSubmitAnswer}
               placeholder="Artiste, featuring ou titre..."
-              autoCapitalize="none"
             />
           </View>
         </KeyboardAvoidingView>

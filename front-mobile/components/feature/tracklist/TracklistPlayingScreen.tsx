@@ -180,7 +180,6 @@ export default function TracklistPlayingScreen({
                 onChangeText={setCurrentInput}
                 onSubmit={onSubmitAnswer}
                 placeholder="Tape un son..."
-                autoCapitalize="words"
                 accessibilityLabel="Saisir un titre de l'album"
                 accessibilityHint="Entrez un titre de chanson de l'album pour valider votre réponse"
               />

@@ -14,7 +14,6 @@ interface Props {
   onChangeText: (v: string) => void;
   onSubmit: () => void;
   placeholder: string;
-  autoCapitalize?: "none" | "words"; // default "none"
   disabled?: boolean; // default: !value.trim()
   accessibilityLabel?: string;
   accessibilityHint?: string;
@@ -27,7 +26,6 @@ export const GameAnswerInput = forwardRef<TextInput, Props>(
       onChangeText,
       onSubmit,
       placeholder,
-      autoCapitalize = "none",
       disabled = !value.trim(),
       accessibilityLabel,
       accessibilityHint,
@@ -40,10 +38,10 @@ export const GameAnswerInput = forwardRef<TextInput, Props>(
           ref={ref}
           style={styles.input}
           value={value}
-          onChangeText={onChangeText}
+          onChangeText={(text) => onChangeText(text.toUpperCase())}
           placeholder={placeholder}
           placeholderTextColor="#666"
-          autoCapitalize={autoCapitalize}
+          autoCapitalize="characters"
           autoCorrect={false}
           returnKeyType="send"
           onSubmitEditing={onSubmit}
@@ -87,7 +85,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
-    textTransform: "uppercase",
     fontFamily: "Bold",
   },
   sendButton: {
