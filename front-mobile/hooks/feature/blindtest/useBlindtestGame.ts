@@ -105,7 +105,6 @@ export function useBlindtestGame() {
 
   const isSubmittingRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isMountedRef = useRef(true);
 
   const { gameId, resume } = useLocalSearchParams<{
     gameId: string;
@@ -116,13 +115,6 @@ export function useBlindtestGame() {
   const { show } = useToast();
   const { shakeAnimation, borderOpacity, errorMessage, triggerError } =
     useErrorFeedback(errorAnimationsEnabled);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -351,19 +343,23 @@ export function useBlindtestGame() {
           Math.min(TOTAL_ROUNDS, tracksWithPreview.length),
         );
 
-        // Fetch each track individually to get contributors
+        // Fetch each track individually to get contributors. On failure we drop the
+        // track rather than fall back to the curated payload, which lacks fields
+        // required by DeezerTrack (e.g. contributors, *_xl variants).
         const enriched = await Promise.all(
           picked.map(async (t) => {
             try {
               return await deezerAPI.getTrack(t.id);
-            } catch {
-              return t as unknown as DeezerTrack;
+            } catch (error) {
+              console.warn(`Failed to enrich track ${t.id}:`, error);
+              return null;
             }
           }),
         );
 
         const valid = enriched.filter(
-          (t) => t.preview && t.preview.startsWith("http"),
+          (t): t is DeezerTrack =>
+            t !== null && !!t.preview && t.preview.startsWith("http"),
         );
 
         if (valid.length < MIN_TRACKS_REQUIRED) {
