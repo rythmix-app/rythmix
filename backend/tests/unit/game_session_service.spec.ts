@@ -29,7 +29,7 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     const created = await service.createGameSession({
       gameId: game.id,
       status: 'en_cours',
-      players: [{ userId: 'user-1', status: 'actif', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId: 'user-1', status: 'actif', score: 0, rank: 1 }],
       gameData: { manche: 1 },
     })
     assert.instanceOf(created, GameSession)
@@ -131,12 +131,12 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     const session = await GameSession.create({
       gameId: game.id,
       status: 'en_cours',
-      players: [{ userId: 'user-1', status: 'actif', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId: 'user-1', status: 'actif', score: 0, rank: 1 }],
       gameData: { manche: 1 },
     })
     const updated = await service.updateGameSession(session.id, {
       status: 'terminee',
-      players: [{ userId: 'user-1', status: 'termine', score: 200, expGained: 100, rank: 1 }],
+      players: [{ userId: 'user-1', status: 'termine', score: 200, rank: 1 }],
     })
     assert.instanceOf(updated, GameSession)
     if (updated instanceof GameSession) {
@@ -150,7 +150,7 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     const session = await GameSession.create({
       gameId: game.id,
       status: 'en_cours',
-      players: [{ userId: 'user-1', status: 'actif', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId: 'user-1', status: 'actif', score: 0, rank: 1 }],
       gameData: {
         album: { id: 42, title: 'Greatest Hits' },
         genre: { id: 132, name: 'Pop' },
@@ -365,14 +365,14 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     await GameSession.create({
       gameId: game.id,
       status: 'active',
-      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'playing', score: 0, rank: 1 }],
       gameData: {},
     })
 
     const result = await service.createGameSession({
       gameId: game.id,
       status: 'active',
-      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'playing', score: 0, rank: 1 }],
       gameData: {},
     })
 
@@ -392,14 +392,14 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     await GameSession.create({
       gameId: game.id,
       status: 'completed',
-      players: [{ userId, status: 'done', score: 100, expGained: 50, rank: 1 }],
+      players: [{ userId, status: 'done', score: 100, rank: 1 }],
       gameData: {},
     })
 
     const result = await service.createGameSession({
       gameId: game.id,
       status: 'active',
-      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'playing', score: 0, rank: 1 }],
       gameData: {},
     })
 
@@ -415,14 +415,14 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     await GameSession.create({
       gameId: game.id,
       status: 'canceled',
-      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 0, rank: 1 }],
       gameData: {},
     })
 
     const result = await service.createGameSession({
       gameId: game.id,
       status: 'active',
-      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'playing', score: 0, rank: 1 }],
       gameData: {},
     })
 
@@ -508,7 +508,7 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     await GameSession.create({
       gameId: game.id,
       status: 'completed',
-      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 0, rank: 1 }],
       gameData: {},
     })
 
@@ -528,20 +528,20 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     await GameSession.create({
       gameId: game.id,
       status: 'completed',
-      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 0, rank: 1 }],
       gameData: { score: 10, maxScore: 18, timeElapsed: 30 },
     })
     await GameSession.create({
       gameId: game.id,
       status: 'completed',
-      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 0, rank: 1 }],
       gameData: { score: 16, maxScore: 18, timeElapsed: 60 },
     })
     // Canceled session should be excluded
     await GameSession.create({
       gameId: game.id,
       status: 'canceled',
-      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 0, rank: 1 }],
       gameData: { score: 0, maxScore: 18, timeElapsed: 5 },
     })
 
@@ -572,13 +572,13 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     const older = await GameSession.create({
       gameId: game.id,
       status: 'completed',
-      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 0, rank: 1 }],
       gameData: {},
     })
     const newer = await GameSession.create({
       gameId: game.id,
       status: 'active',
-      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'playing', score: 0, rank: 1 }],
       gameData: {},
     })
 
@@ -602,27 +602,27 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     await GameSession.create({
       gameId: game.id,
       status: 'completed',
-      players: [{ userId, status: 'done', score: 10, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 10, rank: 1 }],
       gameData: {},
     })
     await GameSession.create({
       gameId: game.id,
       status: 'canceled',
-      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 0, rank: 1 }],
       gameData: {},
     })
     // Active session should not be in history
     await GameSession.create({
       gameId: game.id,
       status: 'active',
-      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'playing', score: 0, rank: 1 }],
       gameData: {},
     })
     // Other game should not leak
     await GameSession.create({
       gameId: otherGame.id,
       status: 'completed',
-      players: [{ userId, status: 'done', score: 5, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 5, rank: 1 }],
       gameData: {},
     })
 
@@ -641,14 +641,14 @@ test.group('GameSessionService - Unit CRUD', (group) => {
       await GameSession.create({
         gameId: game.id,
         status: 'completed',
-        players: [{ userId, status: 'done', score: i, expGained: 0, rank: 1 }],
+        players: [{ userId, status: 'done', score: i, rank: 1 }],
         gameData: {},
       })
     }
     await GameSession.create({
       gameId: game.id,
       status: 'canceled',
-      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 0, rank: 1 }],
       gameData: {},
     })
 
@@ -664,13 +664,13 @@ test.group('GameSessionService - Unit CRUD', (group) => {
     await GameSession.create({
       gameId: game.id,
       status: 'completed',
-      players: [{ userId, status: 'done', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'done', score: 0, rank: 1 }],
       gameData: {},
     })
     const activeSession = await GameSession.create({
       gameId: game.id,
       status: 'active',
-      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'playing', score: 0, rank: 1 }],
       gameData: {},
     })
 
@@ -682,8 +682,8 @@ test.group('GameSessionService - Unit CRUD', (group) => {
   test('JSON fields are properly serialized and deserialized', async ({ assert }) => {
     const game = await createTestGame('json')
     const complexPlayers = [
-      { userId: 'user-1', status: 'actif', score: 150, expGained: 75, rank: 1 },
-      { userId: 'user-2', status: 'actif', score: 100, expGained: 50, rank: 2 },
+      { userId: 'user-1', status: 'actif', score: 150, rank: 1 },
+      { userId: 'user-2', status: 'actif', score: 100, rank: 2 },
     ]
     const complexGameData = {
       manche: 3,
