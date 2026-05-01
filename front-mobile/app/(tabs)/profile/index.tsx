@@ -2,8 +2,11 @@ import { MaterialIcons } from "@expo/vector-icons";
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
+import OnboardingBanner from "@/components/OnboardingBanner";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
 // TODO: à modifier plus tard - remplacer par des données récupérées depuis l'APIii
 const MOCK_STATS = {
@@ -73,9 +76,11 @@ function getMemberSince(createdAt?: string): string {
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
+  const { status } = useOnboardingStatus();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
+      <OnboardingBanner />
       <ScrollView contentContainerStyle={styles.content}>
         {/* ── Header ── */}
         <View style={styles.header}>
@@ -158,6 +163,39 @@ export default function ProfileScreen() {
               <Text style={styles.activityDate}>{activity.relativeDate}</Text>
             </View>
           ))}
+        </View>
+
+        {/* ── Mes artistes favoris ── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Mes artistes favoris</Text>
+          <Pressable
+            style={styles.favoriteArtistsCard}
+            onPress={() => router.push("/onboarding/artists")}
+            accessibilityRole="button"
+          >
+            <MaterialIcons
+              name="music-note"
+              size={22}
+              color={Colors.primary.survol}
+            />
+            <View style={styles.favoriteArtistsContent}>
+              <Text style={styles.favoriteArtistsTitle}>
+                {status?.completed
+                  ? "Modifier ta sélection"
+                  : "Choisir mes artistes"}
+              </Text>
+              <Text style={styles.favoriteArtistsSubtitle}>
+                {status?.artistsCount
+                  ? `${status.artistsCount} artiste${status.artistsCount > 1 ? "s" : ""} sélectionné${status.artistsCount > 1 ? "s" : ""}`
+                  : "Personnalise ton feed SwipeMix"}
+              </Text>
+            </View>
+            <MaterialIcons
+              name="chevron-right"
+              size={22}
+              color={Colors.dark.icon}
+            />
+          </Pressable>
         </View>
 
         {/* ── Déconnexion ── */}
@@ -357,6 +395,31 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.game.textMuted,
     flexShrink: 0,
+  },
+
+  // Favorite artists
+  favoriteArtistsCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 12,
+    padding: 14,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+  },
+  favoriteArtistsContent: {
+    flex: 1,
+  },
+  favoriteArtistsTitle: {
+    color: Colors.dark.text,
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  favoriteArtistsSubtitle: {
+    color: Colors.dark.icon,
+    fontSize: 12,
   },
 
   // Logout

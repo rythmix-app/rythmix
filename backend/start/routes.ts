@@ -16,6 +16,7 @@ const ProfileController = () => import('#controllers/profile_controller')
 const SpotifyAuthController = () => import('#controllers/spotify_auth_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
+const OnboardingController = () => import('#controllers/onboarding_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -36,6 +37,7 @@ router.get('/', async ({ response }) => {
       gameSessions: '/api/game-sessions',
       profile: '/api/profile',
       me: '/api/me',
+      onboarding: '/api/me/onboarding',
       docs: '/docs',
     },
   })
@@ -69,6 +71,15 @@ router
         router.get('/spotify/top-artists', [MeIntegrationsController, 'topArtists'])
         router.get('/spotify/recently-played', [MeIntegrationsController, 'recentlyPlayed'])
         router.delete('/spotify', [MeIntegrationsController, 'unlinkSpotify'])
+
+        router.get('/onboarding/status', [OnboardingController, 'status'])
+        router.get('/onboarding/artists', [OnboardingController, 'list'])
+        router.post('/onboarding/artists', [OnboardingController, 'replace'])
+        router.get('/onboarding/artists/suggestions', [OnboardingController, 'suggestions'])
+        router.get('/onboarding/artists/spotify-suggestions', [
+          OnboardingController,
+          'spotifySuggestions',
+        ])
 
         router.get('/swipemix/interactions', [TrackInteractionsController, 'index'])
         router.post('/swipemix/interactions', [TrackInteractionsController, 'upsert'])
