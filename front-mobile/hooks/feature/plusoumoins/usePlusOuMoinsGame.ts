@@ -22,7 +22,6 @@ export type PlusOuMoinsGameState =
   | "loading"
   | "playing"
   | "reveal"
-  | "wrong"
   | "result";
 
 export interface TargetData {
@@ -408,7 +407,6 @@ export function usePlusOuMoinsGame() {
         setGameState("playing");
       }, 1500);
     } else {
-      setGameState("wrong");
       setTimeout(() => finishGame(newRounds, streak), 2000);
     }
   };
