@@ -71,6 +71,10 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime()
   declare emailVerifiedAt: DateTime | null
 
+  @ApiProperty({ description: 'Last login timestamp', nullable: true })
+  @column.dateTime()
+  declare lastLoginAt: DateTime | null
+
   @hasMany(() => UserTrackInteraction)
   declare trackInteractions: HasMany<typeof UserTrackInteraction>
 
