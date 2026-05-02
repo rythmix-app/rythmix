@@ -39,12 +39,12 @@ export class OnboardingService {
   }
 
   async getStatus(userId: string): Promise<{ completed: boolean; artistsCount: number }> {
-    const result = await UserOnboardingArtist.query()
+    const row = await UserOnboardingArtist.query()
       .where('userId', userId)
       .count('* as total')
-      .first()
+      .firstOrFail()
 
-    const artistsCount = Number(result?.$extras.total ?? 0)
+    const artistsCount = Number(row.$extras.total)
     return {
       completed: artistsCount >= MIN_ONBOARDING_ARTISTS,
       artistsCount,
