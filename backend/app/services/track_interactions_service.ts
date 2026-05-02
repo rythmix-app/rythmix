@@ -1,6 +1,7 @@
 import UserTrackInteraction from '#models/user_track_interaction'
 import { InteractionAction } from '#enums/interaction_action'
 import { type ServiceError } from '#types/service_error'
+import TrackLiked from '#events/track_liked'
 
 export class TrackInteractionsService {
   public getByUserId(userId: string, action?: InteractionAction) {
@@ -21,7 +22,14 @@ export class TrackInteractionsService {
     isrc?: string | null
   }): Promise<UserTrackInteraction | ServiceError> {
     try {
-      return await UserTrackInteraction.updateOrCreate(
+      const existing = await UserTrackInteraction.query()
+        .where('userId', payload.userId)
+        .where('deezerTrackId', payload.deezerTrackId)
+        .first()
+
+      const wasAlreadyLiked = existing?.action === InteractionAction.Liked
+
+      const interaction = await UserTrackInteraction.updateOrCreate(
         {
           userId: payload.userId,
           deezerTrackId: payload.deezerTrackId,
@@ -34,6 +42,16 @@ export class TrackInteractionsService {
           isrc: payload.isrc ?? null,
         }
       )
+
+      if (payload.action === InteractionAction.Liked && !wasAlreadyLiked) {
+        await TrackLiked.dispatch({
+          userId: payload.userId,
+          deezerTrackId: payload.deezerTrackId,
+          deezerArtistId: payload.deezerArtistId ?? null,
+        })
+      }
+
+      return interaction
     } catch (error: any) {
       if (error.code === '22001') {
         return {

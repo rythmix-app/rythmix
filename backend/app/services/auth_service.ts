@@ -6,6 +6,7 @@ import { randomBytes } from 'node:crypto'
 import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
+import AuthSessionCreated from '#events/auth_session_created'
 
 export class AuthService {
   async register(data: {
@@ -53,6 +54,8 @@ export class AuthService {
       })
     }
 
+    await this.recordSession(user)
+
     return this.issueTokens(user)
   }
 
@@ -78,7 +81,21 @@ export class AuthService {
       throw new Error('Email not verified')
     }
 
+    await this.recordSession(user)
+
     return this.issueTokens(user)
+  }
+
+  private async recordSession(user: User) {
+    const previousLastLoginAt = user.lastLoginAt
+    user.lastLoginAt = DateTime.now()
+    await user.save()
+
+    await AuthSessionCreated.dispatch({
+      userId: user.id,
+      lastLoginAt: previousLastLoginAt,
+      isFirstLogin: previousLastLoginAt === null,
+    })
   }
 
   async refresh(refreshTokenValue: string) {
