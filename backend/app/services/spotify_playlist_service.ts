@@ -103,7 +103,7 @@ export class SpotifyPlaylistService {
       return { added: false }
     }
 
-    await this.spotifyService.spotifyApiRequest(userId, `/playlists/${playlistId}/tracks`, {
+    await this.spotifyService.spotifyApiRequest(userId, `/playlists/${playlistId}/items`, {
       method: 'POST',
       body: { uris: [trackUri] },
     })
@@ -132,7 +132,7 @@ export class SpotifyPlaylistService {
 
     await this.spotifyService.spotifyApiRequest(
       userId,
-      `/playlists/${integration.spotifyLikedPlaylistId}/tracks`,
+      `/playlists/${integration.spotifyLikedPlaylistId}/items`,
       {
         method: 'DELETE',
         body: { tracks: [{ uri: trackUri }] },
@@ -208,7 +208,7 @@ export class SpotifyPlaylistService {
     playlistId: string,
     trackUri: string
   ): Promise<boolean> {
-    let path = `/playlists/${playlistId}/tracks`
+    let path = `/playlists/${playlistId}/items`
     let query: Record<string, string> | undefined = {
       fields: 'items(track(uri)),next',
       limit: '100',

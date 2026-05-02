@@ -166,7 +166,7 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_test' }
       }
-      if (record.path.includes('/tracks') && record.options.method === 'GET') {
+      if (record.path.includes('/items') && record.options.method === 'GET') {
         return { items: [], next: null }
       }
       return {}
@@ -181,7 +181,7 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
     assert.equal(search.options.query!.q, 'isrc:USXX12345678')
 
     const addCall = calls.find(
-      (c) => c.path === '/playlists/pl_test/tracks' && c.options.method === 'POST'
+      (c) => c.path === '/playlists/pl_test/items' && c.options.method === 'POST'
     )!
     assert.deepEqual(addCall.options.body, { uris: ['spotify:track:abc123'] })
   })
@@ -200,7 +200,7 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_fb' }
       }
-      if (record.path.includes('/tracks') && record.options.method === 'GET') {
+      if (record.path.includes('/items') && record.options.method === 'GET') {
         return { items: [], next: null }
       }
       return {}
@@ -241,7 +241,7 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_idem' }
       }
-      if (record.path.includes('/tracks') && record.options.method === 'GET') {
+      if (record.path.includes('/items') && record.options.method === 'GET') {
         return { items: [{ track: { uri: 'spotify:track:dup' } }], next: null }
       }
       return {}
@@ -253,7 +253,7 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
     assert.deepEqual(result, { added: false })
 
     const addCall = calls.find(
-      (c) => c.path === '/playlists/pl_idem/tracks' && c.options.method === 'POST'
+      (c) => c.path === '/playlists/pl_idem/items' && c.options.method === 'POST'
     )
     assert.isUndefined(addCall)
   })
@@ -276,12 +276,12 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_paged' }
       }
-      if (record.path.includes('/tracks') && record.options.method === 'GET') {
+      if (record.path.includes('/items') && record.options.method === 'GET') {
         getCalls++
         if (getCalls === 1) {
           return {
             items: [{ track: { uri: 'spotify:track:other' } }],
-            next: 'https://api.spotify.com/v1/playlists/pl_paged/tracks?offset=100&limit=100',
+            next: 'https://api.spotify.com/v1/playlists/pl_paged/items?offset=100&limit=100',
           }
         }
         return { items: [{ track: { uri: 'spotify:track:dup' } }], next: null }
@@ -295,7 +295,7 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
     assert.deepEqual(result, { added: false })
     assert.equal(getCalls, 2)
     const addCall = calls.find(
-      (c) => c.path === '/playlists/pl_paged/tracks' && c.options.method === 'POST'
+      (c) => c.path === '/playlists/pl_paged/items' && c.options.method === 'POST'
     )
     assert.isUndefined(addCall)
   })
@@ -394,7 +394,7 @@ test.group('SpotifyPlaylistService - removeTrack', (group) => {
     assert.deepEqual(result, { removed: true })
 
     const del = calls.find(
-      (c) => c.path === '/playlists/pl_rm/tracks' && c.options.method === 'DELETE'
+      (c) => c.path === '/playlists/pl_rm/items' && c.options.method === 'DELETE'
     )!
     assert.deepEqual(del.options.body, { tracks: [{ uri: 'spotify:track:rm' }] })
   })
@@ -417,7 +417,7 @@ test.group('SpotifyPlaylistService - syncAllLikes', (group) => {
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_sync' }
       }
-      if (record.path.includes('/tracks') && record.options.method === 'GET') {
+      if (record.path.includes('/items') && record.options.method === 'GET') {
         return { items: [{ track: { uri: 'spotify:track:dup' } }], next: null }
       }
       return {}
@@ -464,10 +464,10 @@ test.group('SpotifyPlaylistService - syncAllLikes', (group) => {
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_skip' }
       }
-      if (record.path.includes('/tracks') && record.options.method === 'GET') {
+      if (record.path.includes('/items') && record.options.method === 'GET') {
         return { items: [], next: null }
       }
-      if (record.path.includes('/tracks') && record.options.method === 'POST') {
+      if (record.path.includes('/items') && record.options.method === 'POST') {
         throw new Error('boom')
       }
       return {}
