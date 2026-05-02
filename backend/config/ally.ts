@@ -6,7 +6,12 @@ const allyConfig = defineConfig({
     clientId: env.get('SPOTIFY_CLIENT_ID'),
     clientSecret: env.get('SPOTIFY_CLIENT_SECRET'),
     callbackUrl: env.get('SPOTIFY_CALLBACK_URL'),
-    scopes: ['user-read-email', 'user-top-read', 'user-read-recently-played'],
+    scopes: [
+      'user-read-email',
+      'user-top-read',
+      'user-read-recently-played',
+      'playlist-modify-private',
+    ],
   }),
   google: services.google({
     clientId: env.get('GOOGLE_CLIENT_ID'),
