@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   artistName: {
     color: "white",
     fontSize: 22,
-    fontFamily: "Author-Bold",
+    fontFamily: "Bold",
     textAlign: "center",
     marginBottom: 2,
   },

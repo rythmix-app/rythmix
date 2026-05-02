@@ -16,6 +16,8 @@ const ProfileController = () => import('#controllers/profile_controller')
 const SpotifyAuthController = () => import('#controllers/spotify_auth_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
+const OnboardingController = () => import('#controllers/onboarding_controller')
+const CuratedPlaylistsController = () => import('#controllers/curated_playlists_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -36,6 +38,7 @@ router.get('/', async ({ response }) => {
       gameSessions: '/api/game-sessions',
       profile: '/api/profile',
       me: '/api/me',
+      onboarding: '/api/me/onboarding',
       docs: '/docs',
     },
   })
@@ -71,6 +74,15 @@ router
         router.post('/spotify/playlist/sync', [MeIntegrationsController, 'syncLikedPlaylist'])
         router.delete('/spotify', [MeIntegrationsController, 'unlinkSpotify'])
 
+        router.get('/onboarding/status', [OnboardingController, 'status'])
+        router.get('/onboarding/artists', [OnboardingController, 'list'])
+        router.post('/onboarding/artists', [OnboardingController, 'replace'])
+        router.get('/onboarding/artists/suggestions', [OnboardingController, 'suggestions'])
+        router.get('/onboarding/artists/spotify-suggestions', [
+          OnboardingController,
+          'spotifySuggestions',
+        ])
+
         router.get('/swipemix/interactions', [TrackInteractionsController, 'index'])
         router.post('/swipemix/interactions', [TrackInteractionsController, 'upsert'])
         router.delete('/swipemix/interactions/:deezerTrackId', [
@@ -96,6 +108,9 @@ router
         router
           .post('/:id/restore', [UsersController, 'restore'])
           .use(middleware.role({ roles: ['admin'] }))
+        router
+          .post('/:id/verify', [UsersController, 'verify'])
+          .use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/users')
     router
@@ -117,6 +132,12 @@ router
       .group(() => {
         router.get('/', [GamesController, 'index']).use(middleware.silentAuth())
         router.post('/', [GamesController, 'create']).use(middleware.role({ roles: ['admin'] }))
+        router
+          .get('/blindtest/playlists', [CuratedPlaylistsController, 'index'])
+          .use(middleware.auth())
+        router
+          .get('/blindtest/playlists/:id/tracks', [CuratedPlaylistsController, 'tracks'])
+          .use(middleware.auth())
         router.get('/:id', [GamesController, 'show']).use(middleware.silentAuth())
         router.patch('/:id', [GamesController, 'update']).use(middleware.role({ roles: ['admin'] }))
         router

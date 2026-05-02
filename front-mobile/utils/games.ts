@@ -1,27 +1,16 @@
-import { MaterialIcons } from "@expo/vector-icons";
+import { ImageSourcePropType } from "react-native";
 
-export type GameIconName = keyof typeof MaterialIcons.glyphMap;
+const GAME_IMAGES: Record<string, ImageSourcePropType> = {
+  "blind test": require("@/assets/images/games/blindtest.png"),
+  blindtest: require("@/assets/images/games/blindtest.png"),
+  blurchette: require("@/assets/images/games/blurchette.png"),
+  tracklist: require("@/assets/images/games/tracklist.png"),
+  "plus ou moins": require("@/assets/images/games/plusoumoins.png"),
+  "higher or lower": require("@/assets/images/games/plusoumoins.png"),
+  parkeur: require("@/assets/images/games/parkeur.png"),
+};
 
-interface GameIconConfig {
-  name: GameIconName;
-  color?: string;
-}
-
-/**
- * Returns the icon configuration for a given game
- * @param gameName - The name of the game (case-insensitive)
- * @returns Icon configuration with name and optional color
- */
-export function getGameIcon(gameName: string): GameIconConfig {
+export function getGameImage(gameName: string): ImageSourcePropType | null {
   const normalizedName = gameName.toLowerCase().trim();
-
-  const gameIcons: Record<string, GameIconConfig> = {
-    blurchette: { name: "blur-on" },
-    tracklist: { name: "queue-music" },
-    "higher or lower": { name: "swap-vert" },
-    "plus ou moins": { name: "swap-vert" },
-    // Add more games here as needed
-  };
-
-  return gameIcons[normalizedName] || { name: "help" };
+  return GAME_IMAGES[normalizedName] ?? null;
 }

@@ -100,6 +100,7 @@
                   ></i>
                 </th>
                 <th>STATUT</th>
+                <th>VÉRIFIÉ</th>
                 <th class="actions-header"></th>
               </tr>
             </thead>
@@ -142,6 +143,20 @@
                       {{ isUserDeleted(user) ? "Supprimé" : "Actif" }}
                     </span>
                   </td>
+                  <td>
+                    <span
+                      class="badge"
+                      [class.badge-active]="user.emailVerifiedAt"
+                      [class.badge-danger]="!user.emailVerifiedAt"
+                      [title]="
+                        user.emailVerifiedAt
+                          ? (user.emailVerifiedAt | date: 'dd/MM/yyyy HH:mm')
+                          : ''
+                      "
+                    >
+                      {{ user.emailVerifiedAt ? "Oui" : "Non" }}
+                    </span>
+                  </td>
                   <td class="actions-cell">
                     @if (!isUserDeleted(user)) {
                       <button
@@ -179,7 +194,7 @@
                 </tr>
               } @empty {
                 <tr class="no-data-row">
-                  <td colspan="6">Aucun utilisateur trouvé</td>
+                  <td colspan="7">Aucun utilisateur trouvé</td>
                 </tr>
               }
             </tbody>

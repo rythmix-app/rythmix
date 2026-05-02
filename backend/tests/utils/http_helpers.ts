@@ -10,23 +10,18 @@ export const makeResponse = () => ({
     return this
   },
   ok(payload: any) {
-    this.statusCode = 200
-    this.body = payload
-    return this
+    return this.status(200).json(payload)
   },
   notFound(payload: any) {
-    this.statusCode = 404
-    this.body = payload
-    return this
+    return this.status(404).json(payload)
   },
   forbidden(payload: any) {
-    this.statusCode = 403
-    this.body = payload
-    return this
+    return this.status(403).json(payload)
+  },
+  unprocessableEntity(payload: any) {
+    return this.status(422).json(payload)
   },
   internalServerError(payload: any) {
-    this.statusCode = 500
-    this.body = payload
-    return this
+    return this.status(500).json(payload)
   },
 })

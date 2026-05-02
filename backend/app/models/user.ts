@@ -9,6 +9,7 @@ import { hasMany } from '@adonisjs/lucid/orm'
 import UserTrackInteraction from '#models/user_track_interaction'
 import FavoriteGame from '#models/favorite_game'
 import UserIntegration from '#models/user_integration'
+import UserOnboardingArtist from '#models/user_onboarding_artist'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import { ApiProperty } from '@foadonis/openapi/decorators'
 
@@ -79,6 +80,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @hasMany(() => UserIntegration)
   declare integrations: HasMany<typeof UserIntegration>
+
+  @hasMany(() => UserOnboardingArtist)
+  declare onboardingArtists: HasMany<typeof UserOnboardingArtist>
 
   @column({ serializeAs: null })
   declare verificationToken: string | null

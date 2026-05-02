@@ -111,4 +111,34 @@ test.group('UsersController - Unit Tests for Edge Cases', () => {
 
     assert.equal(mockResponse.statusCode, 500)
   })
+
+  test('verify should use 500 status when error has no status field', async ({ assert }) => {
+    const mockUserService = {
+      verifyUser: async () => ({
+        error: 'Unexpected error',
+      }),
+    } as any
+
+    const controller = new UsersController(mockUserService)
+
+    const mockResponse = {
+      statusCode: 0,
+      status: function (code: number) {
+        this.statusCode = code
+        return this
+      },
+      json: function () {
+        return this
+      },
+    }
+
+    const ctx = {
+      response: mockResponse,
+      params: { id: 'test-id' },
+    } as any as HttpContext
+
+    await controller.verify(ctx)
+
+    assert.equal(mockResponse.statusCode, 500)
+  })
 })

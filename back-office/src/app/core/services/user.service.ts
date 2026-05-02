@@ -49,6 +49,12 @@ export class UserService {
       .pipe(map((response) => response.user));
   }
 
+  verifyUser(id: string): Observable<User> {
+    return this.api
+      .post<{ user: User }>(`${this.endpoint}/${id}/verify`, {})
+      .pipe(map((response) => response.user));
+  }
+
   permanentDeleteUser(id: string): Observable<void> {
     return this.api.delete<void>(`${this.endpoint}/${id}/permanent`);
   }
