@@ -87,7 +87,7 @@ export class AuthService {
   }
 
   private async recordSession(user: User) {
-    const previousLastLoginAt = user.lastLoginAt
+    const previousLastLoginAt = user.lastLoginAt ?? null
     user.lastLoginAt = DateTime.now()
     await user.save()
 
