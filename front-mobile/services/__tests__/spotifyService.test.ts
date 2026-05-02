@@ -7,6 +7,7 @@ import {
   getTopArtists,
   getTopTracks,
   initSpotifyAuth,
+  syncSpotifyLikedPlaylist,
 } from "../spotifyService";
 import { del, get, post } from "../api";
 
@@ -81,5 +82,14 @@ describe("spotifyService", () => {
       returnUrl: "frontmobile://spotify-linked",
     });
     expect(result.authorizeUrl).toContain("accounts.spotify.com");
+  });
+
+  it("syncSpotifyLikedPlaylist posts to /api/me/spotify/playlist/sync and unwraps result", async () => {
+    mockPost.mockResolvedValueOnce({
+      result: { added: 3, notOnSpotify: 1, skipped: 0 },
+    });
+    const result = await syncSpotifyLikedPlaylist();
+    expect(mockPost).toHaveBeenCalledWith("/api/me/spotify/playlist/sync", {});
+    expect(result).toEqual({ added: 3, notOnSpotify: 1, skipped: 0 });
   });
 });
