@@ -128,6 +128,18 @@ test.group('SpotifyPlaylistService - getOrCreateLikedPlaylist', (group) => {
     }, /SPOTIFY_NOT_CONNECTED/)
   })
 
+  test('throws scope upgrade required when integration has no scopes recorded', async ({
+    assert,
+  }) => {
+    const user = await createUser('null_scope')
+    const { service, spotify } = buildPlaylistService(async () => ({}))
+    await linkSpotify(spotify, user.id, '')
+
+    await assert.rejects(async () => {
+      await service.getOrCreateLikedPlaylist(user.id)
+    }, /SPOTIFY_SCOPE_UPGRADE_REQUIRED/)
+  })
+
   test('translates 403 from playlist creation into scope upgrade required', async ({ assert }) => {
     const user = await createUser('forbidden')
     const { service, spotify } = buildPlaylistService(async () => {
@@ -252,5 +264,218 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
     await linkSpotify(spotify, user.id)
     const result = await service.addTrack(user.id, 'unknown')
     assert.deepEqual(result, { added: false })
+  })
+
+  test('paginates the playlist when checking for duplicates', async ({ assert }) => {
+    const user = await createUser('paginate')
+    let getCalls = 0
+    const { service, spotify, calls } = buildPlaylistService(async (record) => {
+      if (record.path === '/search') {
+        return { tracks: { items: [{ uri: 'spotify:track:dup' }] } }
+      }
+      if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
+        return { id: 'pl_paged' }
+      }
+      if (record.path.includes('/tracks') && record.options.method === 'GET') {
+        getCalls++
+        if (getCalls === 1) {
+          return {
+            items: [{ track: { uri: 'spotify:track:other' } }],
+            next: 'https://api.spotify.com/v1/playlists/pl_paged/tracks?offset=100&limit=100',
+          }
+        }
+        return { items: [{ track: { uri: 'spotify:track:dup' } }], next: null }
+      }
+      return {}
+    })
+    await linkSpotify(spotify, user.id)
+    await createLikedInteraction(user.id)
+
+    const result = await service.addTrack(user.id, '12345')
+    assert.deepEqual(result, { added: false })
+    assert.equal(getCalls, 2)
+    const addCall = calls.find(
+      (c) => c.path === '/playlists/pl_paged/tracks' && c.options.method === 'POST'
+    )
+    assert.isUndefined(addCall)
+  })
+
+  test('rethrows non-403 errors from playlist creation', async ({ assert }) => {
+    const user = await createUser('create_error')
+    const { service, spotify } = buildPlaylistService(async () => {
+      throw new SpotifyApiError(500, '/users/x/playlists')
+    })
+    await linkSpotify(spotify, user.id)
+
+    await assert.rejects(async () => {
+      await service.getOrCreateLikedPlaylist(user.id)
+    }, /500/)
+  })
+
+  test('returns null when interaction has neither isrc nor title+artist', async ({ assert }) => {
+    const user = await createUser('add_no_match_inputs')
+    const { service, spotify } = buildPlaylistService(async () => ({}))
+    await linkSpotify(spotify, user.id)
+    await UserTrackInteraction.create({
+      userId: user.id,
+      deezerTrackId: '777',
+      action: InteractionAction.Liked,
+      title: '',
+      artist: '',
+      isrc: null,
+    })
+    const result = await service.addTrack(user.id, '777')
+    assert.deepEqual(result, { added: false, notOnSpotify: true })
+  })
+})
+
+test.group('SpotifyPlaylistService - removeTrack', (group) => {
+  deleteUserIntegrations(group)
+  deleteTrackInteractions(group)
+
+  test('returns removed:false when integration is missing', async ({ assert }) => {
+    const user = await createUser('remove_no_integration')
+    const { service } = buildPlaylistService(async () => ({}))
+    const result = await service.removeTrack(user.id, '12345')
+    assert.deepEqual(result, { removed: false })
+  })
+
+  test('returns removed:false when the playlist has not been created yet', async ({ assert }) => {
+    const user = await createUser('remove_no_playlist')
+    const { service, spotify } = buildPlaylistService(async () => ({}))
+    await linkSpotify(spotify, user.id)
+    const result = await service.removeTrack(user.id, '12345')
+    assert.deepEqual(result, { removed: false })
+  })
+
+  test('returns removed:false when the interaction does not exist', async ({ assert }) => {
+    const user = await createUser('remove_no_interaction')
+    const { service, spotify } = buildPlaylistService(async () => ({}))
+    await linkSpotify(spotify, user.id)
+    const integration = await spotify.findByUserId(user.id)
+    integration!.spotifyLikedPlaylistId = 'pl_x'
+    await integration!.save()
+
+    const result = await service.removeTrack(user.id, 'unknown')
+    assert.deepEqual(result, { removed: false })
+  })
+
+  test('returns removed:false when the track cannot be found on Spotify', async ({ assert }) => {
+    const user = await createUser('remove_not_found')
+    const { service, spotify } = buildPlaylistService(async (record) => {
+      if (record.path === '/search') return { tracks: { items: [] } }
+      return {}
+    })
+    await linkSpotify(spotify, user.id)
+    const integration = await spotify.findByUserId(user.id)
+    integration!.spotifyLikedPlaylistId = 'pl_x'
+    await integration!.save()
+    await createLikedInteraction(user.id, { isrc: 'USXX00000000' })
+
+    const result = await service.removeTrack(user.id, '12345')
+    assert.deepEqual(result, { removed: false })
+  })
+
+  test('issues DELETE on the playlist when the track is found', async ({ assert }) => {
+    const user = await createUser('remove_ok')
+    const { service, spotify, calls } = buildPlaylistService(async (record) => {
+      if (record.path === '/search') {
+        return { tracks: { items: [{ uri: 'spotify:track:rm' }] } }
+      }
+      return undefined
+    })
+    await linkSpotify(spotify, user.id)
+    const integration = await spotify.findByUserId(user.id)
+    integration!.spotifyLikedPlaylistId = 'pl_rm'
+    await integration!.save()
+    await createLikedInteraction(user.id)
+
+    const result = await service.removeTrack(user.id, '12345')
+    assert.deepEqual(result, { removed: true })
+
+    const del = calls.find(
+      (c) => c.path === '/playlists/pl_rm/tracks' && c.options.method === 'DELETE'
+    )!
+    assert.deepEqual(del.options.body, { tracks: [{ uri: 'spotify:track:rm' }] })
+  })
+})
+
+test.group('SpotifyPlaylistService - syncAllLikes', (group) => {
+  deleteUserIntegrations(group)
+  deleteTrackInteractions(group)
+
+  test('aggregates added/notOnSpotify/skipped across the user likes', async ({ assert }) => {
+    const user = await createUser('sync_ok')
+    const { service, spotify } = buildPlaylistService(async (record) => {
+      if (record.path === '/search') {
+        const q = record.options.query!.q
+        if (q.includes('USXX11111111')) return { tracks: { items: [{ uri: 'spotify:track:1' }] } }
+        if (q.includes('NotOnSpotify')) return { tracks: { items: [] } }
+        if (q.includes('USXX22222222')) return { tracks: { items: [] } }
+        return { tracks: { items: [{ uri: 'spotify:track:dup' }] } }
+      }
+      if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
+        return { id: 'pl_sync' }
+      }
+      if (record.path.includes('/tracks') && record.options.method === 'GET') {
+        return { items: [{ track: { uri: 'spotify:track:dup' } }], next: null }
+      }
+      return {}
+    })
+    await linkSpotify(spotify, user.id)
+    await createLikedInteraction(user.id, { deezerTrackId: '1', isrc: 'USXX11111111' })
+    await createLikedInteraction(user.id, {
+      deezerTrackId: '2',
+      isrc: 'USXX22222222',
+      title: 'NotOnSpotify',
+      artist: 'NotOnSpotify',
+    })
+    await createLikedInteraction(user.id, { deezerTrackId: '3', isrc: 'USXX33333333' })
+
+    const result = await service.syncAllLikes(user.id)
+    assert.deepEqual(result, { added: 1, notOnSpotify: 1, skipped: 1 })
+  })
+
+  test('rethrows scope upgrade required errors raised during the sync', async ({ assert }) => {
+    const user = await createUser('sync_scope')
+    const { service, spotify } = buildPlaylistService(async (record) => {
+      if (record.path === '/search') {
+        return { tracks: { items: [{ uri: 'spotify:track:1' }] } }
+      }
+      if (record.path.includes('/playlists') && record.options.method === 'POST') {
+        throw new SpotifyApiError(403, '/users/x/playlists')
+      }
+      return {}
+    })
+    await linkSpotify(spotify, user.id, 'user-read-email playlist-modify-private')
+    await createLikedInteraction(user.id, { isrc: 'USXX11111111' })
+
+    await assert.rejects(async () => {
+      await service.syncAllLikes(user.id)
+    }, /SPOTIFY_SCOPE_UPGRADE_REQUIRED/)
+  })
+
+  test('counts unexpected addTrack errors as skipped', async ({ assert }) => {
+    const user = await createUser('sync_skip')
+    const { service, spotify } = buildPlaylistService(async (record) => {
+      if (record.path === '/search') {
+        return { tracks: { items: [{ uri: 'spotify:track:1' }] } }
+      }
+      if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
+        return { id: 'pl_skip' }
+      }
+      if (record.path.includes('/tracks') && record.options.method === 'GET') {
+        return { items: [], next: null }
+      }
+      if (record.path.includes('/tracks') && record.options.method === 'POST') {
+        throw new Error('boom')
+      }
+      return {}
+    })
+    await linkSpotify(spotify, user.id)
+    await createLikedInteraction(user.id, { isrc: 'USXX11111111' })
+
+    const result = await service.syncAllLikes(user.id)
+    assert.deepEqual(result, { added: 0, notOnSpotify: 0, skipped: 1 })
   })
 })

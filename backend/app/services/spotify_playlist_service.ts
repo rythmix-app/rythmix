@@ -208,13 +208,13 @@ export class SpotifyPlaylistService {
     playlistId: string,
     trackUri: string
   ): Promise<boolean> {
-    let path: string | null = `/playlists/${playlistId}/tracks`
+    let path = `/playlists/${playlistId}/tracks`
     let query: Record<string, string> | undefined = {
       fields: 'items(track(uri)),next',
       limit: '100',
     }
 
-    while (path) {
+    while (true) {
       const data: { items: { track: { uri: string } | null }[]; next: string | null } =
         await this.spotifyService.spotifyApiRequest(userId, path, { method: 'GET', query })
 
@@ -225,8 +225,6 @@ export class SpotifyPlaylistService {
       path = nextUrl.pathname.replace(/^\/v1/, '')
       query = Object.fromEntries(nextUrl.searchParams.entries())
     }
-
-    return false
   }
 
   private hasPlaylistScope(integration: UserIntegration): boolean {
