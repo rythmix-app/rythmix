@@ -1,8 +1,10 @@
 import { inject } from '@adonisjs/core'
+import db from '@adonisjs/lucid/services/db'
 import logger from '@adonisjs/core/services/logger'
 import UserIntegration from '#models/user_integration'
 import UserTrackInteraction from '#models/user_track_interaction'
 import { InteractionAction } from '#enums/interaction_action'
+import { IntegrationProvider } from '#enums/integration_provider'
 import { SpotifyApiError, SpotifyService } from '#services/spotify_service'
 
 export const SPOTIFY_LIKED_PLAYLIST_NAME = 'Rythmix Likes'
@@ -48,38 +50,50 @@ export class SpotifyPlaylistService {
   constructor(private readonly spotifyService: SpotifyService) {}
 
   async getOrCreateLikedPlaylist(userId: string): Promise<string> {
-    const integration = await this.requireIntegration(userId)
-    if (integration.spotifyLikedPlaylistId) {
-      return integration.spotifyLikedPlaylistId
-    }
+    return db.transaction(async (trx) => {
+      const integration = await UserIntegration.query({ client: trx })
+        .where('userId', userId)
+        .where('provider', IntegrationProvider.SPOTIFY)
+        .forUpdate()
+        .first()
 
-    if (!this.hasPlaylistScope(integration)) {
-      throw new SpotifyScopeUpgradeRequiredError()
-    }
+      if (!integration) {
+        throw new SpotifyNotConnectedError()
+      }
 
-    try {
-      const created = await this.spotifyService.spotifyApiRequest<{ id: string }>(
-        userId,
-        `/users/${integration.providerUserId}/playlists`,
-        {
-          method: 'POST',
-          body: {
-            name: SPOTIFY_LIKED_PLAYLIST_NAME,
-            public: false,
-            description: SPOTIFY_LIKED_PLAYLIST_DESCRIPTION,
-          },
-        }
-      )
+      if (integration.spotifyLikedPlaylistId) {
+        return integration.spotifyLikedPlaylistId
+      }
 
-      integration.spotifyLikedPlaylistId = created.id
-      await integration.save()
-      return created.id
-    } catch (error) {
-      if (error instanceof SpotifyApiError && error.status === 403) {
+      if (!this.hasPlaylistScope(integration)) {
         throw new SpotifyScopeUpgradeRequiredError()
       }
-      throw error
-    }
+
+      try {
+        const created = await this.spotifyService.spotifyApiRequest<{ id: string }>(
+          userId,
+          `/users/${integration.providerUserId}/playlists`,
+          {
+            method: 'POST',
+            body: {
+              name: SPOTIFY_LIKED_PLAYLIST_NAME,
+              public: false,
+              description: SPOTIFY_LIKED_PLAYLIST_DESCRIPTION,
+            },
+          }
+        )
+
+        integration.useTransaction(trx)
+        integration.spotifyLikedPlaylistId = created.id
+        await integration.save()
+        return created.id
+      } catch (error) {
+        if (error instanceof SpotifyApiError && error.status === 403) {
+          throw new SpotifyScopeUpgradeRequiredError()
+        }
+        throw error
+      }
+    })
   }
 
   async addTrack(userId: string, deezerTrackId: string): Promise<SpotifyAddTrackResult> {

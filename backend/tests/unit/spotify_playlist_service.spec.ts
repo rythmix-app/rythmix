@@ -478,4 +478,13 @@ test.group('SpotifyPlaylistService - syncAllLikes', (group) => {
     const result = await service.syncAllLikes(user.id)
     assert.deepEqual(result, { added: 0, notOnSpotify: 0, skipped: 1 })
   })
+
+  test('throws SpotifyNotConnectedError when integration is missing', async ({ assert }) => {
+    const user = await createUser('sync_no_integration')
+    const { service } = buildPlaylistService(async () => ({}))
+
+    await assert.rejects(async () => {
+      await service.syncAllLikes(user.id)
+    }, /SPOTIFY_NOT_CONNECTED/)
+  })
 })
