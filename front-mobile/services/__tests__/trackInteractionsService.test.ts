@@ -48,7 +48,33 @@ describe("trackInteractionsService", () => {
       "/api/me/swipemix/interactions",
       request,
     );
-    expect(result).toEqual(interaction);
+    expect(result).toEqual({ interaction });
+  });
+
+  it("upsertMyTrackInteraction surfaces the spotifyResult when present", async () => {
+    const interaction = {
+      id: 2,
+      userId: "u1",
+      deezerTrackId: "99",
+      deezerArtistId: null,
+      action: "liked" as const,
+      title: "x",
+      artist: "y",
+      isrc: null,
+    };
+    mockPost.mockResolvedValueOnce({
+      interaction,
+      spotifyResult: { triggered: true, notOnSpotify: true },
+    });
+
+    const result = await upsertMyTrackInteraction({
+      deezerTrackId: "99",
+      action: "liked",
+    });
+    expect(result.spotifyResult).toEqual({
+      triggered: true,
+      notOnSpotify: true,
+    });
   });
 
   it("deleteMyTrackInteraction DELETEs /api/me/swipemix/interactions/:id", async () => {
