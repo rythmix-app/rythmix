@@ -156,14 +156,16 @@ describe("useSwipeMix", () => {
     }));
 
     mockUpsertMyTrackInteraction.mockResolvedValue({
-      id: 1,
-      userId: "user-1",
-      deezerTrackId: "1",
-      deezerArtistId: "1",
-      action: "liked",
-      title: "Track 1",
-      artist: "Artist 1",
-      isrc: null,
+      interaction: {
+        id: 1,
+        userId: "user-1",
+        deezerTrackId: "1",
+        deezerArtistId: "1",
+        action: "liked",
+        title: "Track 1",
+        artist: "Artist 1",
+        isrc: null,
+      },
     });
   });
 

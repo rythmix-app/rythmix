@@ -2,17 +2,22 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { cacheManager } from "@/services/cache-manager";
 import { upsertMyTrackInteraction } from "@/services/trackInteractionsService";
-import { InteractionAction } from "@/types/trackInteraction";
+import {
+  InteractionAction,
+  SpotifyTriggerSnapshot,
+} from "@/types/trackInteraction";
 import { MusicCardData } from "@/components/swipe";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { useAudioPlayer } from "./useAudioPlayer";
 
 interface UseSwipeMixOptions {
   initialLimit?: number;
+  onInteractionAttempt?: (action: InteractionAction) => void;
+  onSpotifyResult?: (result: SpotifyTriggerSnapshot | undefined) => void;
 }
 
 export function useSwipeMix(options: UseSwipeMixOptions = {}) {
-  const { initialLimit = 10 } = options;
+  const { initialLimit = 10, onInteractionAttempt, onSpotifyResult } = options;
 
   const [cards, setCards] = useState<MusicCardData[]>([]);
   const [tracks, setTracks] = useState<Map<string, DeezerTrack>>(new Map());
@@ -168,8 +173,10 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
           });
       }
 
+      onInteractionAttempt?.(action);
+
       try {
-        await upsertMyTrackInteraction({
+        const response = await upsertMyTrackInteraction({
           deezerTrackId: card.id,
           deezerArtistId: cached ? String(cached.artist.id) : undefined,
           action,
@@ -177,12 +184,13 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
           artist: card.artist,
           isrc: cached?.isrc,
         });
+        onSpotifyResult?.(response.spotifyResult);
       } catch {
         // Les échecs ne sont pas mis en file d'attente : l'interaction peut être perdue
         // en cas d'erreur réseau.
       }
     },
-    [tracks],
+    [tracks, onInteractionAttempt, onSpotifyResult],
   );
 
   // Handler pour swipe left (skip/dislike)

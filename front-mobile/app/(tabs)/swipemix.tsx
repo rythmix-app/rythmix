@@ -5,11 +5,17 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useRef, useEffect } from "react";
 import CardStack from "@/components/swipe/CardStack";
 import { useSwipeMix } from "@/hooks/useSwipeMix";
+import { useSpotifyLikeFeedback } from "@/hooks/useSpotifyLikeFeedback";
+import SpotifyConnectModal from "@/components/SpotifyConnectModal";
 
 export default function SwipeMixScreen() {
   const { top, bottom } = useSafeAreaInsets();
+  const spotifyFeedback = useSpotifyLikeFeedback();
   const { cards, isLoadingCards, handlers, audioPlayer, error, actions } =
-    useSwipeMix();
+    useSwipeMix({
+      onInteractionAttempt: spotifyFeedback.onLikeAttempted,
+      onSpotifyResult: spotifyFeedback.onInteractionResult,
+    });
 
   // Utiliser une ref pour garder une référence stable à la fonction stop
   const audioPlayerStopRef = useRef(audioPlayer.stop);
@@ -53,6 +59,12 @@ export default function SwipeMixScreen() {
             onCardAppear={handlers.onCardAppear}
           />
         </View>
+        <SpotifyConnectModal
+          visible={spotifyFeedback.connectModalVisible}
+          isConnecting={spotifyFeedback.isConnecting}
+          onConnect={spotifyFeedback.onConnectFromModal}
+          onDismiss={spotifyFeedback.onDismissModal}
+        />
       </View>
     </GestureHandlerRootView>
   );
