@@ -68,6 +68,7 @@ router
         router.get('/spotify/top-tracks', [MeIntegrationsController, 'topTracks'])
         router.get('/spotify/top-artists', [MeIntegrationsController, 'topArtists'])
         router.get('/spotify/recently-played', [MeIntegrationsController, 'recentlyPlayed'])
+        router.post('/spotify/playlist/sync', [MeIntegrationsController, 'syncLikedPlaylist'])
         router.delete('/spotify', [MeIntegrationsController, 'unlinkSpotify'])
 
         router.get('/swipemix/interactions', [TrackInteractionsController, 'index'])

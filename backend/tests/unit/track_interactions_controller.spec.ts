@@ -27,7 +27,11 @@ test.group('TrackInteractionsController - Unit', () => {
         throw new Error('boom')
       },
     } as any
-    const controller = new TrackInteractionsController(service)
+    const controller = new TrackInteractionsController(
+      service,
+      { findByUserId: async () => null } as any,
+      {} as any
+    )
     const { response, ctx } = makeCtx()
 
     await controller.index(ctx)
@@ -45,7 +49,11 @@ test.group('TrackInteractionsController - Unit', () => {
         status: 400,
       }),
     } as any
-    const controller = new TrackInteractionsController(service)
+    const controller = new TrackInteractionsController(
+      service,
+      { findByUserId: async () => null } as any,
+      {} as any
+    )
     const { response, ctx } = makeCtx()
 
     await controller.upsert(ctx)
@@ -60,7 +68,11 @@ test.group('TrackInteractionsController - Unit', () => {
         throw new Error('boom')
       },
     } as any
-    const controller = new TrackInteractionsController(service)
+    const controller = new TrackInteractionsController(
+      service,
+      { findByUserId: async () => null } as any,
+      {} as any
+    )
     const { response, ctx } = makeCtx()
 
     await controller.upsert(ctx)
@@ -75,7 +87,11 @@ test.group('TrackInteractionsController - Unit', () => {
         throw new Error('boom')
       },
     } as any
-    const controller = new TrackInteractionsController(service)
+    const controller = new TrackInteractionsController(
+      service,
+      { findByUserId: async () => null } as any,
+      {} as any
+    )
     const { response, ctx } = makeCtx({ params: { deezerTrackId: '1' } } as any)
 
     await controller.delete(ctx)
@@ -93,7 +109,11 @@ test.group('TrackInteractionsController - Unit', () => {
         status: 404,
       }),
     } as any
-    const controller = new TrackInteractionsController(service)
+    const controller = new TrackInteractionsController(
+      service,
+      { findByUserId: async () => null } as any,
+      {} as any
+    )
     const { response, ctx } = makeCtx({ params: { deezerTrackId: '1' } } as any)
 
     await controller.delete(ctx)
