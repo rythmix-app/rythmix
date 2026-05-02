@@ -17,6 +17,7 @@ const SpotifyAuthController = () => import('#controllers/spotify_auth_controller
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
 const OnboardingController = () => import('#controllers/onboarding_controller')
+const CuratedPlaylistsController = () => import('#controllers/curated_playlists_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -106,6 +107,9 @@ router
         router
           .post('/:id/restore', [UsersController, 'restore'])
           .use(middleware.role({ roles: ['admin'] }))
+        router
+          .post('/:id/verify', [UsersController, 'verify'])
+          .use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/users')
     router
@@ -127,6 +131,12 @@ router
       .group(() => {
         router.get('/', [GamesController, 'index']).use(middleware.silentAuth())
         router.post('/', [GamesController, 'create']).use(middleware.role({ roles: ['admin'] }))
+        router
+          .get('/blindtest/playlists', [CuratedPlaylistsController, 'index'])
+          .use(middleware.auth())
+        router
+          .get('/blindtest/playlists/:id/tracks', [CuratedPlaylistsController, 'tracks'])
+          .use(middleware.auth())
         router.get('/:id', [GamesController, 'show']).use(middleware.silentAuth())
         router.patch('/:id', [GamesController, 'update']).use(middleware.role({ roles: ['admin'] }))
         router

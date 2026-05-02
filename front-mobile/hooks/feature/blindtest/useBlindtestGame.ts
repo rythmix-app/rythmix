@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { deezerAPI, DeezerGenre, DeezerTrack } from "@/services/deezer-api";
+import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { cacheManager } from "@/services/cache-manager";
 import { useAuthStore } from "@/stores/authStore";
 import { useToast } from "@/components/Toast";
@@ -17,12 +17,16 @@ import {
 } from "@/services/gameStorageService";
 import { BlindtestGameData, BlindtestRound } from "@/types/gameSession";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
-import { useGenres } from "@/hooks/useGenres";
+import {
+  CuratedPlaylist,
+  getCuratedPlaylists,
+  getCuratedPlaylistTracks,
+} from "@/services/curatedPlaylistService";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { fuzzyMatch, nearMatch } from "@/utils/stringUtils";
 
 export type BlindtestGameState =
-  | "genreSelection"
+  | "playlistSelection"
   | "ready"
   | "playing"
   | "roundReveal"
@@ -45,7 +49,7 @@ export function getFeaturing(track: DeezerTrack): string[] {
 
 interface BlindtestSaveState {
   gameState: BlindtestGameState;
-  selectedGenre: DeezerGenre | null;
+  selectedPlaylist: CuratedPlaylist | null;
   tracks: DeezerTrack[];
   currentRoundIndex: number;
   timeRemaining: number;
@@ -59,11 +63,13 @@ interface BlindtestSaveState {
 
 export function useBlindtestGame() {
   const [gameState, setGameState] =
-    useState<BlindtestGameState>("genreSelection");
-  const { genres, loadingGenres } = useGenres();
+    useState<BlindtestGameState>("playlistSelection");
+  const [playlists, setPlaylists] = useState<CuratedPlaylist[]>([]);
+  const [loadingPlaylists, setLoadingPlaylists] = useState(true);
   const [loadingTracks, setLoadingTracks] = useState(false);
 
-  const [selectedGenre, setSelectedGenre] = useState<DeezerGenre | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] =
+    useState<CuratedPlaylist | null>(null);
   const [tracks, setTracks] = useState<DeezerTrack[]>([]);
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
 
@@ -109,6 +115,32 @@ export function useBlindtestGame() {
   const { show } = useToast();
   const { shakeAnimation, borderOpacity, errorMessage, triggerError } =
     useErrorFeedback(errorAnimationsEnabled);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoadingPlaylists(true);
+      try {
+        const data = await getCuratedPlaylists();
+        if (!cancelled) setPlaylists(data);
+      } catch (error) {
+        console.error("Failed to load curated playlists:", error);
+        if (!cancelled) {
+          show({
+            type: "error",
+            message: "Impossible de charger les playlists",
+          });
+        }
+      } finally {
+        if (!cancelled) setLoadingPlaylists(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [show]);
+
   const handleAudioRetry = useCallback(
     async (track: DeezerTrack): Promise<DeezerTrack | null> => {
       try {
@@ -181,7 +213,7 @@ export function useBlindtestGame() {
       const saved = await getGameState<BlindtestSaveState>(gameId);
       if (saved) {
         setGameState(saved.gameState);
-        setSelectedGenre(saved.selectedGenre);
+        setSelectedPlaylist(saved.selectedPlaylist);
         setTracks(saved.tracks);
         setCurrentRoundIndex(saved.currentRoundIndex);
         setTimeRemaining(saved.timeRemaining);
@@ -225,7 +257,7 @@ export function useBlindtestGame() {
 
     const saveState: BlindtestSaveState = {
       gameState,
-      selectedGenre,
+      selectedPlaylist,
       tracks,
       currentRoundIndex,
       timeRemaining,
@@ -241,7 +273,7 @@ export function useBlindtestGame() {
   }, [
     gameId,
     gameState,
-    selectedGenre,
+    selectedPlaylist,
     tracks,
     currentRoundIndex,
     timeRemaining,
@@ -277,60 +309,63 @@ export function useBlindtestGame() {
 
   // --- Game actions ---
   const startGame = useCallback(
-    async (genre: DeezerGenre) => {
+    async (playlist: CuratedPlaylist) => {
       setLoadingTracks(true);
-      setSelectedGenre(genre);
+      setSelectedPlaylist(playlist);
 
       try {
-        const response = await deezerAPI.getGenreTracks(genre.id, 50);
+        const sampledTracks = await getCuratedPlaylistTracks(playlist.id, 50);
 
-        if (!response.data || response.data.length === 0) {
+        if (!sampledTracks || sampledTracks.length === 0) {
           show({
             type: "error",
-            message: "Aucune musique trouvée pour ce genre",
+            message: "Aucune musique trouvée pour cette playlist",
           });
           setLoadingTracks(false);
           return;
         }
 
-        const tracksWithPreview = response.data.filter(
+        const tracksWithPreview = sampledTracks.filter(
           (t) => t.preview && t.preview.startsWith("http"),
         );
 
         if (tracksWithPreview.length < MIN_TRACKS_REQUIRED) {
           show({
             type: "error",
-            message: "Pas assez de morceaux disponibles pour ce genre",
+            message: "Pas assez de morceaux disponibles pour cette playlist",
           });
           setLoadingTracks(false);
           return;
         }
 
-        const shuffled = [...tracksWithPreview].sort(() => Math.random() - 0.5);
-        const picked = shuffled.slice(
+        const picked = tracksWithPreview.slice(
           0,
-          Math.min(TOTAL_ROUNDS, shuffled.length),
+          Math.min(TOTAL_ROUNDS, tracksWithPreview.length),
         );
 
-        // Fetch each track individually to get contributors
+        // Fetch each track individually to get contributors. On failure we drop the
+        // track rather than fall back to the curated payload, which lacks fields
+        // required by DeezerTrack (e.g. contributors, *_xl variants).
         const enriched = await Promise.all(
           picked.map(async (t) => {
             try {
               return await deezerAPI.getTrack(t.id);
-            } catch {
-              return t;
+            } catch (error) {
+              console.warn(`Failed to enrich track ${t.id}:`, error);
+              return null;
             }
           }),
         );
 
         const valid = enriched.filter(
-          (t) => t.preview && t.preview.startsWith("http"),
+          (t): t is DeezerTrack =>
+            t !== null && !!t.preview && t.preview.startsWith("http"),
         );
 
         if (valid.length < MIN_TRACKS_REQUIRED) {
           show({
             type: "error",
-            message: "Pas assez de morceaux disponibles pour ce genre",
+            message: "Pas assez de morceaux disponibles pour cette playlist",
           });
           setLoadingTracks(false);
           return;
@@ -348,7 +383,11 @@ export function useBlindtestGame() {
         );
 
         const gameData: BlindtestGameData = {
-          genre: { id: genre.id, name: genre.name },
+          playlist: {
+            id: playlist.id,
+            name: playlist.name,
+            genreLabel: playlist.genreLabel,
+          },
           totalRounds: valid.length,
           rounds: [],
           totalScore: 0,
@@ -625,8 +664,8 @@ export function useBlindtestGame() {
   const resetGame = useCallback(() => {
     if (gameId) void deleteGameState(gameId);
     void audioPlayer.stop();
-    setGameState("genreSelection");
-    setSelectedGenre(null);
+    setGameState("playlistSelection");
+    setSelectedPlaylist(null);
     setWarmMessage(null);
     setTracks([]);
     setCurrentRoundIndex(0);
@@ -646,8 +685,8 @@ export function useBlindtestGame() {
 
   return {
     gameState,
-    genres,
-    loadingGenres,
+    playlists,
+    loadingPlaylists,
     loadingTracks,
     currentTrack,
     currentFeaturingNames,
@@ -670,6 +709,7 @@ export function useBlindtestGame() {
     borderOpacity,
     errorMessage,
     errorAnimationsEnabled,
+    selectedPlaylist,
     startGame,
     beginPlaying,
     submitAnswer,
