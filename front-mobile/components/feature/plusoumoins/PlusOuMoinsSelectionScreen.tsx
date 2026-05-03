@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   modeText: {
     color: "white",
     fontSize: 20,
-    fontFamily: "Author-Bold",
+    fontFamily: "Bold",
     marginBottom: 6,
   },
   modeDescription: {
