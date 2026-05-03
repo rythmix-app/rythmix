@@ -1,6 +1,8 @@
 import { test } from '@japa/runner'
+import emitter from '@adonisjs/core/services/emitter'
 import User from '#models/user'
 import { AuthService } from '#services/auth_service'
+import AuthSessionCreated from '#events/auth_session_created'
 import { deleteAuthData } from '#tests/utils/auth_cleanup_helpers'
 
 test.group('AuthService - loginOrCreateFromGoogle', (group) => {
@@ -87,5 +89,43 @@ test.group('AuthService - loginOrCreateFromGoogle', (group) => {
     const result = await authService.loginOrCreateFromGoogle({ email, name: null })
 
     assert.equal(result.user.username, 'abuser')
+  })
+
+  test('dispatches AuthSessionCreated with isFirstLogin=true for a brand-new Google user', async ({
+    cleanup,
+  }) => {
+    const events = emitter.fake([AuthSessionCreated])
+    cleanup(() => emitter.restore())
+
+    const email = `svc_google_first_${Date.now()}@example.com`
+    const result = await authService.loginOrCreateFromGoogle({ email, name: 'First Login' })
+
+    events.assertEmitted(AuthSessionCreated, ({ data }) => {
+      return (
+        data.payload.userId === result.user.id &&
+        data.payload.isFirstLogin === true &&
+        data.payload.lastLoginAt === null
+      )
+    })
+  })
+
+  test('dispatches AuthSessionCreated with isFirstLogin=false for an existing Google user', async ({
+    cleanup,
+  }) => {
+    const email = `svc_google_returning_${Date.now()}@example.com`
+    await authService.loginOrCreateFromGoogle({ email, name: 'Returning User' })
+
+    const events = emitter.fake([AuthSessionCreated])
+    cleanup(() => emitter.restore())
+
+    const result = await authService.loginOrCreateFromGoogle({ email, name: 'Returning User' })
+
+    events.assertEmitted(AuthSessionCreated, ({ data }) => {
+      return (
+        data.payload.userId === result.user.id &&
+        data.payload.isFirstLogin === false &&
+        data.payload.lastLoginAt !== null
+      )
+    })
   })
 })
