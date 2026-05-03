@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,6 +19,9 @@ interface ArtistSelectorProps {
   onQueryChange: (query: string) => void;
   onSelect: (artist: DeezerArtist) => void;
   disabled?: boolean;
+  selectedIds?: Set<number>;
+  maxReached?: boolean;
+  pinnedArtists?: DeezerArtist[];
 }
 
 export default function ArtistSelector({
@@ -25,11 +29,22 @@ export default function ArtistSelector({
   onQueryChange,
   onSelect,
   disabled = false,
+  selectedIds,
+  maxReached = false,
+  pinnedArtists,
 }: ArtistSelectorProps) {
   const { topArtists, searchResults, isSearching, isInitialLoading, hasQuery } =
     useArtistSearch(query);
 
-  const data = hasQuery ? searchResults : topArtists;
+  const pinnedIds = useMemo(
+    () => new Set((pinnedArtists ?? []).map((a) => a.id)),
+    [pinnedArtists],
+  );
+  const baseData = hasQuery ? searchResults : topArtists;
+  const data = useMemo(
+    () => baseData.filter((a) => !pinnedIds.has(a.id)),
+    [baseData, pinnedIds],
+  );
 
   return (
     <>
@@ -75,44 +90,100 @@ export default function ArtistSelector({
           contentContainerStyle={styles.artistList}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={
-            !hasQuery && topArtists.length > 0 ? (
-              <ThemedText style={styles.sectionTitle}>
-                Artistes populaires en France
-              </ThemedText>
-            ) : null
+            <>
+              {pinnedArtists && pinnedArtists.length > 0 && (
+                <View>
+                  <ThemedText style={styles.sectionTitle}>
+                    Tes artistes sélectionnés
+                  </ThemedText>
+                  {pinnedArtists.map((artist) => (
+                    <ArtistRow
+                      key={artist.id}
+                      item={artist}
+                      onSelect={onSelect}
+                      disabled={disabled}
+                      maxReached={maxReached}
+                      selectedIds={selectedIds}
+                    />
+                  ))}
+                </View>
+              )}
+              {!hasQuery && data.length > 0 && (
+                <ThemedText style={styles.sectionTitle}>
+                  Artistes populaires en France
+                </ThemedText>
+              )}
+            </>
           }
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.artistListItem}
-              onPress={() => onSelect(item)}
+            <ArtistRow
+              item={item}
+              onSelect={onSelect}
               disabled={disabled}
-            >
-              <Image
-                source={{ uri: item.picture_medium }}
-                style={styles.artistListImage}
-              />
-              <View style={styles.artistListInfo}>
-                <ThemedText style={styles.artistListName}>
-                  {item.name}
-                </ThemedText>
-              </View>
-              <MaterialIcons
-                name="chevron-right"
-                size={24}
-                color={Colors.game.textMuted}
-              />
-            </TouchableOpacity>
+              maxReached={maxReached}
+              selectedIds={selectedIds}
+            />
           )}
           ListEmptyComponent={
-            <ThemedText style={styles.emptyText}>
-              {hasQuery
-                ? "Aucun artiste trouvé"
-                : "Aucune suggestion disponible"}
-            </ThemedText>
+            !pinnedArtists || pinnedArtists.length === 0 ? (
+              <ThemedText style={styles.emptyText}>
+                {hasQuery
+                  ? "Aucun artiste trouvé"
+                  : "Aucune suggestion disponible"}
+              </ThemedText>
+            ) : null
           }
         />
       )}
     </>
+  );
+}
+
+function ArtistRow({
+  item,
+  onSelect,
+  disabled,
+  maxReached,
+  selectedIds,
+}: {
+  item: DeezerArtist;
+  onSelect: (artist: DeezerArtist) => void;
+  disabled: boolean;
+  maxReached: boolean;
+  selectedIds?: Set<number>;
+}) {
+  const isSelected = selectedIds?.has(item.id) ?? false;
+  const isDisabled = disabled || (maxReached && !isSelected);
+  return (
+    <TouchableOpacity
+      style={[
+        styles.artistListItem,
+        isSelected && styles.artistListItemSelected,
+      ]}
+      onPress={() => onSelect(item)}
+      disabled={isDisabled}
+    >
+      <Image
+        source={{ uri: item.picture_medium }}
+        style={styles.artistListImage}
+      />
+      <View style={styles.artistListInfo}>
+        <ThemedText style={styles.artistListName}>{item.name}</ThemedText>
+      </View>
+      {selectedIds ? (
+        <MaterialIcons
+          name={isSelected ? "check-circle" : "radio-button-unchecked"}
+          size={24}
+          color={isSelected ? Colors.primary.survol : Colors.game.textMuted}
+        />
+      ) : (
+        <MaterialIcons
+          name="chevron-right"
+          size={24}
+          color={Colors.game.textMuted}
+        />
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -163,6 +234,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  artistListItemSelected: {
+    borderColor: Colors.primary.survol,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
   },
   artistListImage: {
     width: 60,

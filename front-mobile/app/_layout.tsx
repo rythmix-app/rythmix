@@ -9,9 +9,10 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { ToastProvider } from "@/components/Toast";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -29,6 +30,8 @@ export default function RootLayout() {
   const { isAuthenticated, isInitializing, checkAuth } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
+  const { status: onboardingStatus } = useOnboardingStatus();
+  const onboardingPromptDoneRef = useRef(false);
 
   useEffect(() => {
     checkAuth();
@@ -38,13 +41,37 @@ export default function RootLayout() {
     if (isInitializing || !loaded) return;
 
     const inAuthGroup = segments[0] === "auth";
+    const inOnboardingGroup = segments[0] === "onboarding";
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/auth/login");
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace("/(tabs)");
+      onboardingPromptDoneRef.current = false;
+      return;
     }
-  }, [isAuthenticated, segments, isInitializing, loaded, router]);
+
+    if (isAuthenticated && inAuthGroup) {
+      router.replace("/(tabs)");
+      return;
+    }
+
+    if (
+      isAuthenticated &&
+      onboardingStatus &&
+      !onboardingStatus.completed &&
+      !onboardingPromptDoneRef.current &&
+      !inOnboardingGroup
+    ) {
+      onboardingPromptDoneRef.current = true;
+      router.replace("/onboarding/artists");
+    }
+  }, [
+    isAuthenticated,
+    segments,
+    isInitializing,
+    loaded,
+    router,
+    onboardingStatus,
+  ]);
 
   useEffect(() => {
     if ((loaded || error) && !isInitializing) {
@@ -68,6 +95,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="settings" />
           <Stack.Screen name="integrations" />
+          <Stack.Screen name="onboarding" />
           <Stack.Screen
             name="+not-found"
             options={{ headerShown: true, title: "Page introuvable" }}
