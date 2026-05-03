@@ -4,6 +4,13 @@ export interface SpotifyStatus {
   connected: boolean;
   providerUserId: string | null;
   scopes: string | null;
+  likedPlaylistId?: string | null;
+}
+
+export interface SpotifyPlaylistSyncResult {
+  added: number;
+  notOnSpotify: number;
+  skipped: number;
 }
 
 export interface SpotifyImage {

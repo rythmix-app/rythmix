@@ -1,6 +1,14 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { TrackInteractionsService } from '#services/track_interactions_service'
+import {
+  SpotifyAddTrackResult,
+  SpotifyPlaylistService,
+  SpotifyRemoveTrackResult,
+  SpotifyScopeUpgradeRequiredError,
+} from '#services/spotify_playlist_service'
+import { SpotifyService } from '#services/spotify_service'
 import { inject } from '@adonisjs/core'
+import logger from '@adonisjs/core/services/logger'
 import { isServiceError } from '#types/service_error'
 import {
   createTrackInteractionValidator,
@@ -14,10 +22,23 @@ import {
   ApiBody,
   ApiSecurity,
 } from '@foadonis/openapi/decorators'
+import { InteractionAction } from '#enums/interaction_action'
+
+interface SpotifyTriggerSnapshot {
+  triggered: boolean
+  added?: boolean
+  removed?: boolean
+  notOnSpotify?: boolean
+  scopeUpgradeRequired?: boolean
+}
 
 @inject()
 export default class TrackInteractionsController {
-  constructor(private readonly trackInteractionsService: TrackInteractionsService) {}
+  constructor(
+    private readonly trackInteractionsService: TrackInteractionsService,
+    private readonly spotifyService: SpotifyService,
+    private readonly spotifyPlaylistService: SpotifyPlaylistService
+  ) {}
 
   @ApiOperation({
     summary: 'List current user track interactions',
@@ -86,7 +107,13 @@ export default class TrackInteractionsController {
         return response.status(result.status).json({ message: result.error })
       }
 
-      return response.status(200).json({ interaction: result })
+      const spotifyResult = await this.syncToSpotifyPlaylist(
+        user.id,
+        payload.deezerTrackId,
+        payload.action
+      )
+
+      return response.status(200).json({ interaction: result, spotifyResult })
     } catch (error: unknown) {
       if (error instanceof errors.E_VALIDATION_ERROR) {
         return response.unprocessableEntity({
@@ -95,6 +122,39 @@ export default class TrackInteractionsController {
         })
       }
       return response.status(500).json({ message: 'Error while upserting track interaction' })
+    }
+  }
+
+  private async syncToSpotifyPlaylist(
+    userId: string,
+    deezerTrackId: string,
+    action: InteractionAction
+  ): Promise<SpotifyTriggerSnapshot | undefined> {
+    const integration = await this.spotifyService.findByUserId(userId)
+    if (!integration) return undefined
+
+    try {
+      if (action === InteractionAction.Liked) {
+        const r: SpotifyAddTrackResult = await this.spotifyPlaylistService.addTrack(
+          userId,
+          deezerTrackId
+        )
+        return { triggered: true, added: r.added, notOnSpotify: r.notOnSpotify }
+      }
+      const r: SpotifyRemoveTrackResult = await this.spotifyPlaylistService.removeTrack(
+        userId,
+        deezerTrackId
+      )
+      return { triggered: true, removed: r.removed }
+    } catch (error) {
+      if (error instanceof SpotifyScopeUpgradeRequiredError) {
+        return { triggered: false, scopeUpgradeRequired: true }
+      }
+      logger.error(
+        { err: error, userId, deezerTrackId, action },
+        'Spotify playlist sync from track interaction failed'
+      )
+      return { triggered: false }
     }
   }
 
@@ -118,7 +178,13 @@ export default class TrackInteractionsController {
         return response.status(result.status).json({ message: result.error })
       }
 
-      return response.json({ message: result.message })
+      const spotifyResult = await this.syncToSpotifyPlaylist(
+        user.id,
+        deezerTrackId,
+        InteractionAction.Disliked
+      )
+
+      return response.json({ message: result.message, spotifyResult })
     } catch {
       return response.status(500).json({ message: 'Error while deleting track interaction' })
     }

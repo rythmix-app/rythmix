@@ -3,11 +3,20 @@ import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
 import { ApiOperation, ApiResponse, ApiSecurity } from '@foadonis/openapi/decorators'
 import { SpotifyService } from '#services/spotify_service'
+import {
+  SPOTIFY_ERROR_CODE,
+  SpotifyNotConnectedError,
+  SpotifyPlaylistService,
+  SpotifyScopeUpgradeRequiredError,
+} from '#services/spotify_playlist_service'
 import { spotifyRecentlyPlayedValidator, spotifyTopValidator } from '#validators/spotify_validator'
 
 @inject()
 export default class MeIntegrationsController {
-  constructor(private readonly spotifyService: SpotifyService) {}
+  constructor(
+    private readonly spotifyService: SpotifyService,
+    private readonly spotifyPlaylistService: SpotifyPlaylistService
+  ) {}
 
   @ApiOperation({
     summary: 'Get Spotify integration status',
@@ -24,7 +33,38 @@ export default class MeIntegrationsController {
       connected: !!integration,
       providerUserId: integration?.providerUserId ?? null,
       scopes: integration?.scopes ?? null,
+      likedPlaylistId: integration?.spotifyLikedPlaylistId ?? null,
     })
+  }
+
+  @ApiOperation({
+    summary: 'Sync all liked tracks to the Spotify "Rythmix Likes" playlist',
+    description:
+      "Manually re-runs the export of every SwipeMix like to the user's private Spotify playlist. Creates the playlist if absent.",
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiResponse({ status: 200, description: 'Sync executed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Spotify scope upgrade required' })
+  @ApiResponse({ status: 404, description: 'Spotify integration not found' })
+  async syncLikedPlaylist({ auth, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    try {
+      const result = await this.spotifyPlaylistService.syncAllLikes(user.id)
+      return response.ok({ result })
+    } catch (error) {
+      if (error instanceof SpotifyNotConnectedError) {
+        return response.notFound({ message: 'Spotify integration not found' })
+      }
+      if (error instanceof SpotifyScopeUpgradeRequiredError) {
+        return response.forbidden({
+          code: SPOTIFY_ERROR_CODE.ScopeUpgradeRequired,
+          message: error.message,
+        })
+      }
+      logger.error({ err: error, userId: user.id }, 'Spotify playlist manual sync failed')
+      return response.internalServerError({ message: 'Failed to sync Spotify playlist' })
+    }
   }
 
   @ApiOperation({ summary: 'Get my Spotify top tracks' })

@@ -20,8 +20,17 @@ export interface UpsertTrackInteractionRequest {
   isrc?: string;
 }
 
+export interface SpotifyTriggerSnapshot {
+  triggered: boolean;
+  added?: boolean;
+  removed?: boolean;
+  notOnSpotify?: boolean;
+  scopeUpgradeRequired?: boolean;
+}
+
 export interface UpsertTrackInteractionResponse {
   interaction: TrackInteraction;
+  spotifyResult?: SpotifyTriggerSnapshot;
 }
 
 export interface GetMyTrackInteractionsResponse {

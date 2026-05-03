@@ -9,12 +9,11 @@ import {
 
 export const upsertMyTrackInteraction = async (
   request: UpsertTrackInteractionRequest,
-): Promise<TrackInteraction> => {
-  const data = await post<UpsertTrackInteractionResponse>(
+): Promise<UpsertTrackInteractionResponse> => {
+  return post<UpsertTrackInteractionResponse>(
     "/api/me/swipemix/interactions",
     request,
   );
-  return data.interaction;
 };
 
 export const deleteMyTrackInteraction = async (
