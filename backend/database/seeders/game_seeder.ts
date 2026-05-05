@@ -50,7 +50,7 @@ export default class extends BaseSeeder {
         name: 'Parkeur',
         description: 'Complétez les paroles manquantes des chansons.',
         isMultiplayer: false,
-        isEnabled: false,
+        isEnabled: true,
       },
     ]
 

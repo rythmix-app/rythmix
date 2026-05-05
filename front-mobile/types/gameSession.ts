@@ -189,3 +189,35 @@ export interface BlindtestGameData {
   startedAt: string;
   completedAt: string | null;
 }
+
+// Types spécifiques pour le jeu Parkeur (devine la suite des paroles)
+export interface ParkeurRound {
+  trackId: number;
+  artist: string;
+  title: string;
+  coverUrl: string | null;
+  lines: [string, string];
+  answerLine: string;
+}
+
+export interface ParkeurAnswer {
+  correct: boolean;
+  durationMs: number;
+  userInput: string;
+  expected: string;
+}
+
+export interface ParkeurGameData {
+  playlistId?: number;
+  playlistName?: string;
+  artistId?: number;
+  artistName?: string;
+  rounds: ParkeurRound[];
+  currentRound: number;
+  score: number;
+  maxScore: number;
+  answers: ParkeurAnswer[];
+  startedAt: string;
+  completedAt: string | null;
+  timeElapsed: number;
+}

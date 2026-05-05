@@ -13,9 +13,19 @@ import * as Haptics from "expo-haptics";
 interface UseGameIndexOptions {
   gameName: string;
   gamePath: string;
+  /**
+   * When true, an active server session is treated as resumable even if no local
+   * AsyncStorage save exists. Set this for games whose round data lives on the
+   * server (e.g. Parkeur) so reinstalls/cross-device users don't lose progress.
+   */
+  canResumeFromServer?: boolean;
 }
 
-export function useGameIndex({ gameName, gamePath }: UseGameIndexOptions) {
+export function useGameIndex({
+  gameName,
+  gamePath,
+  canResumeFromServer = false,
+}: UseGameIndexOptions) {
   const [gameId, setGameId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -39,12 +49,21 @@ export function useGameIndex({ gameName, gamePath }: UseGameIndexOptions) {
       );
       if (game) {
         setGameId(game.id);
-        const [savedStateExists, history] = await Promise.all([
-          hasGameState(game.id.toString()),
-          getMyGameHistory(game.id, { limit: 1 }),
-        ]);
+        const [savedStateExists, history, activeServerSession] =
+          await Promise.all([
+            hasGameState(game.id.toString()),
+            getMyGameHistory(game.id, { limit: 1 }),
+            canResumeFromServer
+              ? getMyActiveSession(game.id)
+              : Promise.resolve(null),
+          ]);
         setHasSavedGame(savedStateExists);
         setHasPlayedBefore(history.meta.total > 0);
+        if (activeServerSession && activeServerSession.status === "active") {
+          setActiveSession(activeServerSession);
+        } else {
+          setActiveSession(null);
+        }
       } else {
         setError(true);
       }
@@ -83,7 +102,7 @@ export function useGameIndex({ gameName, gamePath }: UseGameIndexOptions) {
 
       if (session && session.status === "active") {
         const localSaveExists = await hasGameState(gameId.toString());
-        if (localSaveExists) {
+        if (localSaveExists || canResumeFromServer) {
           setActiveSession(session);
           setIsResumeModalVisible(true);
         } else {
@@ -131,6 +150,7 @@ export function useGameIndex({ gameName, gamePath }: UseGameIndexOptions) {
     error,
     hasSavedGame,
     hasPlayedBefore,
+    activeSession,
     isResumeModalVisible,
     setIsResumeModalVisible,
     isRulesModalVisible,
