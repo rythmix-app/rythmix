@@ -208,8 +208,10 @@ export interface ParkeurAnswer {
 }
 
 export interface ParkeurGameData {
-  playlistId: number;
-  playlistName: string;
+  playlistId?: number;
+  playlistName?: string;
+  artistId?: number;
+  artistName?: string;
   rounds: ParkeurRound[];
   currentRound: number;
   score: number;

@@ -642,6 +642,20 @@ test.group('LyricsService — multi-source aggregator', (group) => {
     ])
   })
 
+  test('textln returns an empty string when the selection has no matched elements', async ({
+    assert,
+  }) => {
+    const cheerio = await import('cheerio')
+    class ExposedLyricsService extends LyricsService {
+      public textlnPublic(el: cheerio.Cheerio<any>) {
+        return this.textln(el)
+      }
+    }
+    const $ = cheerio.load('<html><body></body></html>')
+    const exposed = new ExposedLyricsService()
+    assert.equal(exposed.textlnPublic($('does-not-exist')), '')
+  })
+
   test('rejects redirected responses when rejectRedirects is set', async ({ assert }) => {
     // Letras passes rejectRedirects: true. We craft a Response with redirected=true
     // (Response constructor doesn't expose that flag, so we override it).

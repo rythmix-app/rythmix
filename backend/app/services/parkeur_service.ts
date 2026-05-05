@@ -17,6 +17,7 @@ export const PARKEUR_TARGET_ROUNDS = 10
 export const PARKEUR_OVERSHOOT_FACTOR = 3
 const DEEZER_API_BASE = 'https://api.deezer.com'
 const DEEZER_ARTIST_TOP_LIMIT = 50
+const DEEZER_FETCH_TIMEOUT_MS = 5000
 
 export interface ParkeurRound {
   trackId: number
@@ -139,7 +140,8 @@ export class ParkeurService {
     let response: Response
     try {
       response = await fetch(
-        `${DEEZER_API_BASE}/artist/${artistId}/top?limit=${DEEZER_ARTIST_TOP_LIMIT}`
+        `${DEEZER_API_BASE}/artist/${artistId}/top?limit=${DEEZER_ARTIST_TOP_LIMIT}`,
+        { signal: AbortSignal.timeout(DEEZER_FETCH_TIMEOUT_MS) }
       )
     } catch {
       return { error: 'Failed to load artist top tracks', status: 502 }

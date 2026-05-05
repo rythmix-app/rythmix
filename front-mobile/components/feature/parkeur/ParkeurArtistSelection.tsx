@@ -37,6 +37,7 @@ export default function ParkeurArtistSelection({
   useEffect(() => {
     const trimmed = query.trim();
     if (trimmed.length < 2) {
+      ++requestIdRef.current;
       setResults([]);
       setSearching(false);
       setSearchError(null);

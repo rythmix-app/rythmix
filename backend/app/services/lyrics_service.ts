@@ -61,7 +61,11 @@ export class LyricsService {
     }
   }
 
-  protected async findLyrics(title: string, artist: string): Promise<LyricsResult | null> {
+  protected async findLyrics(
+    title: string,
+    artist: string,
+    allowFallbacks = true
+  ): Promise<LyricsResult | null> {
     const key = `${artist.toLowerCase()}\n${title.toLowerCase()}`
     const cached = LyricsService.cacheGet(key)
     if (cached) return cached
@@ -71,19 +75,28 @@ export class LyricsService {
       fn(title, artist).then((raw) => ({ lines: this.parseLyrics(raw), source: name }))
     )
 
-    if (/[(\[].*[)\]]/.test(title)) {
-      const cleanTitle = title
-        .replace(/\([^)]*\)/g, '')
-        .replace(/\[[^\]]*\]/g, '')
-        .trim()
-      if (cleanTitle && cleanTitle !== title) {
-        attempts.push(this.findLyrics(cleanTitle, artist).then((r) => r ?? Promise.reject()))
+    // Fallbacks (cleaned title / primary artist) recurse once at most: each
+    // variant calls findLyrics with allowFallbacks=false so we cap outbound
+    // calls at 3× the base 6-source fanout instead of multiplying combinatorially.
+    if (allowFallbacks) {
+      if (/[(\[].*[)\]]/.test(title)) {
+        const cleanTitle = title
+          .replace(/\([^)]*\)/g, '')
+          .replace(/\[[^\]]*\]/g, '')
+          .trim()
+        if (cleanTitle && cleanTitle !== title) {
+          attempts.push(
+            this.findLyrics(cleanTitle, artist, false).then((r) => r ?? Promise.reject())
+          )
+        }
       }
-    }
 
-    const primaryArtist = artist.split(/\s*(?:feat\.?|ft\.?|featuring|&|\/|,|;)\s*/i)[0].trim()
-    if (primaryArtist && primaryArtist.length > 1 && primaryArtist !== artist) {
-      attempts.push(this.findLyrics(title, primaryArtist).then((r) => r ?? Promise.reject()))
+      const primaryArtist = artist.split(/\s*(?:feat\.?|ft\.?|featuring|&|\/|,|;)\s*/i)[0].trim()
+      if (primaryArtist && primaryArtist.length > 1 && primaryArtist !== artist) {
+        attempts.push(
+          this.findLyrics(title, primaryArtist, false).then((r) => r ?? Promise.reject())
+        )
+      }
     }
 
     try {
@@ -141,7 +154,7 @@ export class LyricsService {
 
   protected textln(el: cheerio.Cheerio<any>): string {
     el.find('script').remove()
-    let html = el.html() as string
+    let html = el.html() ?? ''
     html = html.replace(/\s*<br\s*\/?>\s*/gi, '\n')
     html = html.replace(/<[^>]+>/g, '')
     html = html

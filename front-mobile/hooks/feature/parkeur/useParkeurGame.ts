@@ -15,7 +15,11 @@ import {
   getGameState,
   saveGameState,
 } from "@/services/gameStorageService";
-import type { ParkeurAnswer, ParkeurRound } from "@/types/gameSession";
+import type {
+  ParkeurAnswer,
+  ParkeurGameData,
+  ParkeurRound,
+} from "@/types/gameSession";
 import { compareAnswers } from "@/utils/parkeur";
 
 export type ParkeurGameState =
@@ -144,10 +148,10 @@ export function useParkeurGame(): UseParkeurGameResult {
       try {
         const session = await getMyActiveSession(Number(gameId));
         if (cancelled || !session) return;
-        const data = session.gameData as any;
-        const serverRounds: ParkeurRound[] = data?.rounds ?? [];
+        const data = session.gameData as Partial<ParkeurGameData>;
+        const serverRounds = data.rounds ?? [];
         if (serverRounds.length === 0) return;
-        const playlist = data?.playlistName
+        const playlist = data.playlistName
           ? ({
               id: data.playlistId ?? 0,
               name: data.playlistName,
@@ -159,18 +163,22 @@ export function useParkeurGame(): UseParkeurGameResult {
               updatedAt: "",
             } as CuratedPlaylist)
           : null;
-        const artist: ParkeurArtist | null = data?.artistName
+        const artist: ParkeurArtist | null = data.artistName
           ? { id: data.artistId ?? 0, name: data.artistName }
           : null;
-        const startedAt = data?.startedAt
+        const startedAt = data.startedAt
           ? new Date(data.startedAt).getTime()
           : Date.now();
+        const restoredRound = Math.min(
+          Math.max(data.currentRound ?? 0, 0),
+          Math.max(serverRounds.length - 1, 0),
+        );
         setSelectedPlaylist(playlist);
         setSelectedArtist(artist);
         setRounds(serverRounds);
-        setCurrentRoundIndex(data?.currentRound ?? 0);
-        setScore(data?.score ?? 0);
-        setAnswers(data?.answers ?? []);
+        setCurrentRoundIndex(restoredRound);
+        setScore(data.score ?? 0);
+        setAnswers(data.answers ?? []);
         setSessionId(session.id);
         setLastAnswer(null);
         startedAtRef.current = startedAt;
@@ -309,15 +317,16 @@ export function useParkeurGame(): UseParkeurGameResult {
       const startedAt = startedAtRef.current || Date.now();
       const completedAt = Date.now();
       const timeElapsed = Math.round((completedAt - startedAt) / 1000);
+      const finalGameData: Partial<ParkeurGameData> = {
+        score: finalScore,
+        answers: finalAnswers,
+        completedAt: new Date(completedAt).toISOString(),
+        timeElapsed,
+        currentRound: finalAnswers.length,
+      };
       updateGameSession(sessionId, {
         status: "completed",
-        gameData: {
-          score: finalScore,
-          answers: finalAnswers,
-          completedAt: new Date(completedAt).toISOString(),
-          timeElapsed,
-          currentRound: finalAnswers.length,
-        } as unknown as Record<string, unknown>,
+        gameData: finalGameData as Record<string, unknown>,
       }).catch((e) =>
         console.warn("[Parkeur] Final session update failed:", e),
       );
@@ -347,12 +356,13 @@ export function useParkeurGame(): UseParkeurGameResult {
       persistState({ answers: nextAnswers, score: nextScore });
 
       if (sessionId) {
+        const partialUpdate: Partial<ParkeurGameData> = {
+          score: nextScore,
+          answers: nextAnswers,
+          currentRound: currentRoundIndex + 1,
+        };
         updateGameSession(sessionId, {
-          gameData: {
-            score: nextScore,
-            answers: nextAnswers,
-            currentRound: currentRoundIndex + 1,
-          } as unknown as Record<string, unknown>,
+          gameData: partialUpdate as Record<string, unknown>,
         }).catch((e) => console.warn("[Parkeur] Session update failed:", e));
       }
     },

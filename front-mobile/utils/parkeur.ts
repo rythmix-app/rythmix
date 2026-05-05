@@ -10,7 +10,7 @@ export function normalizeAnswer(value: string): string {
     .toLowerCase()
     .replace(/\([^)]*\)/g, " ")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[.,!?;:'"`\-()…«»“”‘’]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
