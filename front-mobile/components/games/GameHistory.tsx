@@ -153,7 +153,12 @@ export function HistoryRow({ session, currentUserId }: HistoryRowProps) {
   const playerEntry = currentUserId
     ? session.players?.find((p) => p.userId === currentUserId)
     : undefined;
-  const score = playerEntry?.score;
+  // gameData.score is the authoritative final score for solo games (mobile updates
+  // it on completion). players[].score stays at 0 in the DB, so prefer gameData.
+  const gameDataScore = (session.gameData as { score?: unknown } | undefined)
+    ?.score;
+  const score =
+    typeof gameDataScore === "number" ? gameDataScore : playerEntry?.score;
   const rank = playerEntry?.rank;
   const playerCount = session.players?.length ?? 0;
   const isMultiplayer = playerCount > 1;

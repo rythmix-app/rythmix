@@ -34,6 +34,12 @@ export default function GamesLayout() {
         }}
       />
       <Stack.Screen
+        name="parkeur"
+        options={{
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
         name="history/[gameId]"
         options={{
           headerShown: false,
