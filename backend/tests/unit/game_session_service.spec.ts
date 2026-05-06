@@ -674,9 +674,18 @@ test.group('GameSessionService - Unit CRUD', (group) => {
       gameData: {},
     })
 
-    const sessions = await service.getMyActiveSessionByGameId(userId, game.id)
-    assert.equal(sessions.length, 1)
-    assert.equal(sessions[0].id, activeSession.id)
+    const session = await service.getMyActiveSessionByGameId(userId, game.id)
+    assert.isNotNull(session)
+    assert.equal(session!.id, activeSession.id)
+  })
+
+  test('getMyActiveSessionByGameId returns null when no active session exists', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('no_active')
+    const userId = `user-no-active-${Date.now()}`
+    const session = await service.getMyActiveSessionByGameId(userId, game.id)
+    assert.isNull(session)
   })
 
   test('JSON fields are properly serialized and deserialized', async ({ assert }) => {

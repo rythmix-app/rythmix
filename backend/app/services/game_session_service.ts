@@ -221,7 +221,8 @@ export class GameSessionService {
   }
 
   public async getMyActiveSessionByGameId(userId: string, gameId: number) {
-    return this.getByUserIdAndGameId(userId, gameId, GameSessionStatus.Active)
+    const sessions = await this.getByUserIdAndGameId(userId, gameId, GameSessionStatus.Active)
+    return sessions[0] ?? null
   }
 
   private async emitGameFinished(gameSession: GameSession) {
