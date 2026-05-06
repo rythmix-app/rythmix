@@ -128,7 +128,11 @@ export function FavoriteGamesSection() {
           accessibilityRole="button"
         >
           <Text style={styles.seeAllText}>VOIR TOUT</Text>
-          <MaterialIcons name="chevron-right" size={16} color={Colors.primary.CTA} />
+          <MaterialIcons
+            name="chevron-right"
+            size={16}
+            color={Colors.primary.CTA}
+          />
         </Pressable>
       </View>
 
