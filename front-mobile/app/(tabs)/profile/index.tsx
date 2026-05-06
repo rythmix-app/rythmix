@@ -88,8 +88,9 @@ export default function ProfileScreen() {
             <View style={styles.avatar}>
               <Text style={styles.avatarInitials}>
                 {user
-                  ? user.firstName[0].toUpperCase() +
-                    user.lastName[0].toUpperCase()
+                  ? (
+                      (user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? "")
+                    ).toUpperCase() || "??"
                   : "??"}
               </Text>
             </View>
@@ -99,7 +100,9 @@ export default function ProfileScreen() {
             {user ? `@${user.username}` : "@utilisateur"}
           </Text>
           <Text style={styles.fullName}>
-            {user ? `${user.firstName} ${user.lastName}` : ""}
+            {user
+              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
+              : ""}
           </Text>
           <Text style={styles.memberSince}>
             {getMemberSince(user?.createdAt)}
