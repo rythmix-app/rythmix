@@ -1,7 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
-import logger from '@adonisjs/core/services/logger'
-import { errors } from '@vinejs/vine'
 import { ApiOperation, ApiResponse, ApiSecurity } from '@foadonis/openapi/decorators'
 import { RecommendationService } from '#services/recommendation_service'
 import { swipemixFeedValidator } from '#validators/swipemix_feed_validator'
@@ -19,25 +17,12 @@ export default class SwipemixFeedController {
   @ApiResponse({ status: 200, description: 'Personalized feed returned' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 422, description: 'Invalid query params' })
-  @ApiResponse({ status: 502, description: 'Failed to build personalized feed' })
   async index({ auth, request, response }: HttpContext) {
-    try {
-      const user = auth.getUserOrFail()
-      const qs = await request.validateUsing(swipemixFeedValidator, {
-        data: request.qs(),
-      })
-
-      const tracks = await this.recommendationService.getPersonalizedFeed(user.id, qs)
-      return response.ok({ tracks })
-    } catch (error: unknown) {
-      if (error instanceof errors.E_VALIDATION_ERROR) {
-        return response.unprocessableEntity({
-          message: 'Validation failed',
-          errors: error.messages,
-        })
-      }
-      logger.error({ err: error }, 'Failed to build personalized SwipeMix feed')
-      return response.status(502).json({ message: 'Failed to build personalized feed' })
-    }
+    const user = auth.getUserOrFail()
+    const qs = await request.validateUsing(swipemixFeedValidator, {
+      data: request.qs(),
+    })
+    const tracks = await this.recommendationService.getPersonalizedFeed(user.id, qs)
+    return response.ok({ tracks })
   }
 }

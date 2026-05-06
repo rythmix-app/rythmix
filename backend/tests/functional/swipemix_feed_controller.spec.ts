@@ -378,4 +378,296 @@ test.group('SwipemixFeedController - integrations & errors', (group) => {
     // because we want graceful degradation, not 502.
     response.assertStatus(200)
   })
+
+  test('falls back gracefully when Spotify top-artists API returns an error', async ({
+    client,
+    assert,
+  }) => {
+    const { user, token } = await createAuthenticatedUser('feed_spotify_500')
+    await new SpotifyService().upsertIntegration(user.id, {
+      providerUserId: 'sp_500',
+      accessToken: 'a',
+      refreshToken: 'r',
+      expiresAt: DateTime.now().plus({ hours: 1 }),
+      scopes: 'user-top-read',
+    })
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.includes('api.spotify.com/v1/me/top/artists')) {
+        return new Response('{"error":{"status":500}}', {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      const chartMatch = url.match(/\/chart\/[A-Z]{2}\/tracks/)
+      if (chartMatch) {
+        return new Response(
+          JSON.stringify({
+            data: [makeTrackPayload(CHART_TRACK_BASE_ID, { id: 7000, name: 'Chart Artist 7000' })],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }
+      return new Response('{"data":[]}', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    const response = await client.get('/api/me/swipemix/feed').bearerToken(token)
+    response.assertStatus(200)
+    assert.isAtLeast(asTracks(response.body()).length, 1)
+  })
+
+  test('drops Spotify seeds whose Deezer search returns no match', async ({ client, assert }) => {
+    const { user, token } = await createAuthenticatedUser('feed_spotify_no_match')
+    await new SpotifyService().upsertIntegration(user.id, {
+      providerUserId: 'sp_no_match',
+      accessToken: 'a',
+      refreshToken: 'r',
+      expiresAt: DateTime.now().plus({ hours: 1 }),
+      scopes: 'user-top-read',
+    })
+
+    globalThis.fetch = buildFakeFetch({ spotifyArtistNames: ['Unknown Spotify Artist'] })
+
+    const response = await client.get('/api/me/swipemix/feed').bearerToken(token)
+    response.assertStatus(200)
+    // Spotify seed unresolved → only chart fallback fills the feed
+    const tracks = asTracks(response.body())
+    assert.isAtLeast(tracks.length, 1)
+    assert.isFalse(
+      tracks.some((track) => (FAMILIAR_ARTIST_IDS as readonly number[]).includes(track.artist.id))
+    )
+  })
+
+  test('falls back gracefully when Spotify artist search throws on the Deezer side', async ({
+    client,
+    assert,
+  }) => {
+    const { user, token } = await createAuthenticatedUser('feed_search_throws')
+    await new SpotifyService().upsertIntegration(user.id, {
+      providerUserId: 'sp_throw',
+      accessToken: 'a',
+      refreshToken: 'r',
+      expiresAt: DateTime.now().plus({ hours: 1 }),
+      scopes: 'user-top-read',
+    })
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.includes('/search/artist')) {
+        throw new Error('network down')
+      }
+      if (url.includes('api.spotify.com/v1/me/top/artists')) {
+        return new Response(JSON.stringify({ items: [{ id: 'sp_x', name: 'Daft Punk' }] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      const chartMatch = url.match(/\/chart\/[A-Z]{2}\/tracks/)
+      if (chartMatch) {
+        return new Response(
+          JSON.stringify({
+            data: [makeTrackPayload(CHART_TRACK_BASE_ID, { id: 7000, name: 'Chart Artist 7000' })],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }
+      return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } })
+    }) as typeof fetch
+
+    const response = await client.get('/api/me/swipemix/feed').bearerToken(token)
+    response.assertStatus(200)
+    assert.isAtLeast(asTracks(response.body()).length, 1)
+  })
+})
+
+test.group('SwipemixFeedController - bucket interleave fallback', (group) => {
+  deleteOnboardingArtists(group)
+  deleteTrackInteractions(group)
+
+  let originalFetch: typeof fetch
+
+  group.each.setup(() => {
+    originalFetch = globalThis.fetch
+  })
+
+  group.each.teardown(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('fills discovery slots from familiar bucket when discovery is empty', async ({
+    client,
+    assert,
+  }) => {
+    const { user, token } = await createAuthenticatedUser('feed_only_familiar')
+    await UserOnboardingArtist.createMany([
+      { userId: user.id, deezerArtistId: '27', artistName: 'Daft Punk', rank: 1 },
+    ])
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      const topMatch = url.match(/\/artist\/(\d+)\/top/)
+      if (topMatch) {
+        const artistId = Number(topMatch[1])
+        const data = Array.from({ length: 5 }, (_, i) =>
+          makeTrackPayload(FAMILIAR_TOP_BASE_ID + artistId * 10 + i, {
+            id: artistId,
+            name: ARTIST_NAMES[artistId] ?? `Artist ${artistId}`,
+          })
+        )
+        return new Response(JSON.stringify({ data }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      // Chart, related, and search all return empty → discovery bucket is empty
+      return new Response(JSON.stringify({ data: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    const response = await client.get('/api/me/swipemix/feed?limit=5').bearerToken(token)
+    response.assertStatus(200)
+
+    const tracks = asTracks(response.body())
+    assert.isAtLeast(tracks.length, 1)
+    // All tracks must be familiar (only artist 27) since discovery bucket is empty
+    for (const track of tracks) {
+      assert.equal(track.artist.id, 27, 'all tracks should fall back to familiar bucket')
+    }
+  })
+
+  test('normalises track payloads with minimal optional fields', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('feed_minimal_track')
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      const chartMatch = url.match(/\/chart\/[A-Z]{2}\/tracks/)
+      if (chartMatch) {
+        // Minimal track: only id, preview, artist.{id,name}, album.{id,title}
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: 999_001,
+                preview: 'https://cdn/preview/999001',
+                artist: { id: 8888, name: 'Minimal Artist' },
+                album: { id: 9999, title: 'Minimal Album' },
+              },
+            ],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }
+      return new Response(JSON.stringify({ data: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    const response = await client.get('/api/me/swipemix/feed').bearerToken(token)
+    response.assertStatus(200)
+
+    const tracks = asTracks(response.body())
+    assert.equal(tracks.length, 1)
+    const track = tracks[0] as unknown as {
+      id: number
+      title: string
+      duration: number
+      type: string
+      artist: { picture: string }
+      album: { cover: string }
+    }
+    assert.equal(track.id, 999_001)
+    assert.equal(track.title, '')
+    assert.equal(track.duration, 0)
+    assert.equal(track.type, 'track')
+    assert.equal(track.artist.picture, '')
+    assert.equal(track.album.cover, '')
+  })
+
+  test('continues when Deezer artist top endpoint fails for a familiar seed', async ({
+    client,
+    assert,
+  }) => {
+    const { user, token } = await createAuthenticatedUser('feed_artist_top_500')
+    await UserOnboardingArtist.createMany([
+      { userId: user.id, deezerArtistId: '27', artistName: 'Daft Punk', rank: 1 },
+    ])
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.match(/\/artist\/\d+\/top/)) {
+        return new Response('upstream down', { status: 500 })
+      }
+      const chartMatch = url.match(/\/chart\/[A-Z]{2}\/tracks/)
+      if (chartMatch) {
+        return new Response(
+          JSON.stringify({
+            data: [makeTrackPayload(CHART_TRACK_BASE_ID, { id: 7000, name: 'Chart Artist 7000' })],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }
+      return new Response('{"data":[]}', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    const response = await client.get('/api/me/swipemix/feed').bearerToken(token)
+    response.assertStatus(200)
+    // Familiar bucket is empty (artist top failed) but chart fallback still produces tracks
+    assert.isAtLeast(asTracks(response.body()).length, 1)
+  })
+
+  test('drops Deezer track payloads that miss required artist or album fields', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser('feed_invalid_track')
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      const chartMatch = url.match(/\/chart\/[A-Z]{2}\/tracks/)
+      if (chartMatch) {
+        return new Response(
+          JSON.stringify({
+            data: [
+              { id: 1 }, // missing preview
+              { id: 2, preview: 'p', artist: null, album: { id: 1, title: 't' } },
+              { id: 3, preview: 'p', artist: { id: 1, name: 'a' }, album: null },
+              { id: 4, preview: 'p', artist: { id: 1 }, album: { id: 1, title: 't' } },
+              { id: 5, preview: 'p', artist: { id: 1, name: 'a' }, album: { id: 1 } },
+              null,
+              undefined,
+              { preview: 'p', artist: { id: 1, name: 'a' }, album: { id: 1, title: 't' } }, // missing id
+              {
+                id: 100,
+                preview: 'p',
+                artist: { id: 7, name: 'OK' },
+                album: { id: 7, title: 'OK' },
+              }, // valid
+            ],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      }
+      return new Response(JSON.stringify({ data: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    const response = await client.get('/api/me/swipemix/feed').bearerToken(token)
+    response.assertStatus(200)
+
+    const tracks = asTracks(response.body())
+    assert.equal(tracks.length, 1)
+    assert.equal(tracks[0].id, 100)
+  })
 })
