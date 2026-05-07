@@ -68,7 +68,7 @@ export class MeStatsService {
     }
 
     let streak = 0
-    let currentDay = DateTime.fromISO(today).setZone(timezone)
+    let currentDay = DateTime.fromISO(today, { zone: timezone })
 
     for (const dateStr of sortedDates) {
       if (dateStr === currentDay.toISODate()) {

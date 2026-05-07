@@ -8,6 +8,7 @@ import { InteractionAction } from '#enums/interaction_action'
 import { createAuthenticatedUser } from '#tests/utils/auth_helpers'
 import { deleteGameSession } from '#tests/utils/game_session_helpers'
 import { DateTime } from 'luxon'
+import db from '@adonisjs/lucid/services/db'
 
 test.group('MeStatsService', (group) => {
   let service: MeStatsService
@@ -92,8 +93,10 @@ test.group('MeStatsService', (group) => {
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
-    yesterdaySession.updatedAt = now.minus({ days: 1 })
-    await yesterdaySession.save()
+    await db
+      .from('game_sessions')
+      .where('id', yesterdaySession.id)
+      .update({ updated_at: now.minus({ days: 1 }).toSQL() })
 
     // 2 days ago
     const dayBeforeYesterdaySession = await GameSession.create({
@@ -102,8 +105,10 @@ test.group('MeStatsService', (group) => {
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
-    dayBeforeYesterdaySession.updatedAt = now.minus({ days: 2 })
-    await dayBeforeYesterdaySession.save()
+    await db
+      .from('game_sessions')
+      .where('id', dayBeforeYesterdaySession.id)
+      .update({ updated_at: now.minus({ days: 2 }).toSQL() })
 
     const stats = await service.getStats(user.id)
     assert.equal(stats.streak, 3)
@@ -120,8 +125,10 @@ test.group('MeStatsService', (group) => {
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
-    yesterdaySession.updatedAt = now.minus({ days: 1 })
-    await yesterdaySession.save()
+    await db
+      .from('game_sessions')
+      .where('id', yesterdaySession.id)
+      .update({ updated_at: now.minus({ days: 1 }).toSQL() })
 
     const stats = await service.getStats(user.id)
     assert.equal(stats.streak, 0)
@@ -152,8 +159,10 @@ test.group('MeStatsService', (group) => {
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
-    yesterdaySession.updatedAt = now.minus({ days: 1 })
-    await yesterdaySession.save()
+    await db
+      .from('game_sessions')
+      .where('id', yesterdaySession.id)
+      .update({ updated_at: now.minus({ days: 1 }).toSQL() })
 
     const stats = await service.getStats(user.id)
     assert.equal(stats.streak, 2)
@@ -178,8 +187,10 @@ test.group('MeStatsService', (group) => {
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
-    dayBeforeYesterdaySession.updatedAt = now.minus({ days: 2 })
-    await dayBeforeYesterdaySession.save()
+    await db
+      .from('game_sessions')
+      .where('id', dayBeforeYesterdaySession.id)
+      .update({ updated_at: now.minus({ days: 2 }).toSQL() })
 
     const stats = await service.getStats(user.id)
     // Only today counts because yesterday is missing
@@ -189,14 +200,21 @@ test.group('MeStatsService', (group) => {
   test('getStats works with a custom timezone', async ({ assert }) => {
     const { user } = await createAuthenticatedUser('stats_tz')
     const timezone = 'America/New_York'
+    const todayInTz = DateTime.now().setZone(timezone)
 
     // Create game today in that timezone
-    await GameSession.create({
+    const session = await GameSession.create({
       gameId: game.id,
       status: GameSessionStatus.Completed,
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
+
+    // Ensure it's recorded as "today" in the target timezone
+    await db
+      .from('game_sessions')
+      .where('id', session.id)
+      .update({ updated_at: todayInTz.toSQL() })
 
     const stats = await service.getStats(user.id, timezone)
     assert.equal(stats.streak, 1)
@@ -221,8 +239,36 @@ test.group('MeStatsService', (group) => {
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
-    session.updatedAt = now.minus({ days: 1 })
-    await session.save()
+    await db
+      .from('game_sessions')
+      .where('id', session.id)
+      .update({ updated_at: now.minus({ days: 1 }).toSQL() })
+
+    const stats = await service.getStats(user.id)
+    assert.equal(stats.streak, 0)
+  })
+
+  test('getStreak returns 0 when multiple past games exist but none today', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('stats_past_multi')
+    const now = DateTime.now()
+
+    // Yesterday
+    const s1 = await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
+      gameData: {},
+    })
+    await db.from('game_sessions').where('id', s1.id).update({ updated_at: now.minus({ days: 1 }).toSQL() })
+
+    // Day before yesterday
+    const s2 = await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
+      gameData: {},
+    })
+    await db.from('game_sessions').where('id', s2.id).update({ updated_at: now.minus({ days: 2 }).toSQL() })
 
     const stats = await service.getStats(user.id)
     assert.equal(stats.streak, 0)
@@ -247,8 +293,10 @@ test.group('MeStatsService', (group) => {
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
-    session.updatedAt = now.minus({ days: 2 })
-    await session.save()
+    await db
+      .from('game_sessions')
+      .where('id', session.id)
+      .update({ updated_at: now.minus({ days: 2 }).toSQL() })
 
     const stats = await service.getStats(user.id)
     assert.equal(stats.streak, 1)
