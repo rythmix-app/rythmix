@@ -73,7 +73,7 @@ describe("useArtistSearch", () => {
     });
   });
 
-  it("does not search when query is shorter than 3 characters", async () => {
+  it("does not search when query is empty", async () => {
     const { rerender } = renderHook<
       ReturnType<typeof useArtistSearch>,
       { q: string }
@@ -85,13 +85,36 @@ describe("useArtistSearch", () => {
       expect(mockDeezerAPI.getTopArtists).toHaveBeenCalled();
     });
 
-    rerender({ q: "ab" });
+    rerender({ q: "   " });
 
     await act(async () => {
       jest.advanceTimersByTime(500);
     });
 
     expect(mockDeezerAPI.searchArtists).not.toHaveBeenCalled();
+  });
+
+  it("searches with a single character query", async () => {
+    const { rerender } = renderHook<
+      ReturnType<typeof useArtistSearch>,
+      { q: string }
+    >(({ q }) => useArtistSearch(q), {
+      initialProps: { q: "" },
+    });
+
+    await waitFor(() => {
+      expect(mockDeezerAPI.getTopArtists).toHaveBeenCalled();
+    });
+
+    rerender({ q: "M" });
+
+    await act(async () => {
+      jest.advanceTimersByTime(400);
+    });
+
+    await waitFor(() => {
+      expect(mockDeezerAPI.searchArtists).toHaveBeenCalledWith("M", 20);
+    });
   });
 
   it("debounces the search by 400ms and returns results", async () => {
@@ -127,7 +150,7 @@ describe("useArtistSearch", () => {
     expect(result.current.searchResults[0].name).toBe("Daft Punk");
   });
 
-  it("clears isSearching immediately when query drops below 3 characters mid-flight", async () => {
+  it("clears isSearching immediately when query drops below the min length mid-flight", async () => {
     let resolveSearch: (value: { data: DeezerArtist[] }) => void = () => {};
     mockDeezerAPI.searchArtists.mockImplementationOnce(
       () =>
@@ -155,7 +178,7 @@ describe("useArtistSearch", () => {
       expect(result.current.isSearching).toBe(true);
     });
 
-    rerender({ q: "da" });
+    rerender({ q: "" });
 
     await waitFor(() => {
       expect(result.current.isSearching).toBe(false);
@@ -170,7 +193,7 @@ describe("useArtistSearch", () => {
     expect(result.current.isSearching).toBe(false);
   });
 
-  it("resets search results when query drops below 3 characters", async () => {
+  it("resets search results when query is cleared", async () => {
     const { result, rerender } = renderHook<
       ReturnType<typeof useArtistSearch>,
       { q: string }
@@ -190,7 +213,7 @@ describe("useArtistSearch", () => {
       expect(result.current.searchResults).toHaveLength(1);
     });
 
-    rerender({ q: "da" });
+    rerender({ q: "" });
 
     await waitFor(() => {
       expect(result.current.searchResults).toEqual([]);
