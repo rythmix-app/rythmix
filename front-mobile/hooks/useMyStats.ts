@@ -16,11 +16,9 @@ export function useMyStats() {
     if (!isAuthenticated) return;
 
     try {
-      console.log("[useMyStats] Fetching stats...");
       setLoading(true);
       setError(null);
       const data = await userStatsService.getMyStats();
-      console.log("[useMyStats] Stats received:", data);
       setStats(data);
     } catch (err: any) {
       console.error("[useMyStats] Failed to fetch user stats:", err);

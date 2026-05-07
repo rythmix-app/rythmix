@@ -8,13 +8,9 @@ export class MeStatsService {
    * Get aggregated stats for the authenticated user
    */
   public async getStats(userId: string, timezone: string = 'UTC') {
-    console.log('[MeStatsService] Getting stats for:', userId)
     const totalSwipes = await this.getTotalSwipes(userId)
-    console.log('[MeStatsService] totalSwipes:', totalSwipes)
     const gamesPlayed = await this.getGamesPlayed(userId)
-    console.log('[MeStatsService] gamesPlayed:', gamesPlayed)
     const streak = await this.getStreak(userId, timezone)
-    console.log('[MeStatsService] streak:', streak)
 
     return {
       totalSwipes,
@@ -22,6 +18,7 @@ export class MeStatsService {
       streak,
     }
   }
+
 
   /**
    * Count all track interactions (likes and dislikes)
