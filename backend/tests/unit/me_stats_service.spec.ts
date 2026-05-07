@@ -211,10 +211,7 @@ test.group('MeStatsService', (group) => {
     })
 
     // Ensure it's recorded as "today" in the target timezone
-    await db
-      .from('game_sessions')
-      .where('id', session.id)
-      .update({ updated_at: todayInTz.toSQL() })
+    await db.from('game_sessions').where('id', session.id).update({ updated_at: todayInTz.toSQL() })
 
     const stats = await service.getStats(user.id, timezone)
     assert.equal(stats.streak, 1)
@@ -259,7 +256,10 @@ test.group('MeStatsService', (group) => {
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
-    await db.from('game_sessions').where('id', s1.id).update({ updated_at: now.minus({ days: 1 }).toSQL() })
+    await db
+      .from('game_sessions')
+      .where('id', s1.id)
+      .update({ updated_at: now.minus({ days: 1 }).toSQL() })
 
     // Day before yesterday
     const s2 = await GameSession.create({
@@ -268,7 +268,10 @@ test.group('MeStatsService', (group) => {
       players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
       gameData: {},
     })
-    await db.from('game_sessions').where('id', s2.id).update({ updated_at: now.minus({ days: 2 }).toSQL() })
+    await db
+      .from('game_sessions')
+      .where('id', s2.id)
+      .update({ updated_at: now.minus({ days: 2 }).toSQL() })
 
     const stats = await service.getStats(user.id)
     assert.equal(stats.streak, 0)
