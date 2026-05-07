@@ -121,8 +121,18 @@ export function FavoriteGamesSection() {
           <MaterialIcons name="star" size={20} color={Colors.primary.survol} />
           <Text style={styles.sectionTitle}>Jeux favoris</Text>
         </View>
-        <Pressable onPress={() => router.push("/(tabs)/games" as any)}>
-          <Text style={styles.seeAll}>Voir tout</Text>
+        <Pressable
+          style={styles.seeAllPill}
+          onPress={() => router.push("/(tabs)/games" as any)}
+          accessibilityLabel="Voir tous les jeux favoris"
+          accessibilityRole="button"
+        >
+          <Text style={styles.seeAllText}>VOIR TOUT</Text>
+          <MaterialIcons
+            name="chevron-right"
+            size={16}
+            color={Colors.primary.CTA}
+          />
         </Pressable>
       </View>
 
@@ -196,10 +206,17 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  seeAll: {
+  seeAllPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  seeAllText: {
     color: Colors.primary.CTA,
-    fontSize: 13,
-    fontFamily: "Regular",
+    fontSize: 12,
+    fontFamily: "Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 
   // Card
