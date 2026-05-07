@@ -32,11 +32,11 @@ function formatRelativeDate(date: string): string {
   return diffYears === 1 ? "Il y a 1 an" : `Il y a ${diffYears} ans`;
 }
 
-function activityKey(activity: UserActivity, index: number): string {
+function activityBaseKey(activity: UserActivity): string {
   if (activity.type === "game_session") {
-    return `game_session-${activity.date}-${activity.gameTitle}-${activity.score}-${activity.maxScore}-${index}`;
+    return `game_session-${activity.date}-${activity.gameTitle}-${activity.score}-${activity.maxScore}`;
   }
-  return `liked_track-${activity.date}-${activity.trackTitle ?? "unknown"}-${activity.artist ?? "unknown"}-${index}`;
+  return `liked_track-${activity.date}-${activity.trackTitle ?? "unknown"}-${activity.artist ?? "unknown"}`;
 }
 
 function getActivityContent(activity: UserActivity): {
@@ -108,12 +108,19 @@ function renderBody(
       </Text>
     );
   }
-  return activities.map((activity, index) => (
-    <ActivityRow
-      key={activityKey(activity, index)}
-      activity={activity}
-    />
-  ));
+  const keyCounters = new Map<string, number>();
+  return activities.map((activity) => {
+    const baseKey = activityBaseKey(activity);
+    const counter = keyCounters.get(baseKey) ?? 0;
+    keyCounters.set(baseKey, counter + 1);
+
+    return (
+      <ActivityRow
+        key={counter === 0 ? baseKey : `${baseKey}-${counter}`}
+        activity={activity}
+      />
+    );
+  });
 }
 
 export function ProfileRecentActivities() {
