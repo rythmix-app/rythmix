@@ -1,97 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
+import { evaluatePasswordStrength } from "@/utils/password-strength";
 
 interface PasswordStrengthIndicatorProps {
   password: string;
-}
-
-interface Criteria {
-  length: boolean;
-  lengthStrong: boolean;
-  lowercase: boolean;
-  uppercase: boolean;
-  number: boolean;
-  special: boolean;
-}
-
-interface StrengthResult {
-  strength: number;
-  criteria: Criteria;
 }
 
 const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
   password,
 }) => {
   const progressAnim = React.useRef(new Animated.Value(0)).current;
-
-  const calculateStrength = (): StrengthResult => {
-    if (!password || password.length === 0) {
-      return {
-        strength: 0,
-        criteria: {
-          length: false,
-          lengthStrong: false,
-          lowercase: false,
-          uppercase: false,
-          number: false,
-          special: false,
-        },
-      };
-    }
-
-    const criteria: Criteria = {
-      length: password.length >= 8,
-      lengthStrong: password.length >= 12,
-      lowercase: /[a-z]/.test(password),
-      uppercase: /[A-Z]/.test(password),
-      number: /[0-9]/.test(password),
-      special: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\;'/`~]/.test(password),
-    };
-
-    let strength = 0;
-
-    // Faible (25%) : Moins de 8 caractères OU seulement des minuscules
-    if (password.length < 8) {
-      strength = 25;
-    }
-    // Moyen (50%) : 8+ caractères + (minuscules + majuscules) OU (minuscules + chiffres)
-    else if (
-      criteria.length &&
-      criteria.lowercase &&
-      (criteria.uppercase || criteria.number) &&
-      !(criteria.uppercase && criteria.number)
-    ) {
-      strength = 50;
-    }
-    // Bon (75%) : 8+ caractères + minuscules + majuscules + chiffres (mais pas 12+ ou pas de spéciaux)
-    else if (
-      criteria.length &&
-      criteria.lowercase &&
-      criteria.uppercase &&
-      criteria.number &&
-      (!criteria.lengthStrong || !criteria.special)
-    ) {
-      strength = 75;
-    }
-    // Fort (100%) : 12+ caractères + minuscules + majuscules + chiffres + spéciaux
-    else if (
-      criteria.lengthStrong &&
-      criteria.lowercase &&
-      criteria.uppercase &&
-      criteria.number &&
-      criteria.special
-    ) {
-      strength = 100;
-    }
-    // Si 8+ caractères mais ne rentre dans aucune catégorie (ex: que des majuscules)
-    else if (criteria.length) {
-      strength = 25;
-    }
-
-    return { strength, criteria };
-  };
-
-  const { strength, criteria } = calculateStrength();
+  const { strength, criteria } = evaluatePasswordStrength(password);
 
   React.useEffect(() => {
     Animated.timing(progressAnim, {

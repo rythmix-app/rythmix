@@ -21,10 +21,13 @@ import Button from "@/components/Button";
 import { useAuthStore } from "@/stores/authStore";
 import { ApiError } from "@/types/auth";
 import { useToast } from "@/components/Toast";
+import { resendVerificationEmail } from "@/services/authService";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
   const { login, isLoading } = useAuthStore();
   const { show } = useToast();
 
@@ -52,14 +55,38 @@ export default function LoginScreen() {
     }
 
     try {
+      setUnverifiedEmail(null);
       await login({ email, password });
       router.replace("/(tabs)");
     } catch (error) {
       const apiError = error as ApiError;
+      if (apiError.statusCode === 403) {
+        setUnverifiedEmail(email);
+      }
       show({
         type: "error",
         message: apiError.message || "Une erreur est survenue",
       });
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!unverifiedEmail) return;
+    setIsResending(true);
+    try {
+      await resendVerificationEmail(unverifiedEmail);
+      show({
+        type: "success",
+        message: "Un nouvel email de vérification t'a été envoyé",
+      });
+    } catch (error) {
+      const apiError = error as ApiError;
+      show({
+        type: "error",
+        message: apiError.message || "Impossible d'envoyer l'email",
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -143,6 +170,26 @@ export default function LoginScreen() {
                 style={{ marginTop: 24, width: "100%" }}
               />
 
+              {unverifiedEmail ? (
+                <View style={styles.resendBlock}>
+                  <Text style={styles.resendText}>
+                    Ton email n&apos;est pas encore vérifié.
+                  </Text>
+                  <Button
+                    title={
+                      isResending
+                        ? "Envoi en cours..."
+                        : "Renvoyer l'email de vérification"
+                    }
+                    variant="secondary"
+                    size="large"
+                    onPress={handleResendVerification}
+                    disabled={isResending}
+                    style={{ marginTop: 8, width: "100%" }}
+                  />
+                </View>
+              ) : null}
+
               <View style={styles.bottomRow}>
                 <Text style={styles.bottomText}>
                   Tu n’as pas encore de compte ?{" "}
@@ -225,5 +272,14 @@ const styles = StyleSheet.create({
     color: Colors.secondary.turquoise,
     fontSize: 13,
     fontWeight: "600",
+  },
+  resendBlock: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  resendText: {
+    color: Colors.light.background,
+    fontSize: 13,
+    textAlign: "center",
   },
 });
