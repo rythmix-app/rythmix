@@ -116,7 +116,7 @@ function renderBody(
 
     return (
       <ActivityRow
-        key={duplicateCount > 0 ? `${baseKey}-${duplicateCount}` : baseKey}
+        key={`${baseKey}-${duplicateCount}`}
         activity={activity}
       />
     );
