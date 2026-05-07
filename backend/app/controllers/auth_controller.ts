@@ -26,7 +26,7 @@ export default class AuthController {
     required: true,
     schema: {
       type: 'object',
-      required: ['email', 'username', 'password', 'password_confirmation', 'role'],
+      required: ['email', 'username', 'password', 'password_confirmation'],
       properties: {
         email: { type: 'string', format: 'email', example: 'john@example.com' },
         username: { type: 'string', minLength: 3, example: 'johndoe' },
@@ -40,6 +40,7 @@ export default class AuthController {
         firstName: { type: 'string', example: 'John' },
         lastName: { type: 'string', example: 'Doe' },
         role: { type: 'string', enum: ['user', 'admin'], example: 'user' },
+        optInNewsletter: { type: 'boolean', example: false },
       },
     },
   })
