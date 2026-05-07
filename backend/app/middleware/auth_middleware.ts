@@ -17,7 +17,14 @@ export default class AuthMiddleware {
     try {
       await ctx.auth.authenticateUsing(options.guards || ['api'])
     } catch (error) {
-      ctx.logger.error('Authentication failed', error)
+      const errorCode = (error as { code?: string })?.code
+      const isExpectedExpiry =
+        errorCode === 'E_UNAUTHORIZED_ACCESS' || errorCode === 'E_INVALID_API_TOKEN'
+
+      if (!isExpectedExpiry) {
+        ctx.logger.warn({ err: error }, 'Authentication failed: unexpected error')
+      }
+
       return ctx.response.unauthorized({
         message: 'Unauthorized access',
       })
