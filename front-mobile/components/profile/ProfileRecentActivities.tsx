@@ -111,12 +111,12 @@ function renderBody(
   const keyCounters = new Map<string, number>();
   return activities.map((activity) => {
     const baseKey = activityBaseKey(activity);
-    const counter = keyCounters.get(baseKey) ?? 0;
-    keyCounters.set(baseKey, counter + 1);
+    const duplicateCount = keyCounters.get(baseKey) ?? 0;
+    keyCounters.set(baseKey, duplicateCount + 1);
 
     return (
       <ActivityRow
-        key={counter === 0 ? baseKey : `${baseKey}-${counter}`}
+        key={duplicateCount > 0 ? `${baseKey}-${duplicateCount}` : baseKey}
         activity={activity}
       />
     );
