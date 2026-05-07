@@ -185,4 +185,30 @@ test.group('MeStatsService', (group) => {
     // Only today counts because yesterday is missing
     assert.equal(stats.streak, 1)
   })
+
+  test('getStats works with a custom timezone', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('stats_tz')
+    const timezone = 'America/New_York'
+    const now = DateTime.now().setZone(timezone)
+
+    // Create game today in that timezone
+    await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
+      gameData: {},
+    })
+
+    const stats = await service.getStats(user.id, timezone)
+    assert.equal(stats.streak, 1)
+  })
+
+  test('getTotalSwipes and getGamesPlayed handle empty results (extra safety)', async ({ assert }) => {
+    // This is mostly to ensure 100% coverage of the private methods called by getStats
+    const { user } = await createAuthenticatedUser('stats_empty_methods')
+    const stats = await service.getStats(user.id)
+    assert.equal(stats.totalSwipes, 0)
+    assert.equal(stats.gamesPlayed, 0)
+    assert.equal(stats.streak, 0)
+  })
 })
