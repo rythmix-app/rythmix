@@ -28,14 +28,14 @@ export default class MeStatsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   public async index({ auth, response }: HttpContext) {
     try {
-      console.log("[MeStatsController] Fetching stats for user:", auth.user?.id)
+      console.log('[MeStatsController] Fetching stats for user:', auth.user?.id)
       const user = auth.getUserOrFail()
       const stats = await this.meStatsService.getStats(user.id)
-      console.log("[MeStatsController] Stats fetched successfully")
+      console.log('[MeStatsController] Stats fetched successfully')
       return response.json({ data: stats })
     } catch (error) {
-      console.error("[MeStatsController] Error fetching stats:", error)
-      return response.status(500).json({ message: "Internal server error", error: error.message })
+      console.error('[MeStatsController] Error fetching stats:', error)
+      return response.status(500).json({ message: 'Internal server error', error: error.message })
     }
   }
 }
