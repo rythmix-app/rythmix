@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { router } from "expo-router";
 import { User, LoginCredentials, RegisterData } from "@/types/auth";
 import * as authService from "@/services/authService";
 import * as storage from "@/services/storage";
@@ -20,9 +21,15 @@ interface AuthState {
   checkAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => {
+let onSessionExpired: (() => void) | null = null;
+export const setSessionExpiredHandler = (handler: (() => void) | null) => {
+  onSessionExpired = handler;
+};
+
+export const useAuthStore = create<AuthState>((set, get) => {
   // Handler pour déconnexion (401 sans refresh ou échec du refresh)
   setUnauthorizedHandler(() => {
+    const wasAuthenticated = get().isAuthenticated;
     set({
       user: null,
       token: null,
@@ -30,6 +37,12 @@ export const useAuthStore = create<AuthState>((set) => {
       isAuthenticated: false,
     });
     storage.clearAll();
+    if (wasAuthenticated) {
+      router.replace("/auth/login");
+      if (onSessionExpired) {
+        onSessionExpired();
+      }
+    }
   });
 
   // Handler pour refresh réussi (met à jour le token dans le store)
@@ -95,17 +108,9 @@ export const useAuthStore = create<AuthState>((set) => {
       try {
         const token = await storage.getToken();
         const refreshToken = await storage.getRefreshToken();
-        const user = await storage.getUser();
+        const cachedUser = await storage.getUser();
 
-        if (token && user) {
-          set({
-            user,
-            token,
-            refreshToken,
-            isAuthenticated: true,
-            isInitializing: false,
-          });
-        } else {
+        if (!token || !cachedUser) {
           set({
             user: null,
             token: null,
@@ -113,6 +118,35 @@ export const useAuthStore = create<AuthState>((set) => {
             isAuthenticated: false,
             isInitializing: false,
           });
+          return;
+        }
+
+        // Valider le token côté serveur (évite l'état "zombie" après expiration)
+        try {
+          const freshUser = await authService.getUserInfo();
+          await storage.setUser(freshUser);
+          set({
+            user: freshUser,
+            token,
+            refreshToken,
+            isAuthenticated: true,
+            isInitializing: false,
+          });
+        } catch (error) {
+          // 401 → setUnauthorizedHandler a déjà nettoyé le state
+          // Autres erreurs (réseau) → garder l'état caché pour ne pas déconnecter à tort
+          const statusCode = (error as { statusCode?: number })?.statusCode;
+          if (statusCode === 401) {
+            set({ isInitializing: false });
+          } else {
+            set({
+              user: cachedUser,
+              token,
+              refreshToken,
+              isAuthenticated: true,
+              isInitializing: false,
+            });
+          }
         }
       } catch {
         set({
