@@ -19,7 +19,6 @@ export class MeStatsService {
     }
   }
 
-
   /**
    * Count all track interactions (likes and dislikes)
    */
