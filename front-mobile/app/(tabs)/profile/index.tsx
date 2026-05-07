@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 import OnboardingBanner from "@/components/OnboardingBanner";
+import ProfileSpotifySection from "@/components/profile/ProfileSpotifySection";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
 // TODO: à modifier plus tard - remplacer par des données récupérées depuis l'APIii
@@ -124,6 +125,9 @@ export default function ProfileScreen() {
             <StatCard label="Jeux joués" value={MOCK_STATS.gamesPlayed} />
           </View>
         </View>
+
+        {/* ── Mes stats Spotify ── */}
+        <ProfileSpotifySection />
 
         {/* ── Succès & Récompenses ── */}
         <View style={styles.section}>
