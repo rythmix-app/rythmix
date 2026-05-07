@@ -124,6 +124,45 @@ test.group('MeActivitiesService', (group) => {
     assert.equal(limited.length, 2)
   })
 
+  test('falls back to 0 for score and maxScore when gameData is empty', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('act_empty_data')
+    const game = await createTestGame('emptydata')
+
+    await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'completed', score: 0, rank: 1 }],
+      gameData: {},
+    })
+
+    const result = await service.getRecentActivities(user.id, 5)
+    assert.equal(result.length, 1)
+    if (result[0].type === 'game_session') {
+      assert.equal(result[0].score, 0)
+      assert.equal(result[0].maxScore, 0)
+      assert.equal(result[0].gameTitle, game.name)
+    }
+  })
+
+  test('falls back to 0 when gameData itself is null', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('act_null_data')
+    const game = await createTestGame('nulldata')
+
+    await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'completed', score: 0, rank: 1 }],
+      gameData: null,
+    })
+
+    const result = await service.getRecentActivities(user.id, 5)
+    assert.equal(result.length, 1)
+    if (result[0].type === 'game_session') {
+      assert.equal(result[0].score, 0)
+      assert.equal(result[0].maxScore, 0)
+    }
+  })
+
   test('does not include events from other users', async ({ assert }) => {
     const { user: userA } = await createAuthenticatedUser('act_userA')
     const { user: userB } = await createAuthenticatedUser('act_userB')

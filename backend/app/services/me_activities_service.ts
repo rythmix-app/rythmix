@@ -34,13 +34,16 @@ export class MeActivitiesService {
         .limit(limit),
     ])
 
-    const sessionEvents: ActivityEvent[] = sessions.map((session) => ({
-      type: 'game_session',
-      date: session.updatedAt.toISO()!,
-      gameTitle: session.game?.name ?? '',
-      score: Number(session.gameData?.score ?? 0),
-      maxScore: Number(session.gameData?.maxScore ?? 0),
-    }))
+    const sessionEvents: ActivityEvent[] = sessions.map((session) => {
+      const data = (session.gameData ?? {}) as Record<string, unknown>
+      return {
+        type: 'game_session',
+        date: session.updatedAt.toISO()!,
+        gameTitle: session.game.name,
+        score: Number(data.score ?? 0),
+        maxScore: Number(data.maxScore ?? 0),
+      }
+    })
 
     const likeEvents: ActivityEvent[] = likes.map((like) => ({
       type: 'liked_track',
