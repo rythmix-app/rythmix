@@ -189,7 +189,6 @@ test.group('MeStatsService', (group) => {
   test('getStats works with a custom timezone', async ({ assert }) => {
     const { user } = await createAuthenticatedUser('stats_tz')
     const timezone = 'America/New_York'
-    const now = DateTime.now().setZone(timezone)
 
     // Create game today in that timezone
     await GameSession.create({
@@ -203,12 +202,55 @@ test.group('MeStatsService', (group) => {
     assert.equal(stats.streak, 1)
   })
 
-  test('getTotalSwipes and getGamesPlayed handle empty results (extra safety)', async ({ assert }) => {
-    // This is mostly to ensure 100% coverage of the private methods called by getStats
-    const { user } = await createAuthenticatedUser('stats_empty_methods')
+  test('getTotalSwipes and getGamesPlayed handle empty results', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('stats_empty_safe')
     const stats = await service.getStats(user.id)
     assert.equal(stats.totalSwipes, 0)
     assert.equal(stats.gamesPlayed, 0)
     assert.equal(stats.streak, 0)
+  })
+
+  test('getStreak returns 0 if most recent game is not today', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('stats_not_today')
+    const now = DateTime.now()
+
+    // Create a game for yesterday
+    const session = await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
+      gameData: {},
+    })
+    session.updatedAt = now.minus({ days: 1 })
+    await session.save()
+
+    const stats = await service.getStats(user.id)
+    assert.equal(stats.streak, 0)
+  })
+
+  test('getStreak loop terminates when date does not match current day', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('stats_streak_break_loop')
+    const now = DateTime.now()
+
+    // Game today
+    await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
+      gameData: {},
+    })
+
+    // Game 2 days ago (Gap of 1 day)
+    const session = await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
+      gameData: {},
+    })
+    session.updatedAt = now.minus({ days: 2 })
+    await session.save()
+
+    const stats = await service.getStats(user.id)
+    assert.equal(stats.streak, 1)
   })
 })
