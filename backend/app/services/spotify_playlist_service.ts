@@ -146,7 +146,7 @@ export class SpotifyPlaylistService {
 
     await this.spotifyService.spotifyApiRequest(
       userId,
-      `/playlists/${integration.spotifyLikedPlaylistId}/items`,
+      `/playlists/${integration.spotifyLikedPlaylistId}/tracks`,
       {
         method: 'DELETE',
         body: { tracks: [{ uri: trackUri }] },
