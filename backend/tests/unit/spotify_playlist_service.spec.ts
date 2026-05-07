@@ -394,8 +394,12 @@ test.group('SpotifyPlaylistService - removeTrack', (group) => {
     assert.deepEqual(result, { removed: true })
 
     const del = calls.find(
-      (c) => c.path === '/playlists/pl_rm/items' && c.options.method === 'DELETE'
+      (c) => c.path === '/playlists/pl_rm/tracks' && c.options.method === 'DELETE'
     )!
+    assert.exists(
+      del,
+      'DELETE must target /tracks endpoint, not /items (Spotify rejects DELETE on /items with 400 "No uris provided")'
+    )
     assert.deepEqual(del.options.body, { tracks: [{ uri: 'spotify:track:rm' }] })
   })
 })
