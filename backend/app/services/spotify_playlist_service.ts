@@ -9,7 +9,12 @@ import { SpotifyApiError, SpotifyService } from '#services/spotify_service'
 
 export const SPOTIFY_LIKED_PLAYLIST_NAME = 'Rythmix Likes'
 export const SPOTIFY_LIKED_PLAYLIST_DESCRIPTION = 'Tes likes SwipeMix exportés depuis Rythmix.'
-export const SPOTIFY_PLAYLIST_SCOPE = 'playlist-modify-private'
+export const SPOTIFY_PLAYLIST_MODIFY_SCOPE = 'playlist-modify-private'
+export const SPOTIFY_PLAYLIST_READ_SCOPE = 'playlist-read-private'
+export const SPOTIFY_PLAYLIST_REQUIRED_SCOPES = [
+  SPOTIFY_PLAYLIST_MODIFY_SCOPE,
+  SPOTIFY_PLAYLIST_READ_SCOPE,
+] as const
 
 export const SPOTIFY_ERROR_CODE = {
   ScopeUpgradeRequired: 'SPOTIFY_SCOPE_UPGRADE_REQUIRED',
@@ -65,28 +70,18 @@ export class SpotifyPlaylistService {
         return integration.spotifyLikedPlaylistId
       }
 
-      if (!this.hasPlaylistScope(integration)) {
+      if (!this.hasPlaylistScopes(integration)) {
         throw new SpotifyScopeUpgradeRequiredError()
       }
 
       try {
-        const created = await this.spotifyService.spotifyApiRequest<{ id: string }>(
-          userId,
-          `/users/${integration.providerUserId}/playlists`,
-          {
-            method: 'POST',
-            body: {
-              name: SPOTIFY_LIKED_PLAYLIST_NAME,
-              public: false,
-              description: SPOTIFY_LIKED_PLAYLIST_DESCRIPTION,
-            },
-          }
-        )
+        const existingId = await this.findExistingLikedPlaylist(userId, integration.providerUserId)
+        const playlistId = existingId ?? (await this.createLikedPlaylist(userId, integration))
 
         integration.useTransaction(trx)
-        integration.spotifyLikedPlaylistId = created.id
+        integration.spotifyLikedPlaylistId = playlistId
         await integration.save()
-        return created.id
+        return playlistId
       } catch (error) {
         if (error instanceof SpotifyApiError && error.status === 403) {
           throw new SpotifyScopeUpgradeRequiredError()
@@ -94,6 +89,50 @@ export class SpotifyPlaylistService {
         throw error
       }
     })
+  }
+
+  private async createLikedPlaylist(userId: string, integration: UserIntegration): Promise<string> {
+    const created = await this.spotifyService.spotifyApiRequest<{ id: string }>(
+      userId,
+      `/users/${integration.providerUserId}/playlists`,
+      {
+        method: 'POST',
+        body: {
+          name: SPOTIFY_LIKED_PLAYLIST_NAME,
+          public: false,
+          description: SPOTIFY_LIKED_PLAYLIST_DESCRIPTION,
+        },
+      }
+    )
+    return created.id
+  }
+
+  private async findExistingLikedPlaylist(
+    userId: string,
+    providerUserId: string
+  ): Promise<string | null> {
+    let path = '/me/playlists'
+    let query: Record<string, string> | undefined = { limit: '50' }
+
+    while (true) {
+      const data: {
+        items: { id: string; name: string; owner: { id: string } }[]
+        next: string | null
+      } = await this.spotifyService.spotifyApiRequest(userId, path, {
+        method: 'GET',
+        query,
+      })
+
+      const match = data.items.find(
+        (p) => p.name === SPOTIFY_LIKED_PLAYLIST_NAME && p.owner.id === providerUserId
+      )
+      if (match) return match.id
+      if (!data.next) return null
+
+      const nextUrl = new URL(data.next)
+      path = nextUrl.pathname.replace(/^\/v1/, '')
+      query = Object.fromEntries(nextUrl.searchParams.entries())
+    }
   }
 
   async addTrack(userId: string, deezerTrackId: string): Promise<SpotifyAddTrackResult> {
@@ -241,9 +280,10 @@ export class SpotifyPlaylistService {
     }
   }
 
-  private hasPlaylistScope(integration: UserIntegration): boolean {
+  private hasPlaylistScopes(integration: UserIntegration): boolean {
     if (!integration.scopes) return false
-    return integration.scopes.split(/\s+/).includes(SPOTIFY_PLAYLIST_SCOPE)
+    const granted = new Set(integration.scopes.split(/\s+/))
+    return SPOTIFY_PLAYLIST_REQUIRED_SCOPES.every((scope) => granted.has(scope))
   }
 }
 
