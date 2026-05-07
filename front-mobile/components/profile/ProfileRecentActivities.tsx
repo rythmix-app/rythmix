@@ -20,12 +20,23 @@ function formatRelativeDate(date: string): string {
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays === 1) return "Hier";
   if (diffDays < 7) return `Il y a ${diffDays} jours`;
-  const diffWeeks = Math.floor(diffDays / 7);
-  if (diffWeeks < 4) return `Il y a ${diffWeeks} sem.`;
-  const diffMonths = Math.floor(diffDays / 30);
-  if (diffMonths < 12) return `Il y a ${diffMonths} mois`;
+  if (diffDays < 30) {
+    const diffWeeks = Math.floor(diffDays / 7);
+    return `Il y a ${diffWeeks} sem.`;
+  }
+  if (diffDays < 365) {
+    const diffMonths = Math.floor(diffDays / 30);
+    return `Il y a ${diffMonths} mois`;
+  }
   const diffYears = Math.floor(diffDays / 365);
   return diffYears === 1 ? "Il y a 1 an" : `Il y a ${diffYears} ans`;
+}
+
+function activityKey(activity: UserActivity, index: number): string {
+  if (activity.type === "game_session") {
+    return `game_session-${activity.date}-${activity.gameTitle}-${activity.score}-${activity.maxScore}-${index}`;
+  }
+  return `liked_track-${activity.date}-${activity.trackTitle ?? "unknown"}-${activity.artist ?? "unknown"}-${index}`;
 }
 
 function getActivityContent(activity: UserActivity): {
@@ -97,9 +108,9 @@ function renderBody(
       </Text>
     );
   }
-  return activities.map((activity) => (
+  return activities.map((activity, index) => (
     <ActivityRow
-      key={`${activity.type}-${activity.date}`}
+      key={activityKey(activity, index)}
       activity={activity}
     />
   ));

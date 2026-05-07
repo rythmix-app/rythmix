@@ -85,4 +85,72 @@ describe("ProfileRecentActivities", () => {
     expect(getByText("Titre mis en favori")).toBeTruthy();
     expect(getByText("Papaoutai - Stromae")).toBeTruthy();
   });
+
+  it("formats recent weeks/months without zero values", () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-05-07T12:00:00.000Z"));
+
+    const activities: UserActivity[] = [
+      {
+        type: "liked_track",
+        date: "2026-04-08T12:00:00.000Z",
+        trackTitle: "Track A",
+        artist: "Artist A",
+      },
+      {
+        type: "liked_track",
+        date: "2025-05-12T12:00:00.000Z",
+        trackTitle: "Track B",
+        artist: "Artist B",
+      },
+    ];
+    mockUseMyActivities.mockReturnValue({
+      activities,
+      isLoading: false,
+      error: null,
+      refresh: jest.fn(),
+    });
+
+    const { getByText, queryByText } = render(<ProfileRecentActivities />);
+    expect(getByText("Il y a 4 sem.")).toBeTruthy();
+    expect(getByText("Il y a 12 mois")).toBeTruthy();
+    expect(queryByText("Il y a 0 mois")).toBeNull();
+    expect(queryByText("Il y a 0 ans")).toBeNull();
+    jest.useRealTimers();
+  });
+
+  it("uses unique keys when activities share the same type and date", () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    const activities: UserActivity[] = [
+      {
+        type: "liked_track",
+        date: "2026-05-07T12:00:00.000Z",
+        trackTitle: "Track A",
+        artist: "Artist A",
+      },
+      {
+        type: "liked_track",
+        date: "2026-05-07T12:00:00.000Z",
+        trackTitle: "Track B",
+        artist: "Artist B",
+      },
+    ];
+    mockUseMyActivities.mockReturnValue({
+      activities,
+      isLoading: false,
+      error: null,
+      refresh: jest.fn(),
+    });
+
+    render(<ProfileRecentActivities />);
+    expect(
+      consoleErrorSpy.mock.calls.some((call) =>
+        String(call[0]).includes("Encountered two children with the same key"),
+      ),
+    ).toBe(false);
+    consoleErrorSpy.mockRestore();
+  });
 });
