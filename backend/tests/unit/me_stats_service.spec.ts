@@ -158,4 +158,31 @@ test.group('MeStatsService', (group) => {
     const stats = await service.getStats(user.id)
     assert.equal(stats.streak, 2)
   })
+
+  test('getStreak breaks when a day is missing', async ({ assert }) => {
+    const { user } = await createAuthenticatedUser('stats_streak_break')
+    const now = DateTime.now()
+
+    // Today
+    await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
+      gameData: {},
+    })
+
+    // Day before yesterday (Yesterday is missing)
+    const dayBeforeYesterdaySession = await GameSession.create({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: user.id, status: 'playing', score: 10, rank: 1 }],
+      gameData: {},
+    })
+    dayBeforeYesterdaySession.updatedAt = now.minus({ days: 2 })
+    await dayBeforeYesterdaySession.save()
+
+    const stats = await service.getStats(user.id)
+    // Only today counts because yesterday is missing
+    assert.equal(stats.streak, 1)
+  })
 })
