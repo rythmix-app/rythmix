@@ -106,6 +106,13 @@ export default function OnboardingArtistsScreen() {
         const artists = await getOnboardingSpotifySuggestions();
         if (cancelled) return;
         setSpotifyArtists(artists);
+        if (artists.length === 0 && selectedById.size === 0) {
+          show({
+            type: "warning",
+            message: "Aucun artiste Spotify trouvé, choisis-les manuellement",
+          });
+          setMode("manual");
+        }
       } catch (error) {
         if (cancelled) return;
         console.error("Failed to load Spotify suggestions:", error);
@@ -122,7 +129,7 @@ export default function OnboardingArtistsScreen() {
     return () => {
       cancelled = true;
     };
-  }, [mode, spotifyStatus?.connected, show]);
+  }, [mode, spotifyStatus?.connected, show, selectedById.size]);
 
   const selectedCount = selectedById.size;
   const canValidate =
