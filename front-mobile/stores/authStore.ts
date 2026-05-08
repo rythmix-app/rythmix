@@ -36,7 +36,9 @@ export const useAuthStore = create<AuthState>((set, get) => {
       refreshToken: null,
       isAuthenticated: false,
     });
-    storage.clearAll();
+    storage.clearAll().catch((error) => {
+      console.error("Failed to clear storage on unauthorized:", error);
+    });
     if (wasAuthenticated) {
       router.replace("/auth/login");
       if (onSessionExpired) {
