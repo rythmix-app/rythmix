@@ -130,7 +130,12 @@ export default function LoginScreen() {
                 label="Email"
                 placeholder="votre@email.fr"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  if (unverifiedEmail && value !== unverifiedEmail) {
+                    setUnverifiedEmail(null);
+                  }
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 size="large"
