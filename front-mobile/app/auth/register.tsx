@@ -70,7 +70,7 @@ export default function RegisterScreen() {
       show({
         type: "error",
         message:
-          "Mot de passe trop faible : ajoute une majuscule, un chiffre ou un caractère spécial",
+          "Mot de passe trop faible : ajoute une majuscule ou un chiffre",
       });
       return false;
     }
