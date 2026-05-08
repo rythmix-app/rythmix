@@ -159,8 +159,10 @@ test.group('AuthController - Register', (group) => {
 
     mail.fake()
 
+    const newUser = makeUser('new')
     const response = await client.post('/api/auth/register').json({
-      ...makeUser('new'),
+      ...newUser,
+      password_confirmation: newUser.password,
       email: existing.email,
     })
 
@@ -178,8 +180,10 @@ test.group('AuthController - Register', (group) => {
 
     mail.fake()
 
+    const newUser = makeUser('new')
     const response = await client.post('/api/auth/register').json({
-      ...makeUser('new'),
+      ...newUser,
+      password_confirmation: newUser.password,
       username: existing.username,
     })
 
@@ -200,6 +204,7 @@ test.group('AuthController - Register', (group) => {
       email: userData.email,
       username: userData.username,
       password: 'short',
+      password_confirmation: 'short',
     })
 
     response.assertStatus(422)
@@ -219,6 +224,7 @@ test.group('AuthController - Register', (group) => {
       email: 'invalid-email',
       username: userData.username,
       password: userData.password,
+      password_confirmation: userData.password,
     })
 
     response.assertStatus(422)
@@ -238,6 +244,7 @@ test.group('AuthController - Register', (group) => {
       email: userData.email,
       username: 'ab',
       password: userData.password,
+      password_confirmation: userData.password,
     })
 
     response.assertStatus(422)
