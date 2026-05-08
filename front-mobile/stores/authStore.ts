@@ -104,7 +104,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
     },
 
     checkAuth: async () => {
-      set({ isInitializing: true });
+      // isInitializing defaults to true on store creation; do not re-toggle it
+      // on foreground revalidation, otherwise _layout.tsx unmounts the UI.
       try {
         const token = await storage.getToken();
         const refreshToken = await storage.getRefreshToken();
@@ -133,12 +134,16 @@ export const useAuthStore = create<AuthState>((set, get) => {
             isInitializing: false,
           });
         } catch (error) {
-          // 401 → setUnauthorizedHandler a déjà nettoyé le state
-          // Autres erreurs (réseau) → garder l'état caché pour ne pas déconnecter à tort
           const statusCode = (error as { statusCode?: number })?.statusCode;
-          if (statusCode === 401) {
+          if (statusCode !== undefined) {
+            // Le serveur a répondu : setUnauthorizedHandler a déjà nettoyé
+            // l'état si c'était un 401. Pour les autres erreurs (4xx/5xx),
+            // ne pas restaurer la session cachée — la cohérence avec le
+            // storage déjà nettoyé prime.
             set({ isInitializing: false });
           } else {
+            // Erreur réseau / offline — garder la session cachée pour
+            // ne pas déconnecter à tort.
             set({
               user: cachedUser,
               token,
