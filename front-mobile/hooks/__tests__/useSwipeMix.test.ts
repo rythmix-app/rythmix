@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react-native";
 import { useSwipeMix } from "../useSwipeMix";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
+import { getSwipemixFeed } from "@/services/swipemixFeedService";
 import { useAudioPlayer } from "../useAudioPlayer";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { upsertMyTrackInteraction } from "@/services/trackInteractionsService";
@@ -8,11 +9,15 @@ import { MusicCardData } from "@/components/swipe";
 
 // Mock des dépendances
 jest.mock("@/services/deezer-api");
+jest.mock("@/services/swipemixFeedService");
 jest.mock("../useAudioPlayer");
 jest.mock("@/utils/deezer-adapter");
 jest.mock("@/services/trackInteractionsService");
 
 const mockDeezerAPI = deezerAPI as jest.Mocked<typeof deezerAPI>;
+const mockGetSwipemixFeed = getSwipemixFeed as jest.MockedFunction<
+  typeof getSwipemixFeed
+>;
 const mockUseAudioPlayer = useAudioPlayer as jest.MockedFunction<
   typeof useAudioPlayer
 >;
@@ -135,6 +140,7 @@ describe("useSwipeMix", () => {
         });
       },
     );
+    mockGetSwipemixFeed.mockResolvedValue(mockTracks);
     mockDeezerAPI.getTopTracks.mockResolvedValue({
       data: mockTracks,
       total: mockTracks.length,
@@ -179,7 +185,7 @@ describe("useSwipeMix", () => {
         expect(result.current.isLoadingCards).toBe(false);
       });
 
-      expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledWith(10, 0);
+      expect(mockGetSwipemixFeed).toHaveBeenCalledWith(10, 0);
       expect(result.current.cards).toHaveLength(10);
       expect(result.current.cards[0].id).toBe("1");
       expect(result.current.cards[0].title).toBe("Track 1");
@@ -193,11 +199,12 @@ describe("useSwipeMix", () => {
         expect(result.current.isLoadingCards).toBe(false);
       });
 
-      expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledWith(20, 0);
+      expect(mockGetSwipemixFeed).toHaveBeenCalledWith(20, 0);
     });
 
     it("should handle loading errors", async () => {
       const errorMessage = "Network error";
+      mockGetSwipemixFeed.mockRejectedValueOnce(new Error(errorMessage));
       mockDeezerAPI.getTopTracks.mockRejectedValueOnce(new Error(errorMessage));
 
       const { result } = renderHook(() => useSwipeMix());
@@ -211,6 +218,7 @@ describe("useSwipeMix", () => {
     });
 
     it("should handle non-Error exceptions", async () => {
+      mockGetSwipemixFeed.mockRejectedValueOnce("string error");
       mockDeezerAPI.getTopTracks.mockRejectedValueOnce("string error");
 
       const { result } = renderHook(() => useSwipeMix());
@@ -268,10 +276,9 @@ describe("useSwipeMix", () => {
     });
 
     it("should not trigger a background refetch if cached track already has ISRC", async () => {
-      mockDeezerAPI.getTopTracks.mockResolvedValueOnce({
-        data: mockTracks.map((t) => ({ ...t, isrc: `ISRC${t.id}` })),
-        total: mockTracks.length,
-      });
+      mockGetSwipemixFeed.mockResolvedValueOnce(
+        mockTracks.map((t) => ({ ...t, isrc: `ISRC${t.id}` })),
+      );
 
       const { result } = renderHook(() => useSwipeMix());
 
@@ -582,12 +589,12 @@ describe("useSwipeMix", () => {
         expect(result.current.cards).toHaveLength(10);
       });
 
-      mockDeezerAPI.getTopTracks.mockClear();
+      mockGetSwipemixFeed.mockClear();
 
       result.current.handlers.onEmpty();
 
       await waitFor(() => {
-        expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledWith(10, 0);
+        expect(mockGetSwipemixFeed).toHaveBeenCalledWith(10, 0);
       });
     });
 
@@ -598,30 +605,30 @@ describe("useSwipeMix", () => {
         expect(result.current.cards).toHaveLength(10);
       });
 
-      mockDeezerAPI.getTopTracks.mockClear();
+      mockGetSwipemixFeed.mockClear();
 
       let resolveLoad: (value: any) => void;
       const slowPromise = new Promise((resolve) => {
         resolveLoad = resolve;
       });
-      mockDeezerAPI.getTopTracks.mockReturnValueOnce(slowPromise as any);
+      mockGetSwipemixFeed.mockReturnValueOnce(slowPromise as any);
 
       // Trigger loadMore (sets isLoadingRef = true)
       const loadMorePromise = result.current.actions.loadMore();
 
-      // Wait for loadMore to actually start (getTopTracks called for the in-flight load)
+      // Wait for loadMore to actually start (feed called for the in-flight load)
       await waitFor(() => {
-        expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledTimes(1);
+        expect(mockGetSwipemixFeed).toHaveBeenCalledTimes(1);
       });
 
       // handleEmpty should be blocked by the lock
       result.current.handlers.onEmpty();
 
-      resolveLoad!({ data: mockTracks, total: mockTracks.length });
+      resolveLoad!(mockTracks);
       await loadMorePromise;
 
-      // getTopTracks called only once (loadMore), not twice (handleEmpty blocked)
-      expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledTimes(1);
+      // feed called only once (loadMore), not twice (handleEmpty blocked)
+      expect(mockGetSwipemixFeed).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -636,18 +643,15 @@ describe("useSwipeMix", () => {
       const initialCardCount = result.current.cards.length;
 
       // Clear previous calls
-      mockDeezerAPI.getTopTracks.mockClear();
+      mockGetSwipemixFeed.mockClear();
 
       // Setup mock for pagination call - return same tracks for simplicity
-      mockDeezerAPI.getTopTracks.mockResolvedValueOnce({
-        data: mockTracks,
-        total: mockTracks.length,
-      });
+      mockGetSwipemixFeed.mockResolvedValueOnce(mockTracks);
 
       await result.current.actions.loadMore();
 
       await waitFor(() => {
-        expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledWith(10, 10);
+        expect(mockGetSwipemixFeed).toHaveBeenCalledWith(10, 10);
         expect(result.current.cards).toHaveLength(initialCardCount + 10);
       });
     });
@@ -660,7 +664,7 @@ describe("useSwipeMix", () => {
       });
 
       // Clear calls from initialization
-      mockDeezerAPI.getTopTracks.mockClear();
+      mockGetSwipemixFeed.mockClear();
 
       // Setup slow-resolving promise to simulate loading
       let resolveLoad: (value: any) => void;
@@ -668,7 +672,7 @@ describe("useSwipeMix", () => {
         resolveLoad = resolve;
       });
 
-      mockDeezerAPI.getTopTracks.mockReturnValueOnce(slowPromise as any);
+      mockGetSwipemixFeed.mockReturnValueOnce(slowPromise as any);
 
       // Trigger first load (will be slow)
       const loadPromise1 = result.current.actions.loadMore();
@@ -680,23 +684,17 @@ describe("useSwipeMix", () => {
       const loadPromise2 = result.current.actions.loadMore();
 
       // Resolve the slow promise
-      resolveLoad!({
-        data: mockTracks,
-        total: mockTracks.length,
-      });
+      resolveLoad!(mockTracks);
 
       await Promise.all([loadPromise1, loadPromise2]);
 
       // Should only be called once (second call was blocked)
-      expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledTimes(1);
+      expect(mockGetSwipemixFeed).toHaveBeenCalledTimes(1);
     });
 
     it("should not load more if no more tracks", async () => {
       // Retourner moins de tracks que la limite
-      mockDeezerAPI.getTopTracks.mockResolvedValueOnce({
-        data: [mockTracks[0]],
-        total: 1,
-      });
+      mockGetSwipemixFeed.mockResolvedValueOnce([mockTracks[0]]);
 
       const { result } = renderHook(() => useSwipeMix());
 
@@ -704,11 +702,11 @@ describe("useSwipeMix", () => {
         expect(result.current.cards).toHaveLength(1);
       });
 
-      mockDeezerAPI.getTopTracks.mockClear();
+      mockGetSwipemixFeed.mockClear();
 
       await result.current.actions.loadMore();
 
-      expect(mockDeezerAPI.getTopTracks).not.toHaveBeenCalled();
+      expect(mockGetSwipemixFeed).not.toHaveBeenCalled();
     });
   });
 
@@ -721,19 +719,77 @@ describe("useSwipeMix", () => {
       });
 
       // Clear the mock to verify reload is called with index 0
-      mockDeezerAPI.getTopTracks.mockClear();
+      mockGetSwipemixFeed.mockClear();
 
-      mockDeezerAPI.getTopTracks.mockResolvedValueOnce({
-        data: [mockTracks[0]],
-        total: 1,
-      });
+      mockGetSwipemixFeed.mockResolvedValueOnce([mockTracks[0]]);
 
       await result.current.actions.reload();
 
       await waitFor(() => {
         expect(result.current.cards).toHaveLength(1);
-        expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledWith(10, 0);
+        expect(mockGetSwipemixFeed).toHaveBeenCalledWith(10, 0);
       });
+    });
+  });
+
+  describe("backend feed fallback", () => {
+    it("falls back to deezerAPI.getTopTracks when backend returns 5xx", async () => {
+      mockGetSwipemixFeed.mockRejectedValueOnce({
+        message: "Internal error",
+        statusCode: 500,
+      });
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.isLoadingCards).toBe(false);
+      });
+
+      expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledWith(10, 0);
+      expect(result.current.cards).toHaveLength(10);
+      expect(result.current.error).toBeNull();
+    });
+
+    it("falls back to deezerAPI.getTopTracks when backend throws a network error without statusCode", async () => {
+      mockGetSwipemixFeed.mockRejectedValueOnce(new Error("Network failure"));
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.isLoadingCards).toBe(false);
+      });
+
+      expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledWith(10, 0);
+      expect(result.current.cards).toHaveLength(10);
+    });
+
+    it("does not fall back when backend returns 401 (auth)", async () => {
+      mockGetSwipemixFeed.mockRejectedValueOnce({
+        message: "Non autorisé",
+        statusCode: 401,
+      });
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.isLoadingCards).toBe(false);
+      });
+
+      expect(mockDeezerAPI.getTopTracks).not.toHaveBeenCalled();
+      expect(result.current.error).toBe("Non autorisé");
+    });
+
+    it("falls back when backend returns an empty feed", async () => {
+      mockGetSwipemixFeed.mockResolvedValueOnce([]);
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.isLoadingCards).toBe(false);
+      });
+
+      expect(mockDeezerAPI.getTopTracks).toHaveBeenCalledWith(10, 0);
+      expect(result.current.cards).toHaveLength(10);
     });
   });
 });
