@@ -7,6 +7,7 @@ import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 import OnboardingBanner from "@/components/OnboardingBanner";
 import ProfileSpotifySection from "@/components/profile/ProfileSpotifySection";
+import { ProfileRecentActivities } from "@/components/profile/ProfileRecentActivities";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
 // TODO: à modifier plus tard - remplacer par des données récupérées depuis l'APIii
@@ -27,34 +28,6 @@ const MOCK_BADGES = [
   { id: "7", name: "Vétéran", icon: "🏆", unlocked: false },
   { id: "8", name: "Légende", icon: "👑", unlocked: false },
   { id: "9", name: "Mélomane absolu", icon: "🎵", unlocked: false },
-];
-
-// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
-const MOCK_RECENT_ACTIVITIES = [
-  {
-    id: "1",
-    name: "Partie Blurchette",
-    detail: "Score : 8/10",
-    relativeDate: "Il y a 2h",
-  },
-  {
-    id: "2",
-    name: "Titre mis en favori",
-    detail: "One More Time - Daft Punk",
-    relativeDate: "Il y a 5h",
-  },
-  {
-    id: "3",
-    name: "Partie Tracklist",
-    detail: "Score : 6/10",
-    relativeDate: "Hier",
-  },
-  {
-    id: "4",
-    name: "Titre mis en favori",
-    detail: "Papaoutai - Stromae",
-    relativeDate: "Il y a 2 jours",
-  },
 ];
 
 // TODO: à modifier plus tard - niveau et titre à récupérer depuis l'API
@@ -158,19 +131,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* ── Activités récentes ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Activités récentes</Text>
-          {MOCK_RECENT_ACTIVITIES.map((activity) => (
-            <View key={activity.id} style={styles.activityItem}>
-              <View style={styles.activityDot} />
-              <View style={styles.activityContent}>
-                <Text style={styles.activityName}>{activity.name}</Text>
-                <Text style={styles.activityDetail}>{activity.detail}</Text>
-              </View>
-              <Text style={styles.activityDate}>{activity.relativeDate}</Text>
-            </View>
-          ))}
-        </View>
+        <ProfileRecentActivities />
 
         {/* ── Mes artistes favoris ── */}
         <View style={styles.section}>
@@ -367,41 +328,6 @@ const styles = StyleSheet.create({
   },
   badgeNameLocked: {
     color: Colors.dark.icon,
-  },
-
-  // Activities
-  activityItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1A1A1A",
-    gap: 12,
-  },
-  activityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary.CTA,
-    flexShrink: 0,
-  },
-  activityContent: {
-    flex: 1,
-  },
-  activityName: {
-    fontSize: 14,
-    color: Colors.dark.text,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  activityDetail: {
-    fontSize: 12,
-    color: Colors.dark.icon,
-  },
-  activityDate: {
-    fontSize: 11,
-    color: Colors.game.textMuted,
-    flexShrink: 0,
   },
 
   // Favorite artists

@@ -17,6 +17,7 @@ const ProfileController = () => import('#controllers/profile_controller')
 const SpotifyAuthController = () => import('#controllers/spotify_auth_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
+const MeActivitiesController = () => import('#controllers/me_activities_controller')
 const OnboardingController = () => import('#controllers/onboarding_controller')
 const CuratedPlaylistsController = () => import('#controllers/curated_playlists_controller')
 const ParkeurController = () => import('#controllers/parkeur_controller')
@@ -85,6 +86,8 @@ router
           OnboardingController,
           'spotifySuggestions',
         ])
+
+        router.get('/activities', [MeActivitiesController, 'index'])
 
         router.get('/swipemix/feed', [SwipemixFeedController, 'index'])
         router.get('/swipemix/interactions', [TrackInteractionsController, 'index'])
