@@ -115,10 +115,7 @@ function renderBody(
     keyCounters.set(baseKey, duplicateCount + 1);
 
     return (
-      <ActivityRow
-        key={`${baseKey}-${duplicateCount}`}
-        activity={activity}
-      />
+      <ActivityRow key={`${baseKey}-${duplicateCount}`} activity={activity} />
     );
   });
 }

@@ -1,8 +1,8 @@
-process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
-
 import { getMyActivities } from "../userActivitiesService";
 import { get } from "../api";
 import { UserActivity } from "@/types/userActivity";
+
+process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
 
 jest.mock("../api", () => ({
   get: jest.fn(),
