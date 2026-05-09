@@ -76,6 +76,13 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime()
   declare lastLoginAt: DateTime | null
 
+  @ApiProperty({
+    description: 'Whether the user opted-in to the newsletter at registration',
+    example: false,
+  })
+  @column()
+  declare optInNewsletter: boolean
+
   @hasMany(() => UserTrackInteraction)
   declare trackInteractions: HasMany<typeof UserTrackInteraction>
 

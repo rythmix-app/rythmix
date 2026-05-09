@@ -25,6 +25,7 @@ test.group('AuthController - Register', (group) => {
 
     const response = await client.post('/api/auth/register').json({
       ...userData,
+      password_confirmation: userData.password,
       firstName: 'John',
       lastName: 'Doe',
     })
@@ -58,7 +59,10 @@ test.group('AuthController - Register', (group) => {
 
     mail.fake()
 
-    const response = await client.post('/api/auth/register').json(userData)
+    const response = await client.post('/api/auth/register').json({
+      ...userData,
+      password_confirmation: userData.password,
+    })
 
     response.assertStatus(201)
 
@@ -69,14 +73,96 @@ test.group('AuthController - Register', (group) => {
     mail.restore()
   }).timeout(10000)
 
+  test('POST /api/auth/register should fail when password_confirmation is missing', async ({
+    client,
+  }) => {
+    const userData = makeUser('noconfirm')
+
+    mail.fake()
+
+    const response = await client.post('/api/auth/register').json(userData)
+
+    response.assertStatus(422)
+    response.assertBodyContains({
+      message: 'Validation failed',
+    })
+
+    mail.restore()
+  }).timeout(10000)
+
+  test('POST /api/auth/register should fail when password_confirmation does not match', async ({
+    client,
+  }) => {
+    const userData = makeUser('mismatch')
+
+    mail.fake()
+
+    const response = await client.post('/api/auth/register').json({
+      ...userData,
+      password_confirmation: 'different_password',
+    })
+
+    response.assertStatus(422)
+    response.assertBodyContains({
+      message: 'Validation failed',
+    })
+
+    mail.restore()
+  }).timeout(10000)
+
+  test('POST /api/auth/register should persist optInNewsletter when true', async ({
+    client,
+    assert,
+  }) => {
+    const userData = makeUser('newsletter')
+
+    mail.fake()
+
+    const response = await client.post('/api/auth/register').json({
+      ...userData,
+      password_confirmation: userData.password,
+      optInNewsletter: true,
+    })
+
+    response.assertStatus(201)
+
+    const user = await User.findByOrFail('email', userData.email)
+    assert.isTrue(user.optInNewsletter)
+
+    mail.restore()
+  }).timeout(10000)
+
+  test('POST /api/auth/register should default optInNewsletter to false', async ({
+    client,
+    assert,
+  }) => {
+    const userData = makeUser('newsletter_default')
+
+    mail.fake()
+
+    const response = await client.post('/api/auth/register').json({
+      ...userData,
+      password_confirmation: userData.password,
+    })
+
+    response.assertStatus(201)
+
+    const user = await User.findByOrFail('email', userData.email)
+    assert.isFalse(user.optInNewsletter)
+
+    mail.restore()
+  }).timeout(10000)
+
   test('POST /api/auth/register should fail with duplicate email', async ({ client }) => {
     const existing = makeUser('existing')
     await User.create(existing)
 
     mail.fake()
 
+    const newUser = makeUser('new')
     const response = await client.post('/api/auth/register').json({
-      ...makeUser('new'),
+      ...newUser,
+      password_confirmation: newUser.password,
       email: existing.email,
     })
 
@@ -94,8 +180,10 @@ test.group('AuthController - Register', (group) => {
 
     mail.fake()
 
+    const newUser = makeUser('new')
     const response = await client.post('/api/auth/register').json({
-      ...makeUser('new'),
+      ...newUser,
+      password_confirmation: newUser.password,
       username: existing.username,
     })
 
@@ -116,6 +204,7 @@ test.group('AuthController - Register', (group) => {
       email: userData.email,
       username: userData.username,
       password: 'short',
+      password_confirmation: 'short',
     })
 
     response.assertStatus(422)
@@ -135,6 +224,7 @@ test.group('AuthController - Register', (group) => {
       email: 'invalid-email',
       username: userData.username,
       password: userData.password,
+      password_confirmation: userData.password,
     })
 
     response.assertStatus(422)
@@ -154,6 +244,7 @@ test.group('AuthController - Register', (group) => {
       email: userData.email,
       username: 'ab',
       password: userData.password,
+      password_confirmation: userData.password,
     })
 
     response.assertStatus(422)
@@ -630,6 +721,7 @@ test.group('AuthController - Complete Authentication Flow', (group) => {
 
     let response = await client.post('/api/auth/register').json({
       ...userData,
+      password_confirmation: userData.password,
       firstName: 'Complete',
       lastName: 'Flow',
     })
