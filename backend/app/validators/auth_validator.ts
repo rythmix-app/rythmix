@@ -19,10 +19,11 @@ export const registerValidator = vine.compile(
         const user = await db.from('users').where('username', value).first()
         return !user
       }),
-    password: vine.string().minLength(8).maxLength(255),
+    password: vine.string().minLength(8).maxLength(255).confirmed(),
     firstName: vine.string().minLength(1).maxLength(100).optional(),
     lastName: vine.string().minLength(1).maxLength(100).optional(),
     role: vine.enum(['user', 'admin']).optional(),
+    optInNewsletter: vine.boolean().optional(),
   })
 )
 
