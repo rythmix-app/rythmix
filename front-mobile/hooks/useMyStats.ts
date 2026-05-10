@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { userStatsService, UserStats } from "@/services/userStatsService";
 import { useAuthStore } from "@/stores/authStore";
@@ -12,26 +12,46 @@ export function useMyStats() {
   const [error, setError] = useState<string | null>(null);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
+  const isMountedRef = useRef(true);
+  const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const fetchStats = useCallback(async () => {
     if (!isAuthenticated) return;
 
-    try {
+    const requestId = ++requestIdRef.current;
+    if (isMountedRef.current) {
       setLoading(true);
       setError(null);
+    }
+
+    try {
       const data = await userStatsService.getMyStats();
-      setStats(data);
-    } catch (err: any) {
+      if (isMountedRef.current && requestIdRef.current === requestId) {
+        setStats(data);
+      }
+    } catch (err: unknown) {
       console.error("[useMyStats] Failed to fetch user stats:", err);
-      setError("Erreur lors du chargement des statistiques");
+      if (isMountedRef.current && requestIdRef.current === requestId) {
+        setError("Erreur lors du chargement des statistiques");
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current && requestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, [isAuthenticated]);
 
   useFocusEffect(
     useCallback(() => {
       if (isAuthenticated) {
-        fetchStats();
+        void fetchStats();
       }
     }, [fetchStats, isAuthenticated]),
   );

@@ -8,6 +8,22 @@ jest.mock("@/services/userStatsService", () => ({
   },
 }));
 
+jest.mock("expo-router", () => ({
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    const React = require("react");
+    React.useEffect(() => {
+      const cleanup = callback();
+      return typeof cleanup === "function" ? cleanup : undefined;
+    }, [callback]);
+  },
+}));
+
+let mockIsAuthenticated = true;
+jest.mock("@/stores/authStore", () => ({
+  useAuthStore: (selector: (state: { isAuthenticated: boolean }) => unknown) =>
+    selector({ isAuthenticated: mockIsAuthenticated }),
+}));
+
 describe("useMyStats", () => {
   const mockStats = {
     totalSwipes: 100,
@@ -17,6 +33,7 @@ describe("useMyStats", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIsAuthenticated = true;
   });
 
   it("should fetch stats on mount", async () => {
@@ -50,6 +67,18 @@ describe("useMyStats", () => {
     expect(result.current.error).toBe(
       "Erreur lors du chargement des statistiques",
     );
+  });
+
+  it("does not fetch when user is not authenticated", async () => {
+    mockIsAuthenticated = false;
+
+    const { result } = renderHook(() => useMyStats());
+
+    await waitFor(() => {
+      expect(userStatsService.getMyStats).not.toHaveBeenCalled();
+    });
+    expect(result.current.loading).toBe(false);
+    expect(result.current.stats).toBeNull();
   });
 
   it("should retry fetching stats", async () => {
