@@ -7,6 +7,7 @@ import { GameSessionStatus } from '#enums/game_session_status'
 import { InteractionAction } from '#enums/interaction_action'
 import { createAuthenticatedUser } from '#tests/utils/auth_helpers'
 import { deleteGameSession } from '#tests/utils/game_session_helpers'
+import { deleteTrackInteractions } from '#tests/utils/track_interaction_helpers'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 
@@ -15,12 +16,11 @@ test.group('MeStatsService', (group) => {
   let game: Game
 
   deleteGameSession(group)
+  deleteTrackInteractions(group)
 
   group.each.setup(async () => {
     service = new MeStatsService()
-    // Create a game with a random ID to avoid conflicts
     game = await Game.create({
-      id: Math.floor(Math.random() * 1000000),
       name: 'Test Game for Stats',
       description: 'Test Description',
       isEnabled: true,
