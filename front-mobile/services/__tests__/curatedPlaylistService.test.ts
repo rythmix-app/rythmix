@@ -1,5 +1,3 @@
-process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
-
 import {
   getCuratedPlaylists,
   getCuratedPlaylistTracks,
@@ -7,6 +5,8 @@ import {
   CuratedPlaylistTrack,
 } from "../curatedPlaylistService";
 import { get } from "../api";
+
+process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
 
 jest.mock("../api", () => ({
   get: jest.fn(),

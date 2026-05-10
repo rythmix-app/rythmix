@@ -1,14 +1,50 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { cacheManager } from "@/services/cache-manager";
+import { getSwipemixFeed } from "@/services/swipemixFeedService";
 import { upsertMyTrackInteraction } from "@/services/trackInteractionsService";
 import {
   InteractionAction,
   SpotifyTriggerSnapshot,
 } from "@/types/trackInteraction";
+import { ApiError } from "@/types/auth";
 import { MusicCardData } from "@/components/swipe";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { useAudioPlayer } from "./useAudioPlayer";
+
+const getApiErrorStatus = (error: unknown): number | undefined => {
+  if (typeof error !== "object" || error === null) return undefined;
+  const status = (error as ApiError).statusCode;
+  return typeof status === "number" ? status : undefined;
+};
+
+const extractErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+  return "Erreur lors du chargement des musiques";
+};
+
+const shouldFallbackToDeezer = (error: unknown): boolean => {
+  const status = getApiErrorStatus(error);
+  return status === undefined || status >= 500;
+};
+
+const fetchFeedWithFallback = async (
+  limit: number,
+  offset: number,
+): Promise<DeezerTrack[]> => {
+  try {
+    const tracks = await getSwipemixFeed(limit, offset);
+    if (tracks.length > 0) return tracks;
+  } catch (error) {
+    if (!shouldFallbackToDeezer(error)) throw error;
+  }
+  const response = await deezerAPI.getTopTracks(limit, offset);
+  return response.data;
+};
 
 interface UseSwipeMixOptions {
   initialLimit?: number;
@@ -62,14 +98,17 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         // Utiliser l'index actuel pour la pagination
         const indexToUse = append ? currentPageIndexRef.current : 0;
 
-        // Récupérer les morceaux tendances
-        const response = await deezerAPI.getTopTracks(initialLimit, indexToUse);
+        // Récupérer le feed personnalisé (avec fallback sur le top Deezer en cas d'erreur backend)
+        const feedTracks = await fetchFeedWithFallback(
+          initialLimit,
+          indexToUse,
+        );
 
         // Récupérer les genres et les détails des albums (pour avoir le genre_id) en parallèle
         // Note: deezerAPI utilise déjà le cacheManager
         const [genresResponse, ...albums] = await Promise.all([
           deezerAPI.getGenres(),
-          ...response.data.map((track) => deezerAPI.getAlbum(track.album.id)),
+          ...feedTracks.map((track) => deezerAPI.getAlbum(track.album.id)),
         ]);
 
         // Créer les mappings pour l'adapter
@@ -95,13 +134,13 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
 
         // Convertir en cartes avec les informations de genre
         const newCards = deezerTracksToCardData(
-          response.data,
+          feedTracks,
           genreMapping,
           albumGenresMapping,
         );
 
         // Vérifier s'il y a encore des musiques à charger
-        setHasMoreTracks(response.data.length === initialLimit);
+        setHasMoreTracks(feedTracks.length === initialLimit);
 
         if (append) {
           // Ajouter les nouvelles cartes à la fin
@@ -110,7 +149,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
           // Ajouter les nouvelles tracks à la map existante
           setTracks((prev) => {
             const newMap = new Map(prev);
-            response.data.forEach((track) => {
+            feedTracks.forEach((track) => {
               newMap.set(track.id.toString(), track);
             });
             return newMap;
@@ -121,7 +160,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         } else {
           // Remplacer complètement les cartes et tracks
           const trackMap = new Map<string, DeezerTrack>();
-          response.data.forEach((track) => {
+          feedTracks.forEach((track) => {
             trackMap.set(track.id.toString(), track);
           });
 
@@ -130,11 +169,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
           currentPageIndexRef.current = initialLimit;
         }
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Erreur lors du chargement des musiques",
-        );
+        setError(extractErrorMessage(err));
       } finally {
         isLoadingRef.current = false;
         setIsLoadingCards(false);

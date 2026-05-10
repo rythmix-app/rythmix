@@ -10,9 +10,10 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useEffect, useRef } from "react";
-import { useAuthStore } from "@/stores/authStore";
-import { ToastProvider } from "@/components/Toast";
+import { setSessionExpiredHandler, useAuthStore } from "@/stores/authStore";
+import { ToastProvider, useToast } from "@/components/Toast";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
+import { useAppStateAuthCheck } from "@/hooks/useAppStateAuthCheck";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +33,7 @@ export default function RootLayout() {
   const router = useRouter();
   const { status: onboardingStatus } = useOnboardingStatus();
   const onboardingPromptDoneRef = useRef(false);
+  useAppStateAuthCheck();
 
   useEffect(() => {
     checkAuth();
@@ -90,6 +92,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <ToastProvider>
+        <SessionExpiredToastBridge />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="auth" />
           <Stack.Screen name="(tabs)" />
@@ -105,4 +108,20 @@ export default function RootLayout() {
       </ToastProvider>
     </ThemeProvider>
   );
+}
+
+function SessionExpiredToastBridge() {
+  const { show } = useToast();
+
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      show({
+        type: "warning",
+        message: "Session expirée, reconnecte-toi",
+      });
+    });
+    return () => setSessionExpiredHandler(null);
+  }, [show]);
+
+  return null;
 }

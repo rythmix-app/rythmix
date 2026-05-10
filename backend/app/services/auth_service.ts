@@ -16,6 +16,7 @@ export class AuthService {
     firstName?: string
     lastName?: string
     role?: string
+    optInNewsletter?: boolean
   }) {
     const user = await User.create({
       email: data.email,
@@ -26,6 +27,7 @@ export class AuthService {
       // edit mail in "admin" for dev mode (back office)
       // role: 'admin',
       role: data.role,
+      optInNewsletter: data.optInNewsletter ?? false,
     })
 
     if (user.isAdmin) {

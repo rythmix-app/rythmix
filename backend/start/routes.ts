@@ -10,15 +10,18 @@ const GamesController = () => import('#controllers/games_controller')
 const AchievementsController = () => import('#controllers/achievements_controller')
 const GameSessionsController = () => import('#controllers/game_sessions_controller')
 const TrackInteractionsController = () => import('#controllers/track_interactions_controller')
+const SwipemixFeedController = () => import('#controllers/swipemix_feed_controller')
 const FavoriteGamesController = () => import('#controllers/favorite_games_controller')
 const UserAchievementsController = () => import('#controllers/user_achievements_controller')
 const ProfileController = () => import('#controllers/profile_controller')
 const SpotifyAuthController = () => import('#controllers/spotify_auth_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
+const MeActivitiesController = () => import('#controllers/me_activities_controller')
 const OnboardingController = () => import('#controllers/onboarding_controller')
 const MeStatsController = () => import('#controllers/me_stats_controller')
 const CuratedPlaylistsController = () => import('#controllers/curated_playlists_controller')
+const ParkeurController = () => import('#controllers/parkeur_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -34,6 +37,7 @@ router.get('/', async ({ response }) => {
       achievements: '/api/achievements',
       games: '/api/games',
       trackInteractions: '/api/me/swipemix/interactions',
+      swipemixFeed: '/api/me/swipemix/feed',
       favoriteGames: '/api/favorite-games',
       userAchievements: '/api/user-achievements',
       gameSessions: '/api/game-sessions',
@@ -85,6 +89,10 @@ router
         ])
 
         router.get('/stats', [MeStatsController, 'index'])
+
+        router.get('/activities', [MeActivitiesController, 'index'])
+
+        router.get('/swipemix/feed', [SwipemixFeedController, 'index'])
 
         router.get('/swipemix/interactions', [TrackInteractionsController, 'index'])
         router.post('/swipemix/interactions', [TrackInteractionsController, 'upsert'])
@@ -141,6 +149,7 @@ router
         router
           .get('/blindtest/playlists/:id/tracks', [CuratedPlaylistsController, 'tracks'])
           .use(middleware.auth())
+        router.post('/parkeur/start', [ParkeurController, 'start']).use(middleware.auth())
         router.get('/:id', [GamesController, 'show']).use(middleware.silentAuth())
         router.patch('/:id', [GamesController, 'update']).use(middleware.role({ roles: ['admin'] }))
         router

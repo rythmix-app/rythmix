@@ -6,6 +6,8 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 import OnboardingBanner from "@/components/OnboardingBanner";
+import ProfileSpotifySection from "@/components/profile/ProfileSpotifySection";
+import { ProfileRecentActivities } from "@/components/profile/ProfileRecentActivities";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useMyStats } from "@/hooks/useMyStats";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -102,6 +104,9 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        {/* ── Mes stats Spotify ── */}
+        <ProfileSpotifySection />
+
         {/* ── Succès & Récompenses ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitleCentered}>Succès & Récompenses</Text>
@@ -129,6 +134,9 @@ export default function ProfileScreen() {
             ))}
           </View>
         </View>
+
+        {/* ── Activités récentes ── */}
+        <ProfileRecentActivities />
 
         {/* ── Mes artistes favoris ── */}
         <View style={styles.section}>
