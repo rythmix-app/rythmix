@@ -3,14 +3,18 @@ import GameSession from '#models/game_session'
 import { GameSessionStatus } from '#enums/game_session_status'
 import { DateTime } from 'luxon'
 
+const STREAK_LOOKBACK_DAYS = 365
+
 export class MeStatsService {
   /**
    * Get aggregated stats for the authenticated user
    */
   public async getStats(userId: string, timezone: string = 'UTC') {
-    const totalSwipes = await this.getTotalSwipes(userId)
-    const gamesPlayed = await this.getGamesPlayed(userId)
-    const streak = await this.getStreak(userId, timezone)
+    const [totalSwipes, gamesPlayed, streak] = await Promise.all([
+      this.getTotalSwipes(userId),
+      this.getGamesPlayed(userId),
+      this.getStreak(userId, timezone),
+    ])
 
     return {
       totalSwipes,
@@ -40,13 +44,16 @@ export class MeStatsService {
 
   /**
    * Calculate consecutive days streak ending today
+   * Bounded to STREAK_LOOKBACK_DAYS to keep the query cheap.
    */
   private async getStreak(userId: string, timezone: string = 'UTC') {
-    // Get unique dates of completed games
     // We use updatedAt as finished_at is not currently in the schema
+    const cutoff = DateTime.now().minus({ days: STREAK_LOOKBACK_DAYS }).toSQL()
+
     const sessions = await GameSession.query()
       .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
       .where('status', GameSessionStatus.Completed)
+      .where('updated_at', '>=', cutoff!)
       .select('updated_at')
       .orderBy('updated_at', 'desc')
 
