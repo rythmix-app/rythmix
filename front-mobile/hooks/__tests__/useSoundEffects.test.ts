@@ -169,4 +169,5 @@ describe("useSoundEffects", () => {
       expect(allRemoved).toBe(true);
     });
   });
+
 });

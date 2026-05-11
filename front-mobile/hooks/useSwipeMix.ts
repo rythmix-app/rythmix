@@ -9,6 +9,7 @@ import {
 import { MusicCardData } from "@/components/swipe";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { useAudioPlayer } from "./useAudioPlayer";
+import { useSoundEffects } from "./useSoundEffects";
 
 interface UseSwipeMixOptions {
   initialLimit?: number;
@@ -49,6 +50,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   );
 
   const audioPlayer = useAudioPlayer({ onRetry: handleRetry });
+  const { play } = useSoundEffects();
 
   // Charger les musiques initiales
   const loadTracks = useCallback(
@@ -196,6 +198,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   // Handler pour swipe left (skip/dislike)
   const handleSwipeLeft = useCallback(
     (card: MusicCardData) => {
+      play("swipe-dislike");
       persistInteraction(card, "disliked");
 
       // Arrêter la lecture si c'est le morceau actuel
@@ -203,12 +206,13 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         audioPlayer.stop();
       }
     },
-    [audioPlayer, persistInteraction],
+    [audioPlayer, persistInteraction, play],
   );
 
   // Handler pour swipe right (like/save)
   const handleSwipeRight = useCallback(
     (card: MusicCardData) => {
+      play("swipe-like");
       persistInteraction(card, "liked");
 
       // Arrêter la lecture pour passer à la carte suivante
@@ -217,7 +221,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         audioPlayer.stop();
       }
     },
-    [audioPlayer, persistInteraction],
+    [audioPlayer, persistInteraction, play],
   );
 
   // Handler pour play/pause

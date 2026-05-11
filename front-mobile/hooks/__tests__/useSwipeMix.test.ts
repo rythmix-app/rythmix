@@ -2,6 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useSwipeMix } from "../useSwipeMix";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { useAudioPlayer } from "../useAudioPlayer";
+import { useSoundEffects } from "../useSoundEffects";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { upsertMyTrackInteraction } from "@/services/trackInteractionsService";
 import { MusicCardData } from "@/components/swipe";
@@ -9,12 +10,16 @@ import { MusicCardData } from "@/components/swipe";
 // Mock des dépendances
 jest.mock("@/services/deezer-api");
 jest.mock("../useAudioPlayer");
+jest.mock("../useSoundEffects");
 jest.mock("@/utils/deezer-adapter");
 jest.mock("@/services/trackInteractionsService");
 
 const mockDeezerAPI = deezerAPI as jest.Mocked<typeof deezerAPI>;
 const mockUseAudioPlayer = useAudioPlayer as jest.MockedFunction<
   typeof useAudioPlayer
+>;
+const mockUseSoundEffects = useSoundEffects as jest.MockedFunction<
+  typeof useSoundEffects
 >;
 const mockDeezerTracksToCardData =
   deezerTracksToCardData as jest.MockedFunction<typeof deezerTracksToCardData>;
@@ -24,6 +29,8 @@ const mockUpsertMyTrackInteraction =
   >;
 
 describe("useSwipeMix", () => {
+  const mockPlay = jest.fn();
+
   // Helper function to create mock tracks
   const createMockTrack = (id: number): DeezerTrack => ({
     id,
@@ -107,6 +114,7 @@ describe("useSwipeMix", () => {
     mockAudioPlayer.setVolume = jest.fn().mockResolvedValue(undefined);
 
     // Setup default mocks
+    mockUseSoundEffects.mockReturnValue({ play: mockPlay });
     mockUseAudioPlayer.mockReturnValue(mockAudioPlayer);
     mockDeezerTracksToCardData.mockImplementation(
       (tracks, genreMapping, albumGenresMapping) => {
@@ -436,6 +444,32 @@ describe("useSwipeMix", () => {
       await result.current.handlers.onSwipeRight(firstCard);
 
       expect(mockAudioPlayer.stop).toHaveBeenCalled();
+    });
+
+    it("should call play('swipe-like') on swipe right", async () => {
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      const firstCard = result.current.cards[0];
+      result.current.handlers.onSwipeRight(firstCard);
+
+      expect(mockPlay).toHaveBeenCalledWith("swipe-like");
+    });
+
+    it("should call play('swipe-dislike') on swipe left", async () => {
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.cards).toHaveLength(10);
+      });
+
+      const firstCard = result.current.cards[0];
+      result.current.handlers.onSwipeLeft(firstCard);
+
+      expect(mockPlay).toHaveBeenCalledWith("swipe-dislike");
     });
   });
 
