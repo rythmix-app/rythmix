@@ -16,6 +16,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToast } from "@/components/Toast";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 jest.mock("@/services/deezer-api");
 jest.mock("@/services/gameSessionService");
@@ -24,6 +25,7 @@ jest.mock("@/stores/authStore");
 jest.mock("@/stores/settingsStore");
 jest.mock("@/components/Toast");
 jest.mock("@/hooks/useErrorFeedback");
+jest.mock("@/hooks/useSoundEffects");
 jest.mock("expo-router", () => ({
   useLocalSearchParams: jest.fn(),
   router: { back: jest.fn(), push: jest.fn() },
@@ -56,6 +58,9 @@ const mockUseSettingsStore = useSettingsStore as unknown as jest.Mock;
 const mockUseToast = useToast as jest.MockedFunction<typeof useToast>;
 const mockUseErrorFeedback = useErrorFeedback as jest.MockedFunction<
   typeof useErrorFeedback
+>;
+const mockUseSoundEffects = useSoundEffects as jest.MockedFunction<
+  typeof useSoundEffects
 >;
 
 const buildTrack = (id: number, title: string): DeezerTrack =>
@@ -128,6 +133,8 @@ const buildSavedPlayingState = (
 describe("useTracklistGame", () => {
   const mockShow = jest.fn();
   const mockTriggerError = jest.fn();
+  const mockLoop = jest.fn();
+  const mockStop = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -140,6 +147,11 @@ describe("useTracklistGame", () => {
     );
     mockUseSettingsStore.mockReturnValue({ errorAnimationsEnabled: false });
     mockUseToast.mockReturnValue({ show: mockShow });
+    mockUseSoundEffects.mockReturnValue({
+      play: jest.fn(),
+      loop: mockLoop,
+      stop: mockStop,
+    });
     mockUseErrorFeedback.mockReturnValue({
       shakeAnimation: { value: 0 } as unknown as ReturnType<
         typeof useErrorFeedback
@@ -269,6 +281,59 @@ describe("useTracklistGame", () => {
     expect(mockDeleteGameState).toHaveBeenCalledWith("1");
   });
 
+  describe("timer sounds", () => {
+    it("loops timer-warning when timeRemaining reaches 10", async () => {
+      mockUseLocalSearchParams.mockReturnValue({ gameId: "1", resume: "true" });
+      mockGetGameState.mockResolvedValue(
+        buildSavedPlayingState({ timeRemaining: 12 }),
+      );
+
+      const { result } = renderHook(() => useTracklistGame());
+      await waitFor(() => expect(result.current.gameState).toBe("playing"));
+
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+
+      expect(result.current.timeRemaining).toBe(10);
+      expect(mockLoop).toHaveBeenCalledWith("timer-warning");
+    });
+
+    it("stops timer-warning and loops timer-danger when timeRemaining reaches 5", async () => {
+      mockUseLocalSearchParams.mockReturnValue({ gameId: "1", resume: "true" });
+      mockGetGameState.mockResolvedValue(
+        buildSavedPlayingState({ timeRemaining: 7 }),
+      );
+
+      const { result } = renderHook(() => useTracklistGame());
+      await waitFor(() => expect(result.current.gameState).toBe("playing"));
+
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+
+      expect(result.current.timeRemaining).toBe(5);
+      expect(mockStop).toHaveBeenCalledWith("timer-warning");
+      expect(mockLoop).toHaveBeenCalledWith("timer-danger");
+    });
+
+    it("stops timer-danger when timeRemaining reaches 0", async () => {
+      mockUseLocalSearchParams.mockReturnValue({ gameId: "1", resume: "true" });
+      mockGetGameState.mockResolvedValue(
+        buildSavedPlayingState({ timeRemaining: 2 }),
+      );
+
+      const { result } = renderHook(() => useTracklistGame());
+      await waitFor(() => expect(result.current.gameState).toBe("playing"));
+
+      await act(async () => {
+        jest.advanceTimersByTime(3000);
+      });
+
+      expect(mockStop).toHaveBeenCalledWith("timer-danger");
+    });
+  });
+
   it("startGameWithAlbum creates a session and transitions to playing", async () => {
     const { result } = renderHook(() => useTracklistGame());
 
@@ -286,5 +351,4 @@ describe("useTracklistGame", () => {
     expect(result.current.currentAlbum?.album.id).toBe(500);
     expect(result.current.timeRemaining).toBe(300);
   });
-
 });

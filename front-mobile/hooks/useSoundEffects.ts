@@ -13,6 +13,8 @@ export type SoundName =
 
 export interface UseSoundEffectsReturn {
   play: (sound: SoundName) => Promise<void>;
+  loop: (sound: SoundName) => void;
+  stop: (sound: SoundName) => void;
 }
 
 const SOUND_SOURCES: Record<SoundName, number> = {
@@ -86,5 +88,38 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
     }
   };
 
-  return { play };
+  const loop = (sound: SoundName): void => {
+    const category = SOUND_CATEGORY[sound];
+    const { swipeSoundsEnabled: swipeOn, gameSoundsEnabled: gameOn } =
+      enabledRef.current;
+    const enabled = category === "swipe" ? swipeOn : gameOn;
+    if (!enabled) return;
+
+    try {
+      const player = playersRef.current[sound];
+      if (!player) return;
+      player.loop = true;
+      player.seekTo(0);
+      player.play();
+    } catch (err) {
+      if (__DEV__) {
+        console.log(`[SoundEffects] Error looping ${sound}:`, err);
+      }
+    }
+  };
+
+  const stop = (sound: SoundName): void => {
+    try {
+      const player = playersRef.current[sound];
+      if (!player) return;
+      player.loop = false;
+      player.pause();
+    } catch (err) {
+      if (__DEV__) {
+        console.log(`[SoundEffects] Error stopping ${sound}:`, err);
+      }
+    }
+  };
+
+  return { play, loop, stop };
 };

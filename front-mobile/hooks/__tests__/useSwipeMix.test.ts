@@ -114,7 +114,11 @@ describe("useSwipeMix", () => {
     mockAudioPlayer.setVolume = jest.fn().mockResolvedValue(undefined);
 
     // Setup default mocks
-    mockUseSoundEffects.mockReturnValue({ play: mockPlay });
+    mockUseSoundEffects.mockReturnValue({
+      play: mockPlay,
+      loop: jest.fn(),
+      stop: jest.fn(),
+    });
     mockUseAudioPlayer.mockReturnValue(mockAudioPlayer);
     mockDeezerTracksToCardData.mockImplementation(
       (tracks, genreMapping, albumGenresMapping) => {

@@ -22,6 +22,7 @@ import {
 } from "@/services/gameStorageService";
 import { TracklistGameData, TrackAnswer } from "@/types/gameSession";
 import { useErrorFeedback } from "@/hooks/useErrorFeedback";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { fuzzyMatch } from "@/utils/stringUtils";
 
 export type GameState =
@@ -52,7 +53,7 @@ interface TracklistSaveState {
   sessionId: string | null;
 }
 
-export const GAME_DURATION = 300;
+export const GAME_DURATION = 20;
 const ALBUM_CHOICES = 6;
 
 export function useTracklistGame() {
@@ -89,6 +90,7 @@ export function useTracklistGame() {
   const user = useAuthStore((state) => state.user);
   const { errorAnimationsEnabled } = useSettingsStore();
   const { show } = useToast();
+  const { loop, stop } = useSoundEffects();
   const { shakeAnimation, borderOpacity, triggerError } = useErrorFeedback(
     errorAnimationsEnabled,
   );
@@ -153,6 +155,22 @@ export function useTracklistGame() {
     }, 1000);
     return () => clearInterval(interval);
   }, [isTimerRunning, timeRemaining]);
+
+  useEffect(() => {
+    if (gameState !== "playing") {
+      stop("timer-warning");
+      stop("timer-danger");
+      return;
+    }
+    if (timeRemaining === 10) {
+      loop("timer-warning");
+    } else if (timeRemaining === 5) {
+      stop("timer-warning");
+      loop("timer-danger");
+    } else if (timeRemaining === 0) {
+      stop("timer-danger");
+    }
+  }, [timeRemaining, gameState, loop, stop]);
 
   const autoSave = useCallback(async () => {
     if (!gameId || gameState === "result") return;
