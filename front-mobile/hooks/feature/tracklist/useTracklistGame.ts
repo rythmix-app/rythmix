@@ -53,7 +53,7 @@ interface TracklistSaveState {
   sessionId: string | null;
 }
 
-export const GAME_DURATION = 20;
+export const GAME_DURATION = 300;
 const ALBUM_CHOICES = 6;
 
 export function useTracklistGame() {
