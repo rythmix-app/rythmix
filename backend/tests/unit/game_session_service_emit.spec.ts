@@ -170,12 +170,14 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
     })
     logger.error = ((...args: Parameters<typeof logger.error>) => {
       logCalled = true
-      if (typeof args[1] === 'string') {
+      if (typeof args[0] === 'string') {
+        loggedMessage = args[0]
+      } else if (typeof args[1] === 'string') {
         loggedMessage = args[1]
       }
     }) as typeof logger.error
 
-    let updated: Awaited<ReturnType<GameSessionService['updateGameSession']>>
+    let updated: Awaited<ReturnType<GameSessionService['updateGameSession']>> | undefined
     try {
       updated = await service.updateGameSession(created.id, {
         status: GameSessionStatus.Completed,
