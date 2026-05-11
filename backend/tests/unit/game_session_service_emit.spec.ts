@@ -196,6 +196,23 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
     }
   })
 
+  test('createGameSession with Completed status falls back to {} when gameData is an array', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('emit_array_gamedata')
+    const created = await service.createGameSession({
+      gameId: game.id,
+      status: GameSessionStatus.Completed,
+      players: [{ userId: 'u_array', status: 'finished', score: 0, expGained: 0, rank: 1 }],
+      gameData: [] as any,
+    })
+
+    assert.instanceOf(created, GameSession)
+    if (created instanceof GameSession) {
+      assert.equal(created.status, GameSessionStatus.Completed)
+    }
+  })
+
   test('updateGameSession does not re-dispatch when already Completed', async ({ assert }) => {
     const game = await createTestGame('emit_no_re')
     const created = await service.createGameSession({
