@@ -6,6 +6,7 @@ import Achievement from '#models/achievement'
 import { AchievementType } from '#enums/achievement_type'
 import { GameSessionStatus } from '#enums/game_session_status'
 import GameFinished from '#events/game_finished'
+import emitter from '@adonisjs/core/services/emitter'
 import logger from '@adonisjs/core/services/logger'
 import { deleteGameSession } from '#tests/utils/game_session_helpers'
 import { deleteAchievementProgress } from '#tests/utils/achievement_progress_helpers'
@@ -161,16 +162,17 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
     assert.instanceOf(created, GameSession)
     if (!(created instanceof GameSession)) return
 
-    const originalDispatch = GameFinished.dispatch
     const originalLoggerError = logger.error
     let logCalled = false
     let loggedMessage: string | undefined
-    GameFinished.dispatch = (async () => {
+    const unsubscribe = emitter.on(GameFinished, async () => {
       throw new Error('listener failed')
-    }) as typeof GameFinished.dispatch
-    logger.error = ((...args: any[]) => {
+    })
+    logger.error = ((...args: Parameters<typeof logger.error>) => {
       logCalled = true
-      loggedMessage = args[1]
+      if (typeof args[1] === 'string') {
+        loggedMessage = args[1]
+      }
     }) as typeof logger.error
 
     let updated: Awaited<ReturnType<GameSessionService['updateGameSession']>>
@@ -180,7 +182,7 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
         gameData: baseGameData({ score: 3, maxScore: 5 }) as any,
       })
     } finally {
-      GameFinished.dispatch = originalDispatch
+      unsubscribe()
       logger.error = originalLoggerError
     }
 
