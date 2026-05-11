@@ -2,8 +2,11 @@ import { test } from '@japa/runner'
 import GameSession from '#models/game_session'
 import { GameSessionService } from '#services/game_session_service'
 import Game from '#models/game'
+import Achievement from '#models/achievement'
+import { AchievementType } from '#enums/achievement_type'
 import { GameSessionStatus } from '#enums/game_session_status'
 import { deleteGameSession } from '#tests/utils/game_session_helpers'
+import { deleteAchievementProgress } from '#tests/utils/achievement_progress_helpers'
 
 async function createTestGame(tag: string) {
   return Game.create({ name: `Test ${tag} ${Date.now() + Math.random()}`, description: 'd' })
@@ -21,6 +24,7 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
   let service: GameSessionService
 
   deleteGameSession(group)
+  deleteAchievementProgress(group)
 
   group.each.setup(() => {
     service = new GameSessionService()
@@ -101,6 +105,36 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
     const updated = await service.updateGameSession(created.id, {
       status: GameSessionStatus.Completed,
       gameData: { foundCorrect: true, completedAt: new Date().toISOString() } as any,
+    })
+
+    assert.instanceOf(updated, GameSession)
+    if (updated instanceof GameSession) {
+      assert.equal(updated.status, GameSessionStatus.Completed)
+    }
+  })
+
+  test('updateGameSession swallows listener errors so a buggy listener does not 500 the user', async ({
+    assert,
+  }) => {
+    await Achievement.create({
+      type: AchievementType.FirstGame,
+      name: AchievementType.FirstGame.toString(),
+      description: 'd',
+    })
+
+    const game = await createTestGame('emit_listener_err')
+    const created = await service.createGameSession({
+      gameId: game.id,
+      status: GameSessionStatus.Active,
+      players: [{ userId: 'u_ghost', status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: baseGameData(),
+    })
+    assert.instanceOf(created, GameSession)
+    if (!(created instanceof GameSession)) return
+
+    const updated = await service.updateGameSession(created.id, {
+      status: GameSessionStatus.Completed,
+      gameData: baseGameData({ score: 3, maxScore: 5 }) as any,
     })
 
     assert.instanceOf(updated, GameSession)

@@ -226,7 +226,7 @@ export class GameSessionService {
   }
 
   private async emitGameFinished(gameSession: GameSession) {
-    const gameData = (gameSession.gameData ?? {}) as Record<string, any>
+    const gameData = gameSession.gameData as Record<string, any>
     const score = Number(gameData.score ?? 0)
     const maxScore = Number(gameData.maxScore ?? 0)
     const isPerfect = maxScore > 0 && score >= maxScore
