@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node bin/server.js",
     "build": "node ace build",

@@ -226,14 +226,23 @@ export class GameSessionService {
   }
 
   private async emitGameFinished(gameSession: GameSession) {
-    const gameData = gameSession.gameData as Record<string, any>
-    const score = Number(gameData.score ?? 0)
-    const maxScore = Number(gameData.maxScore ?? 0)
+    const gameData =
+      gameSession.gameData &&
+      typeof gameSession.gameData === 'object' &&
+      !Array.isArray(gameSession.gameData)
+        ? (gameSession.gameData as Record<string, unknown>)
+        : {}
+    const toFiniteNumber = (value: unknown) => {
+      const number = Number(value)
+      return Number.isFinite(number) ? number : 0
+    }
+    const score = toFiniteNumber(gameData.score)
+    const maxScore = toFiniteNumber(gameData.maxScore)
     const isPerfect = maxScore > 0 && score >= maxScore
     const answers = Array.isArray(gameData.answers) ? gameData.answers : []
     const correctAnswersCount = answers.filter((a: any) => a?.correct === true).length
-    const durationMs = Math.round(Number(gameData.timeElapsed ?? 0) * 1000)
-    const answerTimes = answers.map((a: any) => Number(a?.durationMs)).filter((t) => t > 0)
+    const durationMs = Math.round(toFiniteNumber(gameData.timeElapsed) * 1000)
+    const answerTimes = answers.map((a: any) => toFiniteNumber(a?.durationMs)).filter((t) => t > 0)
     const fastestAnswerMs = answerTimes.length > 0 ? Math.min(...answerTimes) : undefined
 
     for (const player of gameSession.players) {

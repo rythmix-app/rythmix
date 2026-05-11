@@ -5,6 +5,8 @@ import Game from '#models/game'
 import Achievement from '#models/achievement'
 import { AchievementType } from '#enums/achievement_type'
 import { GameSessionStatus } from '#enums/game_session_status'
+import GameFinished from '#events/game_finished'
+import logger from '@adonisjs/core/services/logger'
 import { deleteGameSession } from '#tests/utils/game_session_helpers'
 import { deleteAchievementProgress } from '#tests/utils/achievement_progress_helpers'
 
@@ -113,6 +115,35 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
     }
   })
 
+  test('updateGameSession tolerates malformed numeric gameData fields (no NaN crash)', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('emit_malformed_numbers')
+    const created = await service.createGameSession({
+      gameId: game.id,
+      status: GameSessionStatus.Active,
+      players: [{ userId: 'u_malformed', status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: baseGameData(),
+    })
+    assert.instanceOf(created, GameSession)
+    if (!(created instanceof GameSession)) return
+
+    const updated = await service.updateGameSession(created.id, {
+      status: GameSessionStatus.Completed,
+      gameData: {
+        score: 'abc',
+        maxScore: null,
+        timeElapsed: 'bad',
+        answers: [{ correct: true, durationMs: 'bad' }],
+      } as any,
+    })
+
+    assert.instanceOf(updated, GameSession)
+    if (updated instanceof GameSession) {
+      assert.equal(updated.status, GameSessionStatus.Completed)
+    }
+  })
+
   test('updateGameSession swallows listener errors so a buggy listener does not 500 the user', async ({
     assert,
   }) => {
@@ -132,12 +163,29 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
     assert.instanceOf(created, GameSession)
     if (!(created instanceof GameSession)) return
 
-    const updated = await service.updateGameSession(created.id, {
-      status: GameSessionStatus.Completed,
-      gameData: baseGameData({ score: 3, maxScore: 5 }) as any,
-    })
+    const originalDispatch = GameFinished.dispatch
+    const originalLoggerError = logger.error
+    let logCalled = false
+    GameFinished.dispatch = (async () => {
+      throw new Error('listener failed')
+    }) as typeof GameFinished.dispatch
+    logger.error = ((..._args: any[]) => {
+      logCalled = true
+    }) as typeof logger.error
+
+    let updated: Awaited<ReturnType<GameSessionService['updateGameSession']>>
+    try {
+      updated = await service.updateGameSession(created.id, {
+        status: GameSessionStatus.Completed,
+        gameData: baseGameData({ score: 3, maxScore: 5 }) as any,
+      })
+    } finally {
+      GameFinished.dispatch = originalDispatch
+      logger.error = originalLoggerError
+    }
 
     assert.instanceOf(updated, GameSession)
+    assert.isTrue(logCalled)
     if (updated instanceof GameSession) {
       assert.equal(updated.status, GameSessionStatus.Completed)
     }
