@@ -115,9 +115,7 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
     }
   })
 
-  test('updateGameSession tolerates malformed numeric gameData fields (no NaN crash)', async ({
-    assert,
-  }) => {
+  test('updateGameSession tolerates malformed numeric gameData fields', async ({ assert }) => {
     const game = await createTestGame('emit_malformed_numbers')
     const created = await service.createGameSession({
       gameId: game.id,
@@ -166,11 +164,13 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
     const originalDispatch = GameFinished.dispatch
     const originalLoggerError = logger.error
     let logCalled = false
+    let loggedMessage: string | undefined
     GameFinished.dispatch = (async () => {
       throw new Error('listener failed')
     }) as typeof GameFinished.dispatch
-    logger.error = ((..._args: any[]) => {
+    logger.error = ((...args: any[]) => {
       logCalled = true
+      loggedMessage = args[1]
     }) as typeof logger.error
 
     let updated: Awaited<ReturnType<GameSessionService['updateGameSession']>>
@@ -186,6 +186,7 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
 
     assert.instanceOf(updated, GameSession)
     assert.isTrue(logCalled)
+    assert.equal(loggedMessage, 'GameFinished listener failed')
     if (updated instanceof GameSession) {
       assert.equal(updated.status, GameSessionStatus.Completed)
     }
