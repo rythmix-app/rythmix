@@ -80,6 +80,35 @@ test.group('GameSessionService — emitGameFinished branches', (group) => {
     }
   })
 
+  test('updateGameSession completes a Blurchette-shape gameData without answers/score (no 500)', async ({
+    assert,
+  }) => {
+    const game = await createTestGame('emit_blurchette')
+    const created = await service.createGameSession({
+      gameId: game.id,
+      status: GameSessionStatus.Active,
+      players: [{ userId: 'u_blur', status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      gameData: {
+        attempts: [],
+        currentBlurLevel: 1,
+        foundCorrect: false,
+        finalBlurLevel: 1,
+      } as any,
+    })
+    assert.instanceOf(created, GameSession)
+    if (!(created instanceof GameSession)) return
+
+    const updated = await service.updateGameSession(created.id, {
+      status: GameSessionStatus.Completed,
+      gameData: { foundCorrect: true, completedAt: new Date().toISOString() } as any,
+    })
+
+    assert.instanceOf(updated, GameSession)
+    if (updated instanceof GameSession) {
+      assert.equal(updated.status, GameSessionStatus.Completed)
+    }
+  })
+
   test('updateGameSession does not re-dispatch when already Completed', async ({ assert }) => {
     const game = await createTestGame('emit_no_re')
     const created = await service.createGameSession({
