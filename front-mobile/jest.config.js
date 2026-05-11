@@ -21,4 +21,7 @@ module.exports = {
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
   testMatch: ["**/__tests__/**/*.test.(ts|tsx|js)"],
+  moduleNameMapper: {
+    "\\.(mp3|m4a|wav|ogg)$": "<rootDir>/__mocks__/fileMock.js",
+  },
 };

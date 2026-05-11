@@ -7,6 +7,7 @@ import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 import OnboardingBanner from "@/components/OnboardingBanner";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
+import SoundSettingsPanel from "@/components/profile/SoundSettingsPanel";
 
 // TODO: à modifier plus tard - remplacer par des données récupérées depuis l'APIii
 const MOCK_STATS = {
@@ -199,6 +200,12 @@ export default function ProfileScreen() {
               color={Colors.dark.icon}
             />
           </Pressable>
+        </View>
+
+        {/* ── Paramètres sonores ── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Paramètres sonores</Text>
+          <SoundSettingsPanel />
         </View>
 
         {/* ── Déconnexion ── */}
