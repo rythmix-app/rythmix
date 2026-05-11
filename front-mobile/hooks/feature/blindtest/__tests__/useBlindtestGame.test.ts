@@ -438,5 +438,4 @@ describe("useBlindtestGame", () => {
     );
     expect(result.current.playlists).toEqual([]);
   });
-
 });
