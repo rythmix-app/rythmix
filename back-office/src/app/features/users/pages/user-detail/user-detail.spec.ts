@@ -12,6 +12,7 @@ import { UserDetail } from './user-detail';
 import { UserService } from '../../../../core/services/user.service';
 import { LikedTrackService } from '../../../../core/services/liked-track.service';
 import { UserAchievementService } from '../../../../core/services/user-achievement.service';
+import { UserSpotifyService } from '../../../../core/services/user-spotify.service';
 import { User } from '../../../../core/models/user.model';
 import { LikedTrack } from '../../../../core/models/liked-track.model';
 import { UserAchievement } from '../../../../core/models/user-achievement.model';
@@ -22,6 +23,7 @@ describe('UserDetail', () => {
   let userService: jasmine.SpyObj<UserService>;
   let likedTrackService: jasmine.SpyObj<LikedTrackService>;
   let userAchievementService: jasmine.SpyObj<UserAchievementService>;
+  let userSpotifyService: jasmine.SpyObj<UserSpotifyService>;
   let router: jasmine.SpyObj<Router>;
   let activatedRoute: {
     snapshot: {
@@ -42,6 +44,16 @@ describe('UserDetail', () => {
     deletedAt: null,
   };
 
+  const buildSpotifyStatus = () => ({
+    connected: true,
+    providerUserId: 'spotify-user',
+    scopes: 'user-top-read',
+    likedPlaylistId: null,
+    linkedAt: '2024-02-01T10:00:00Z',
+    updatedAt: '2024-02-01T10:00:00Z',
+    expiresAt: null,
+  });
+
   beforeEach(async () => {
     const userServiceSpy = jasmine.createSpyObj('UserService', [
       'getUserById',
@@ -56,6 +68,12 @@ describe('UserDetail', () => {
       'UserAchievementService',
       ['getByUserId'],
     );
+    const userSpotifyServiceSpy = jasmine.createSpyObj('UserSpotifyService', [
+      'getStatus',
+      'getTopTracks',
+      'getTopArtists',
+      'getRecentlyPlayed',
+    ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     activatedRoute = {
@@ -77,6 +95,7 @@ describe('UserDetail', () => {
           provide: UserAchievementService,
           useValue: userAchievementServiceSpy,
         },
+        { provide: UserSpotifyService, useValue: userSpotifyServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: ActivatedRoute, useValue: activatedRoute },
       ],
@@ -91,12 +110,23 @@ describe('UserDetail', () => {
     userAchievementService = TestBed.inject(
       UserAchievementService,
     ) as jasmine.SpyObj<UserAchievementService>;
+    userSpotifyService = TestBed.inject(
+      UserSpotifyService,
+    ) as jasmine.SpyObj<UserSpotifyService>;
     router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
 
     // Set default mock return values to prevent errors in tests
     userService.getUserById.and.returnValue(of(mockUser));
     likedTrackService.getByUserId.and.returnValue(of([]));
     userAchievementService.getByUserId.and.returnValue(of([]));
+    userSpotifyService.getStatus.and.returnValue(of(buildSpotifyStatus()));
+    userSpotifyService.getTopTracks.and.returnValue(
+      of({ items: [], total: 0 }),
+    );
+    userSpotifyService.getTopArtists.and.returnValue(
+      of({ items: [], total: 0 }),
+    );
+    userSpotifyService.getRecentlyPlayed.and.returnValue(of({ items: [] }));
   });
 
   afterEach(() => {
@@ -770,6 +800,130 @@ describe('UserDetail', () => {
 
     it('should return 100 for a fully completed achievement', () => {
       expect(component.getAchievementProgress(makeUa(50, 50))).toBe(100);
+    });
+  });
+
+  describe('loadSpotifyData', () => {
+    const mockTrack = {
+      id: 't1',
+      name: 'Some Track',
+      artists: [{ id: 'a1', name: 'Artist A' }],
+      album: {
+        id: 'al1',
+        name: 'Album',
+        images: [{ url: 'https://img/track.jpg' }],
+      },
+    };
+    const mockArtist = {
+      id: 'a1',
+      name: 'Artist A',
+      genres: ['rock', 'indie', 'pop'],
+      images: [{ url: 'https://img/artist.jpg' }],
+    };
+
+    it('should load top tracks, artists and recently played', () => {
+      userSpotifyService.getTopTracks.and.returnValue(
+        of({ items: [mockTrack], total: 1 }),
+      );
+      userSpotifyService.getTopArtists.and.returnValue(
+        of({ items: [mockArtist], total: 1 }),
+      );
+      userSpotifyService.getRecentlyPlayed.and.returnValue(
+        of({ items: [{ track: mockTrack, played_at: '2024-02-02T10:00:00Z' }] }),
+      );
+
+      component.loadSpotifyData('1');
+
+      expect(component.spotifyTopTracks.length).toBe(1);
+      expect(component.spotifyTopArtists.length).toBe(1);
+      expect(component.spotifyRecentlyPlayed.length).toBe(1);
+      expect(component.isLoadingSpotify).toBe(false);
+      expect(component.spotifyError).toBeNull();
+    });
+
+    it('should set spotifyError when a Spotify endpoint fails', () => {
+      userSpotifyService.getTopTracks.and.returnValue(
+        throwError(() => new Error('boom')),
+      );
+      userSpotifyService.getTopArtists.and.returnValue(
+        of({ items: [], total: 0 }),
+      );
+      userSpotifyService.getRecentlyPlayed.and.returnValue(of({ items: [] }));
+
+      component.loadSpotifyData('1');
+
+      expect(component.spotifyError).toContain('Spotify');
+      expect(component.isLoadingSpotify).toBe(false);
+    });
+
+    it('should auto-load Spotify data when user has Spotify linked', () => {
+      userService.getUserById.and.returnValue(
+        of({ ...mockUser, hasSpotify: true }),
+      );
+      userSpotifyService.getTopTracks.and.returnValue(
+        of({ items: [mockTrack], total: 1 }),
+      );
+      userSpotifyService.getTopArtists.and.returnValue(
+        of({ items: [mockArtist], total: 1 }),
+      );
+      userSpotifyService.getRecentlyPlayed.and.returnValue(of({ items: [] }));
+
+      component.ngOnInit();
+
+      expect(userSpotifyService.getTopTracks).toHaveBeenCalledWith('1', {
+        limit: 10,
+      });
+      expect(component.spotifyTopTracks.length).toBe(1);
+    });
+
+    it('should not load Spotify data when user has no Spotify integration', () => {
+      userService.getUserById.and.returnValue(
+        of({ ...mockUser, hasSpotify: false }),
+      );
+
+      component.ngOnInit();
+
+      expect(userSpotifyService.getTopTracks).not.toHaveBeenCalled();
+      expect(userSpotifyService.getTopArtists).not.toHaveBeenCalled();
+      expect(userSpotifyService.getRecentlyPlayed).not.toHaveBeenCalled();
+    });
+
+    it('getArtistNames joins artists with commas', () => {
+      expect(
+        component.getArtistNames({
+          ...mockTrack,
+          artists: [
+            { id: 'a1', name: 'A' },
+            { id: 'a2', name: 'B' },
+          ],
+        }),
+      ).toBe('A, B');
+    });
+
+    it('getArtistNames returns dash when no artist', () => {
+      expect(component.getArtistNames({ ...mockTrack, artists: [] })).toBe('—');
+    });
+
+    it('getTrackImage returns first album image url', () => {
+      expect(component.getTrackImage(mockTrack)).toBe('https://img/track.jpg');
+    });
+
+    it('getTrackImage returns null when no image', () => {
+      expect(
+        component.getTrackImage({ ...mockTrack, album: undefined }),
+      ).toBeNull();
+    });
+
+    it('getArtistImage returns first artist image url', () => {
+      expect(component.getArtistImage(mockArtist)).toBe(
+        'https://img/artist.jpg',
+      );
+    });
+
+    it('getArtistImage returns null when no image', () => {
+      expect(
+        component.getArtistImage({ ...mockArtist, images: [] }),
+      ).toBeNull();
     });
   });
 });

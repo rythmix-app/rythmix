@@ -16,6 +16,8 @@ const ProfileController = () => import('#controllers/profile_controller')
 const SpotifyAuthController = () => import('#controllers/spotify_auth_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
+const AdminUserIntegrationsController = () =>
+  import('#controllers/admin_user_integrations_controller')
 const OnboardingController = () => import('#controllers/onboarding_controller')
 const CuratedPlaylistsController = () => import('#controllers/curated_playlists_controller')
 
@@ -110,6 +112,19 @@ router
           .use(middleware.role({ roles: ['admin'] }))
         router
           .post('/:id/verify', [UsersController, 'verify'])
+          .use(middleware.role({ roles: ['admin'] }))
+
+        router
+          .get('/:id/spotify/status', [AdminUserIntegrationsController, 'spotifyStatus'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .get('/:id/spotify/top-tracks', [AdminUserIntegrationsController, 'topTracks'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .get('/:id/spotify/top-artists', [AdminUserIntegrationsController, 'topArtists'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .get('/:id/spotify/recently-played', [AdminUserIntegrationsController, 'recentlyPlayed'])
           .use(middleware.role({ roles: ['admin'] }))
       })
       .prefix('/users')

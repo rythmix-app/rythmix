@@ -13,7 +13,7 @@
         <input
           type="text"
           placeholder="Rechercher par username ou email..."
-          (input)="applyFilter($event)"
+          (input)="onSearchInput($event)"
           class="search-input"
         />
         <i class="fas fa-search search-icon"></i>
@@ -28,6 +28,17 @@
         />
         <span class="toggle-slider"></span>
         <span class="toggle-label">Inclure les supprimés</span>
+      </label>
+
+      <label class="toggle-deleted">
+        <input
+          type="checkbox"
+          [(ngModel)]="withSpotifyOnly"
+          (change)="toggleWithSpotifyOnly()"
+          class="toggle-input"
+        />
+        <span class="toggle-slider"></span>
+        <span class="toggle-label">Avec Spotify uniquement</span>
       </label>
     </div>
 
@@ -101,6 +112,20 @@
                 </th>
                 <th>STATUT</th>
                 <th>VÉRIFIÉ</th>
+                <th (click)="sortBy('hasSpotify')" class="sortable">
+                  SPOTIFY
+                  <i
+                    class="fas"
+                    [class.fa-sort]="sortColumn !== 'hasSpotify'"
+                    [class.fa-sort-up]="
+                      sortColumn === 'hasSpotify' && sortDirection === 'asc'
+                    "
+                    [class.fa-sort-down]="
+                      sortColumn === 'hasSpotify' && sortDirection === 'desc'
+                    "
+                    [class.active]="sortColumn === 'hasSpotify'"
+                  ></i>
+                </th>
                 <th class="actions-header"></th>
               </tr>
             </thead>
@@ -157,6 +182,18 @@
                       {{ user.emailVerifiedAt ? "Oui" : "Non" }}
                     </span>
                   </td>
+                  <td>
+                    @if (user.hasSpotify) {
+                      <span class="badge badge-spotify" title="Compte Spotify lié">
+                        <i class="fab fa-spotify"></i>
+                        Lié
+                      </span>
+                    } @else {
+                      <span class="badge badge-muted" title="Pas de compte Spotify lié">
+                        —
+                      </span>
+                    }
+                  </td>
                   <td class="actions-cell">
                     @if (!isUserDeleted(user)) {
                       <button
@@ -194,7 +231,7 @@
                 </tr>
               } @empty {
                 <tr class="no-data-row">
-                  <td colspan="7">Aucun utilisateur trouvé</td>
+                  <td colspan="8">Aucun utilisateur trouvé</td>
                 </tr>
               }
             </tbody>

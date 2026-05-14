@@ -19,6 +19,8 @@ export class UsersList implements OnInit {
   filters: UserFilters = {
     includeDeleted: false,
   };
+  withSpotifyOnly = false;
+  searchTerm = '';
 
   userService = inject(UserService);
   authService = inject(AuthService);
@@ -42,9 +44,7 @@ export class UsersList implements OnInit {
     this.userService.getUsers(this.filters).subscribe({
       next: (users) => {
         this.allUsers = users;
-        this.filteredUsers = [...users];
-        this.currentPage = 0;
-        this.updatePagination();
+        this.applyFilters();
         this.isLoading = false;
       },
       error: (error) => {
@@ -58,21 +58,33 @@ export class UsersList implements OnInit {
     });
   }
 
-  applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value
+  onSearchInput(event: Event): void {
+    this.searchTerm = (event.target as HTMLInputElement).value
       .toLowerCase()
       .trim();
+    this.applyFilters();
+  }
 
-    if (!filterValue) {
-      this.filteredUsers = [...this.allUsers];
-    } else {
-      this.filteredUsers = this.allUsers.filter(
+  toggleWithSpotifyOnly(): void {
+    this.applyFilters();
+  }
+
+  private applyFilters(): void {
+    let result = this.allUsers;
+
+    if (this.searchTerm) {
+      result = result.filter(
         (user) =>
-          user.username.toLowerCase().includes(filterValue) ||
-          user.email.toLowerCase().includes(filterValue),
+          user.username.toLowerCase().includes(this.searchTerm) ||
+          user.email.toLowerCase().includes(this.searchTerm),
       );
     }
 
+    if (this.withSpotifyOnly) {
+      result = result.filter((user) => user.hasSpotify === true);
+    }
+
+    this.filteredUsers = result;
     this.currentPage = 0;
     this.updatePagination();
   }
@@ -90,17 +102,17 @@ export class UsersList implements OnInit {
     }
 
     this.filteredUsers.sort((a, b) => {
-      let aValue: string | number | Date | null | undefined =
+      let aValue: string | number | boolean | Date | null | undefined =
         a[column as keyof User];
-      let bValue: string | number | Date | null | undefined =
+      let bValue: string | number | boolean | Date | null | undefined =
         b[column as keyof User];
 
       if (aValue === null || aValue === undefined) return 1;
       if (bValue === null || bValue === undefined) return -1;
 
       if (column === 'createdAt') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
+        aValue = new Date(aValue as string | number | Date).getTime();
+        bValue = new Date(bValue as string | number | Date).getTime();
       }
 
       if (aValue < bValue) return this.sortDirection === 'asc' ? -1 : 1;

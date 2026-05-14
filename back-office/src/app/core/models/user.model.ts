@@ -10,6 +10,7 @@ export interface User {
   createdAt: Date;
   updatedAt?: Date | null;
   deletedAt?: Date | null;
+  hasSpotify?: boolean;
 }
 
 export interface CreateUserDto {

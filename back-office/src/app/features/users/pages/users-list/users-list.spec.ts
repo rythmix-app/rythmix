@@ -122,7 +122,7 @@ describe('UsersList', () => {
     });
   });
 
-  describe('applyFilter', () => {
+  describe('onSearchInput', () => {
     beforeEach(() => {
       component.allUsers = mockUsers;
       component.filteredUsers = mockUsers;
@@ -131,7 +131,7 @@ describe('UsersList', () => {
     it('should filter users by username', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: 'admin' } } as any;
-      component.applyFilter(event);
+      component.onSearchInput(event);
 
       expect(component.filteredUsers.length).toBe(1);
       expect(component.filteredUsers[0].username).toBe('admin');
@@ -140,7 +140,7 @@ describe('UsersList', () => {
     it('should filter users by email', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: 'john@' } } as any;
-      component.applyFilter(event);
+      component.onSearchInput(event);
 
       expect(component.filteredUsers.length).toBe(1);
       expect(component.filteredUsers[0].email).toBe('john@example.com');
@@ -151,7 +151,7 @@ describe('UsersList', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: '' } } as any;
 
-      component.applyFilter(event);
+      component.onSearchInput(event);
 
       expect(component.filteredUsers.length).toBe(3);
     });
@@ -159,7 +159,7 @@ describe('UsersList', () => {
     it('should be case insensitive', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: 'ADMIN' } } as any;
-      component.applyFilter(event);
+      component.onSearchInput(event);
 
       expect(component.filteredUsers.length).toBe(1);
       expect(component.filteredUsers[0].username).toBe('admin');
@@ -170,7 +170,7 @@ describe('UsersList', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: 'test' } } as any;
 
-      component.applyFilter(event);
+      component.onSearchInput(event);
 
       expect(component.currentPage).toBe(0);
     });
@@ -447,6 +447,46 @@ describe('UsersList', () => {
       component.toggleIncludeDeleted();
 
       expect(userService.getUsers).toHaveBeenCalled();
+    });
+  });
+
+  describe('toggleWithSpotifyOnly', () => {
+    const spotifyUsers: User[] = [
+      { ...mockUsers[0], hasSpotify: true },
+      { ...mockUsers[1], hasSpotify: false },
+      { ...mockUsers[2], hasSpotify: true },
+    ];
+
+    it('should keep only users with Spotify when toggle is on', () => {
+      component.allUsers = spotifyUsers;
+      component.withSpotifyOnly = true;
+
+      component.toggleWithSpotifyOnly();
+
+      expect(component.filteredUsers.length).toBe(2);
+      expect(component.filteredUsers.every((u) => u.hasSpotify === true)).toBe(
+        true,
+      );
+    });
+
+    it('should restore all users when toggle is off', () => {
+      component.allUsers = spotifyUsers;
+      component.withSpotifyOnly = false;
+
+      component.toggleWithSpotifyOnly();
+
+      expect(component.filteredUsers.length).toBe(3);
+    });
+
+    it('should combine search and Spotify filters', () => {
+      component.allUsers = spotifyUsers;
+      component.searchTerm = 'john';
+      component.withSpotifyOnly = true;
+
+      component.toggleWithSpotifyOnly();
+
+      expect(component.filteredUsers.length).toBe(1);
+      expect(component.filteredUsers[0].username).toBe('user1');
     });
   });
 });

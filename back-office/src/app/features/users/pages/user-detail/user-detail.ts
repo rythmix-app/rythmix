@@ -8,9 +8,16 @@ import {
 } from '../../../../core/models/user.model';
 import { LikedTrack } from '../../../../core/models/liked-track.model';
 import { UserAchievement } from '../../../../core/models/user-achievement.model';
+import {
+  SpotifyArtist,
+  SpotifyRecentlyPlayedItem,
+  SpotifyTrack,
+  UserSpotifyStatus,
+} from '../../../../core/models/user-spotify.model';
 import { UserService } from '../../../../core/services/user.service';
 import { LikedTrackService } from '../../../../core/services/liked-track.service';
 import { UserAchievementService } from '../../../../core/services/user-achievement.service';
+import { UserSpotifyService } from '../../../../core/services/user-spotify.service';
 
 @Component({
   standalone: false,
@@ -29,12 +36,21 @@ export class UserDetail implements OnInit {
   isLoading = false;
   isSubmitting = false;
   isVerifying = false;
+
+  spotifyStatus: UserSpotifyStatus | null = null;
+  spotifyTopTracks: SpotifyTrack[] = [];
+  spotifyTopArtists: SpotifyArtist[] = [];
+  spotifyRecentlyPlayed: SpotifyRecentlyPlayedItem[] = [];
+  isLoadingSpotify = false;
+  spotifyError: string | null = null;
+
   route = inject(ActivatedRoute);
   router = inject(Router);
   fb = inject(FormBuilder);
   userService = inject(UserService);
   likedTrackService = inject(LikedTrackService);
   userAchievementService = inject(UserAchievementService);
+  userSpotifyService = inject(UserSpotifyService);
   private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
@@ -85,6 +101,9 @@ export class UserDetail implements OnInit {
         this.isLoading = false;
         this.loadLikedTracks(user.id);
         this.loadUserAchievements(user.id);
+        if (user.hasSpotify) {
+          this.loadSpotifyData(user.id);
+        }
       },
       error: (error) => {
         console.error('Error loading user:', error);
@@ -134,6 +153,56 @@ export class UserDetail implements OnInit {
       100,
       Math.round((ua.currentProgress / ua.requiredProgress) * 100),
     );
+  }
+
+  loadSpotifyData(userId: string): void {
+    this.isLoadingSpotify = true;
+    this.spotifyError = null;
+
+    this.userSpotifyService.getStatus(userId).subscribe({
+      next: (status) => (this.spotifyStatus = status),
+      error: () => (this.spotifyStatus = null),
+    });
+
+    this.userSpotifyService.getTopTracks(userId, { limit: 10 }).subscribe({
+      next: (response) => (this.spotifyTopTracks = response.items ?? []),
+      error: () => this.handleSpotifyLoadError(),
+    });
+
+    this.userSpotifyService.getTopArtists(userId, { limit: 10 }).subscribe({
+      next: (response) => (this.spotifyTopArtists = response.items ?? []),
+      error: () => this.handleSpotifyLoadError(),
+    });
+
+    this.userSpotifyService.getRecentlyPlayed(userId, { limit: 10 }).subscribe({
+      next: (response) => {
+        this.spotifyRecentlyPlayed = response.items ?? [];
+        this.isLoadingSpotify = false;
+      },
+      error: () => {
+        this.isLoadingSpotify = false;
+        this.handleSpotifyLoadError();
+      },
+    });
+  }
+
+  private handleSpotifyLoadError(): void {
+    if (!this.spotifyError) {
+      this.spotifyError =
+        'Impossible de récupérer les données Spotify de cet utilisateur';
+    }
+  }
+
+  getArtistNames(track: SpotifyTrack): string {
+    return (track.artists ?? []).map((a) => a.name).join(', ') || '—';
+  }
+
+  getTrackImage(track: SpotifyTrack): string | null {
+    return track.album?.images?.[0]?.url ?? null;
+  }
+
+  getArtistImage(artist: SpotifyArtist): string | null {
+    return artist.images?.[0]?.url ?? null;
   }
 
   deleteLikedTrack(track: LikedTrack): void {

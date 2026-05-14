@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
-import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, column, computed } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { randomUUID } from 'node:crypto'
@@ -107,6 +107,15 @@ export default class User extends compose(BaseModel, AuthFinder) {
   get fullName() {
     const parts = [this.firstName, this.lastName].filter((part) => part && part !== null)
     return parts.length > 0 ? parts.join(' ') : ''
+  }
+
+  @ApiProperty({
+    description: 'Whether the user has linked a Spotify account',
+    example: true,
+  })
+  @computed()
+  get hasSpotify(): boolean {
+    return Number(this.$extras.spotify_count ?? 0) > 0
   }
 
   @beforeCreate()

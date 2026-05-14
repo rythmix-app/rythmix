@@ -166,6 +166,160 @@
           </div>
         </div>
 
+        @if (user.hasSpotify) {
+          <div class="spotify-section">
+            <div class="spotify-section-header">
+              <h2 class="card-title">
+                <i class="fab fa-spotify"></i>
+                Spotify
+                @if (spotifyStatus?.providerUserId) {
+                  <span class="card-count mono">
+                    &#64;{{ spotifyStatus!.providerUserId }}
+                  </span>
+                }
+              </h2>
+              @if (spotifyStatus?.linkedAt) {
+                <span class="spotify-meta">
+                  Lié le
+                  {{ spotifyStatus!.linkedAt | date: "dd/MM/yyyy HH:mm" }}
+                </span>
+              }
+            </div>
+
+            @if (spotifyError) {
+              <div class="spotify-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ spotifyError }}
+              </div>
+            }
+
+            @if (isLoadingSpotify) {
+              <div class="spotify-loading">
+                <div class="spinner"></div>
+              </div>
+            }
+
+            <div class="spotify-grid">
+              <div class="card">
+                <h3 class="card-subtitle">
+                  Top tracks
+                  <span class="card-count">{{ spotifyTopTracks.length }}</span>
+                </h3>
+                @if (spotifyTopTracks.length === 0 && !isLoadingSpotify) {
+                  <p class="empty-state">Aucun top track</p>
+                } @else {
+                  <div class="item-list">
+                    @for (track of spotifyTopTracks; track track.id) {
+                      <div class="list-item">
+                        @if (getTrackImage(track); as img) {
+                          <img
+                            [src]="img"
+                            alt=""
+                            class="item-cover"
+                            loading="lazy"
+                          />
+                        } @else {
+                          <div class="item-icon music-icon">
+                            <i class="fas fa-music"></i>
+                          </div>
+                        }
+                        <div class="item-info">
+                          <span class="item-title">{{ track.name }}</span>
+                          <span class="item-sub">{{
+                            getArtistNames(track)
+                          }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="card">
+                <h3 class="card-subtitle">
+                  Top artistes
+                  <span class="card-count">{{
+                    spotifyTopArtists.length
+                  }}</span>
+                </h3>
+                @if (spotifyTopArtists.length === 0 && !isLoadingSpotify) {
+                  <p class="empty-state">Aucun top artiste</p>
+                } @else {
+                  <div class="item-list">
+                    @for (artist of spotifyTopArtists; track artist.id) {
+                      <div class="list-item">
+                        @if (getArtistImage(artist); as img) {
+                          <img
+                            [src]="img"
+                            alt=""
+                            class="item-cover round"
+                            loading="lazy"
+                          />
+                        } @else {
+                          <div class="item-icon music-icon">
+                            <i class="fas fa-user"></i>
+                          </div>
+                        }
+                        <div class="item-info">
+                          <span class="item-title">{{ artist.name }}</span>
+                          <span class="item-sub">{{
+                            (artist.genres || []).slice(0, 2).join(", ") || "—"
+                          }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div class="card">
+                <h3 class="card-subtitle">
+                  Récemment écouté
+                  <span class="card-count">{{
+                    spotifyRecentlyPlayed.length
+                  }}</span>
+                </h3>
+                @if (
+                  spotifyRecentlyPlayed.length === 0 && !isLoadingSpotify
+                ) {
+                  <p class="empty-state">Aucune écoute récente</p>
+                } @else {
+                  <div class="item-list">
+                    @for (
+                      entry of spotifyRecentlyPlayed;
+                      track entry.played_at
+                    ) {
+                      <div class="list-item">
+                        @if (getTrackImage(entry.track); as img) {
+                          <img
+                            [src]="img"
+                            alt=""
+                            class="item-cover"
+                            loading="lazy"
+                          />
+                        } @else {
+                          <div class="item-icon music-icon">
+                            <i class="fas fa-music"></i>
+                          </div>
+                        }
+                        <div class="item-info">
+                          <span class="item-title">{{ entry.track.name }}</span>
+                          <span class="item-sub">{{
+                            getArtistNames(entry.track)
+                          }}</span>
+                        </div>
+                        <span class="item-meta mono">
+                          {{ entry.played_at | date: "dd/MM HH:mm" }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
         <!-- Grille listes : tracks | achievements -->
         <div class="lists-grid">
           <div class="card">

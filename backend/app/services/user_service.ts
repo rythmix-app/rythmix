@@ -1,13 +1,24 @@
 import User from '#models/user'
 import { DateTime } from 'luxon'
+import { IntegrationProvider } from '#enums/integration_provider'
 
 export class UserService {
   public async getAll() {
-    return User.query().whereNull('deleted_at')
+    return User.query()
+      .whereNull('deleted_at')
+      .withCount('integrations', (query) => {
+        query.where('provider', IntegrationProvider.SPOTIFY).as('spotify_count')
+      })
   }
 
   public async getById(userId: string) {
-    return User.query().where('id', userId).whereNull('deleted_at').first()
+    return User.query()
+      .where('id', userId)
+      .whereNull('deleted_at')
+      .withCount('integrations', (query) => {
+        query.where('provider', IntegrationProvider.SPOTIFY).as('spotify_count')
+      })
+      .first()
   }
 
   public async updateUser(userId: string, payload: Partial<User>) {
@@ -90,11 +101,17 @@ export class UserService {
   }
 
   public async getAllWithTrashed() {
-    return User.query()
+    return User.query().withCount('integrations', (query) => {
+      query.where('provider', IntegrationProvider.SPOTIFY).as('spotify_count')
+    })
   }
 
   public async getOnlyTrashed() {
-    return User.query().whereNotNull('deleted_at')
+    return User.query()
+      .whereNotNull('deleted_at')
+      .withCount('integrations', (query) => {
+        query.where('provider', IntegrationProvider.SPOTIFY).as('spotify_count')
+      })
   }
 
   public async createUser(payload: {

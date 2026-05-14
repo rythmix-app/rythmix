@@ -210,7 +210,10 @@ $pagination-height: 52px;
         width: 85px;
       }
       thead th:nth-child(6) {
-        width: 130px;
+        width: 110px;
+      }
+      thead th:nth-child(7) {
+        width: 110px;
       }
 
       thead tr {
@@ -332,6 +335,23 @@ $pagination-height: 52px;
           background: var(--danger-dim);
           color: var(--danger);
           border: 1px solid rgba(224, 85, 85, 0.25);
+        }
+
+        &.badge-spotify {
+          background: rgba(30, 215, 96, 0.12);
+          color: #1ed760;
+          border: 1px solid rgba(30, 215, 96, 0.3);
+          gap: 5px;
+
+          i {
+            font-size: 12px;
+          }
+        }
+
+        &.badge-muted {
+          background: transparent;
+          color: var(--text-secondary);
+          border: 1px dashed var(--border);
         }
       }
 
