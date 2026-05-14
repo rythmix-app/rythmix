@@ -13,10 +13,27 @@
         <input
           type="text"
           placeholder="Rechercher par nom, type ou description..."
-          (input)="applyFilter($event)"
+          (input)="onSearch($event)"
           class="search-input"
         />
         <i class="fas fa-search search-icon"></i>
+      </div>
+
+      <div class="dropdown-filter">
+        <label for="typeFilter" class="filter-label">Type :</label>
+        <div class="select-wrapper">
+          <select
+            id="typeFilter"
+            class="filter-select"
+            (change)="onTypeFilterChange($event)"
+          >
+            <option value="">Tous</option>
+            @for (type of typeOptions; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
       </div>
     </div>
 

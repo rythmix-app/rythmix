@@ -26,6 +26,10 @@ export class GamesList implements OnInit {
   sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
+  searchValue = '';
+  enabledFilter: '' | 'on' | 'off' = '';
+  multiplayerFilter: '' | 'solo' | 'multi' = '';
+
   private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
@@ -37,9 +41,7 @@ export class GamesList implements OnInit {
     this.gameService.getGames().subscribe({
       next: (games) => {
         this.allGames = games;
-        this.filteredGames = [...games];
-        this.currentPage = 0;
-        this.updatePagination();
+        this.applyFilters();
         this.isLoading = false;
       },
       error: (error) => {
@@ -50,21 +52,51 @@ export class GamesList implements OnInit {
     });
   }
 
-  applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value
+  onSearch(event: Event): void {
+    this.searchValue = (event.target as HTMLInputElement).value
       .toLowerCase()
       .trim();
+    this.applyFilters();
+  }
 
-    if (filterValue) {
-      this.filteredGames = this.allGames.filter(
+  onEnabledFilterChange(event: Event): void {
+    this.enabledFilter = (event.target as HTMLSelectElement).value as
+      | ''
+      | 'on'
+      | 'off';
+    this.applyFilters();
+  }
+
+  onMultiplayerFilterChange(event: Event): void {
+    this.multiplayerFilter = (event.target as HTMLSelectElement).value as
+      | ''
+      | 'solo'
+      | 'multi';
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let result = [...this.allGames];
+
+    if (this.searchValue) {
+      result = result.filter(
         (g) =>
-          g.name.toLowerCase().includes(filterValue) ||
-          g.description?.toLowerCase().includes(filterValue),
+          g.name.toLowerCase().includes(this.searchValue) ||
+          g.description?.toLowerCase().includes(this.searchValue),
       );
-    } else {
-      this.filteredGames = [...this.allGames];
     }
 
+    if (this.enabledFilter) {
+      const wantEnabled = this.enabledFilter === 'on';
+      result = result.filter((g) => g.isEnabled === wantEnabled);
+    }
+
+    if (this.multiplayerFilter) {
+      const wantMulti = this.multiplayerFilter === 'multi';
+      result = result.filter((g) => g.isMultiplayer === wantMulti);
+    }
+
+    this.filteredGames = result;
     this.currentPage = 0;
     this.updatePagination();
   }
