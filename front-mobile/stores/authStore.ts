@@ -30,11 +30,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
   // Handler pour déconnexion (401 sans refresh ou échec du refresh)
   setUnauthorizedHandler(() => {
     const wasAuthenticated = get().isAuthenticated;
+    // isInitializing: false unblocks the splash if 401 fires during the
+    // initial checkAuth, before its own catch block resets the flag.
     set({
       user: null,
       token: null,
       refreshToken: null,
       isAuthenticated: false,
+      isInitializing: false,
     });
     storage.clearAll().catch((error) => {
       console.error("Failed to clear storage on unauthorized:", error);

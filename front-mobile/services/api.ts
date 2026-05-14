@@ -2,6 +2,7 @@ import { getToken, getRefreshToken } from "./storage";
 import { ApiError } from "@/types/auth";
 
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+const REQUEST_TIMEOUT_MS = 15000;
 
 // Gestion du refresh en cours
 let isRefreshing = false;
@@ -32,7 +33,7 @@ let pendingRequests: PendingRequest[] = [];
 
 interface RequestOptions extends RequestInit {
   skipAuth?: boolean;
-  _isRetry?: boolean; // Flag interne pour éviter les boucles infinies
+  skipRefresh?: boolean; // Skip the 401→refresh→retry loop (used internally after retry, and externally by /api/auth/refresh itself to avoid recursion)
 }
 
 // Fonction pour gérer le refresh du token
@@ -124,8 +125,9 @@ const handleResponse = async <T>(
   options: RequestOptions,
 ): Promise<T> => {
   if (response.status === 401) {
-    // Si c'est un retry, ne pas réessayer le refresh (éviter boucles infinies)
-    if (options._isRetry) {
+    // Skip the refresh loop on requests already retried or on the refresh
+    // endpoint itself — otherwise handleTokenRefresh awaits its own promise.
+    if (options.skipRefresh) {
       if (onUnauthorized) onUnauthorized();
       const error: ApiError = {
         message: "Non autorisé",
@@ -138,7 +140,7 @@ const handleResponse = async <T>(
     const refreshToken = await getRefreshToken();
     if (refreshToken) {
       // Tenter le refresh
-      return handleTokenRefresh(endpoint, { ...options, _isRetry: true });
+      return handleTokenRefresh(endpoint, { ...options, skipRefresh: true });
     } else {
       // Pas de refreshToken: déconnecter
       if (onUnauthorized) onUnauthorized();
@@ -196,10 +198,19 @@ export const apiClient = async <T>(
 
   const url = `${BASE_URL}${endpoint}`;
 
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...fetchOptions,
+      headers,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   return handleResponse<T>(response, endpoint, options);
 };
