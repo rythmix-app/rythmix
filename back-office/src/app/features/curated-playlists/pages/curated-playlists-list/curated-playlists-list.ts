@@ -51,10 +51,7 @@ export class CuratedPlaylistsList implements OnInit {
         this.isLoading = false;
       },
       error: () => {
-        this.showSnackbar(
-          'Erreur lors du chargement des playlists',
-          'error',
-        );
+        this.showSnackbar('Erreur lors du chargement des playlists', 'error');
         this.isLoading = false;
       },
     });
@@ -73,9 +70,9 @@ export class CuratedPlaylistsList implements OnInit {
   }
 
   uniqueGenres(): string[] {
-    return Array.from(
-      new Set(this.allPlaylists.map((p) => p.genreLabel)),
-    ).sort((a, b) => a.localeCompare(b));
+    return Array.from(new Set(this.allPlaylists.map((p) => p.genreLabel))).sort(
+      (a, b) => a.localeCompare(b),
+    );
   }
 
   applyFilters(): void {

@@ -74,9 +74,7 @@ describe('CuratedPlaylistsList', () => {
   });
 
   afterEach(() => {
-    document
-      .querySelectorAll('.custom-snackbar')
-      .forEach((el) => el.remove());
+    document.querySelectorAll('.custom-snackbar').forEach((el) => el.remove());
   });
 
   it('should be created', () => {

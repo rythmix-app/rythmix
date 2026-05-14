@@ -111,7 +111,10 @@
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s, background 0.15s, border-color 0.15s;
+      transition:
+        opacity 0.15s,
+        background 0.15s,
+        border-color 0.15s;
     }
 
     .secondary-btn {

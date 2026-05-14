@@ -207,20 +207,20 @@
   </div>
 
   @switch (dialog.kind) {
-    @case ('import') {
+    @case ("import") {
       <app-import-curated-playlist-dialog
         (cancelled)="closeDialog()"
         (confirmed)="onImportConfirmed($event)"
       ></app-import-curated-playlist-dialog>
     }
-    @case ('rename') {
+    @case ("rename") {
       <app-rename-curated-playlist-dialog
         [initialName]="dialog.playlist.name"
         (cancelled)="closeDialog()"
         (confirmed)="onRenameConfirmed($event)"
       ></app-rename-curated-playlist-dialog>
     }
-    @case ('delete') {
+    @case ("delete") {
       <app-confirm-delete-curated-playlist-dialog
         [playlistName]="dialog.playlist.name"
         (cancelled)="closeDialog()"

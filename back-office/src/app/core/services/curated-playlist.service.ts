@@ -38,10 +38,7 @@ export class CuratedPlaylistService {
 
   refreshPlaylist(id: number): Observable<CuratedPlaylist> {
     return this.api
-      .post<{ playlist: CuratedPlaylist }>(
-        `${this.endpoint}/${id}/refresh`,
-        {},
-      )
+      .post<{ playlist: CuratedPlaylist }>(`${this.endpoint}/${id}/refresh`, {})
       .pipe(map((response) => response.playlist));
   }
 
