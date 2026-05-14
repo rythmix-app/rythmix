@@ -26,6 +26,10 @@ export class AchievementsList implements OnInit {
   sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
+  searchValue = '';
+  typeFilter = '';
+  typeOptions: string[] = [];
+
   private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
@@ -37,9 +41,10 @@ export class AchievementsList implements OnInit {
     this.achievementService.getAchievements().subscribe({
       next: (achievements) => {
         this.allAchievements = achievements;
-        this.filteredAchievements = [...achievements];
-        this.currentPage = 0;
-        this.updatePagination();
+        this.typeOptions = Array.from(
+          new Set(achievements.map((a) => a.type).filter((t) => !!t)),
+        ).sort();
+        this.applyFilters();
         this.isLoading = false;
       },
       error: (error) => {
@@ -50,22 +55,36 @@ export class AchievementsList implements OnInit {
     });
   }
 
-  applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value
+  onSearch(event: Event): void {
+    this.searchValue = (event.target as HTMLInputElement).value
       .toLowerCase()
       .trim();
+    this.applyFilters();
+  }
 
-    if (!filterValue) {
-      this.filteredAchievements = [...this.allAchievements];
-    } else {
-      this.filteredAchievements = this.allAchievements.filter(
+  onTypeFilterChange(event: Event): void {
+    this.typeFilter = (event.target as HTMLSelectElement).value;
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let result = [...this.allAchievements];
+
+    if (this.searchValue) {
+      result = result.filter(
         (a) =>
-          a.name.toLowerCase().includes(filterValue) ||
-          a.type.toLowerCase().includes(filterValue) ||
-          (a.description && a.description.toLowerCase().includes(filterValue)),
+          a.name.toLowerCase().includes(this.searchValue) ||
+          a.type.toLowerCase().includes(this.searchValue) ||
+          (a.description &&
+            a.description.toLowerCase().includes(this.searchValue)),
       );
     }
 
+    if (this.typeFilter) {
+      result = result.filter((a) => a.type === this.typeFilter);
+    }
+
+    this.filteredAchievements = result;
     this.currentPage = 0;
     this.updatePagination();
   }

@@ -15,7 +15,7 @@
         <i class="fas fa-search search-icon"></i>
       </div>
 
-      <div class="status-filter">
+      <div class="dropdown-filter">
         <label for="statusFilter" class="filter-label">Statut :</label>
         <div class="select-wrapper">
           <select
@@ -26,6 +26,23 @@
             <option value="">Tous</option>
             @for (status of statusOptions; track status) {
               <option [value]="status">{{ status }}</option>
+            }
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
+      </div>
+
+      <div class="dropdown-filter">
+        <label for="gameFilter" class="filter-label">Jeu :</label>
+        <div class="select-wrapper">
+          <select
+            id="gameFilter"
+            class="filter-select"
+            (change)="onGameFilterChange($event)"
+          >
+            <option value="">Tous</option>
+            @for (game of games; track game.id) {
+              <option [value]="game.id">{{ game.name }}</option>
             }
           </select>
           <span class="select-arrow">▼</span>

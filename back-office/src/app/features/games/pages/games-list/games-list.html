@@ -9,10 +9,42 @@
         <input
           type="text"
           placeholder="Rechercher par nom ou description..."
-          (input)="applyFilter($event)"
+          (input)="onSearch($event)"
           class="search-input"
         />
         <i class="fas fa-search search-icon"></i>
+      </div>
+
+      <div class="dropdown-filter">
+        <label for="enabledFilter" class="filter-label">Activé :</label>
+        <div class="select-wrapper">
+          <select
+            id="enabledFilter"
+            class="filter-select"
+            (change)="onEnabledFilterChange($event)"
+          >
+            <option value="">Tous</option>
+            <option value="on">ON</option>
+            <option value="off">OFF</option>
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
+      </div>
+
+      <div class="dropdown-filter">
+        <label for="multiplayerFilter" class="filter-label">Mode :</label>
+        <div class="select-wrapper">
+          <select
+            id="multiplayerFilter"
+            class="filter-select"
+            (change)="onMultiplayerFilterChange($event)"
+          >
+            <option value="">Tous</option>
+            <option value="solo">Solo</option>
+            <option value="multi">Multi</option>
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
       </div>
     </div>
 
