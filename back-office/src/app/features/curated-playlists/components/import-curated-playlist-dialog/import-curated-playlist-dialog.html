@@ -1,0 +1,56 @@
+<div
+  class="dialog-backdrop"
+  (click)="onCancel()"
+  (keydown.escape)="onCancel()"
+  role="button"
+  tabindex="-1"
+>
+  <div
+    class="dialog-card"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <div class="dialog-header">
+      <h2>Importer une playlist</h2>
+      <button class="close-btn" (click)="onCancel()" aria-label="Fermer">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="dialog-body">
+      <div class="field">
+        <label for="import-url">URL Deezer</label>
+        <input
+          id="import-url"
+          type="text"
+          placeholder="https://www.deezer.com/fr/playlist/..."
+          [(ngModel)]="url"
+        />
+        @if (urlError) {
+          <span class="field-error">{{ urlError }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="import-genre">Genre</label>
+        <input
+          id="import-genre"
+          type="text"
+          placeholder="Ex : Rap FR, Pop, Rock…"
+          [(ngModel)]="genreLabel"
+        />
+        @if (genreError) {
+          <span class="field-error">{{ genreError }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <button class="secondary-btn" (click)="onCancel()">Annuler</button>
+      <button class="primary-btn" (click)="onConfirm()">Importer</button>
+    </div>
+  </div>
+</div>

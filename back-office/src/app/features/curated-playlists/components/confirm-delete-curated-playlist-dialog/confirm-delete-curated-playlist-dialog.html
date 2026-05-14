@@ -1,0 +1,35 @@
+<div
+  class="dialog-backdrop"
+  (click)="onCancel()"
+  (keydown.escape)="onCancel()"
+  role="button"
+  tabindex="-1"
+>
+  <div
+    class="dialog-card"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <div class="dialog-header">
+      <h2>Supprimer la playlist</h2>
+      <button class="close-btn" (click)="onCancel()" aria-label="Fermer">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="dialog-body">
+      <p>
+        La playlist <strong>{{ playlistName }}</strong> sera retirée du
+        catalogue Blindtest. Cette action est irréversible.
+      </p>
+    </div>
+
+    <div class="dialog-footer">
+      <button class="secondary-btn" (click)="onCancel()">Annuler</button>
+      <button class="danger-btn" (click)="onConfirm()">Supprimer</button>
+    </div>
+  </div>
+</div>

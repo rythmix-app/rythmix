@@ -1,0 +1,231 @@
+<div class="curated-page">
+  <div class="page-header">
+    <h1 class="page-title">PLAYLISTS BLINDTEST</h1>
+    <button class="primary-btn" (click)="openImportDialog()">
+      <i class="fas fa-plus"></i>
+      Importer
+    </button>
+  </div>
+
+  <div class="page-content">
+    <div class="filters-bar">
+      <div class="search-field">
+        <input
+          type="text"
+          placeholder="Rechercher par nom ou genre..."
+          (input)="onSearch($event)"
+          class="search-input"
+        />
+        <i class="fas fa-search search-icon"></i>
+      </div>
+
+      <div class="dropdown-filter">
+        <label for="genreFilter" class="filter-label">Genre :</label>
+        <div class="select-wrapper">
+          <select
+            id="genreFilter"
+            class="filter-select"
+            (change)="onGenreFilterChange($event)"
+          >
+            <option value="">Tous</option>
+            @for (g of uniqueGenres(); track g) {
+              <option [value]="g">{{ g }}</option>
+            }
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
+      </div>
+    </div>
+
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+      </div>
+    }
+
+    @if (!isLoading) {
+      <div class="table-wrapper">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="cover-header"></th>
+                <th (click)="sortBy('name')" class="sortable">
+                  NOM
+                  <i
+                    class="fas"
+                    [class.fa-sort]="sortColumn !== 'name'"
+                    [class.fa-sort-up]="
+                      sortColumn === 'name' && sortDirection === 'asc'
+                    "
+                    [class.fa-sort-down]="
+                      sortColumn === 'name' && sortDirection === 'desc'
+                    "
+                  ></i>
+                </th>
+                <th (click)="sortBy('genreLabel')" class="sortable">
+                  GENRE
+                  <i
+                    class="fas"
+                    [class.fa-sort]="sortColumn !== 'genreLabel'"
+                    [class.fa-sort-up]="
+                      sortColumn === 'genreLabel' && sortDirection === 'asc'
+                    "
+                    [class.fa-sort-down]="
+                      sortColumn === 'genreLabel' && sortDirection === 'desc'
+                    "
+                  ></i>
+                </th>
+                <th (click)="sortBy('trackCount')" class="sortable">
+                  TITRES
+                  <i
+                    class="fas"
+                    [class.fa-sort]="sortColumn !== 'trackCount'"
+                    [class.fa-sort-up]="
+                      sortColumn === 'trackCount' && sortDirection === 'asc'
+                    "
+                    [class.fa-sort-down]="
+                      sortColumn === 'trackCount' && sortDirection === 'desc'
+                    "
+                  ></i>
+                </th>
+                <th class="actions-header"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (playlist of paginatedPlaylists; track playlist.id) {
+                <tr>
+                  <td class="cover-cell">
+                    @if (playlist.coverUrl) {
+                      <img
+                        [src]="playlist.coverUrl"
+                        [alt]="playlist.name"
+                        class="cover-thumb"
+                      />
+                    } @else {
+                      <div class="cover-placeholder">
+                        <i class="fas fa-music"></i>
+                      </div>
+                    }
+                  </td>
+                  <td>
+                    {{ playlist.name }}
+                    @if (playlist.nameOverridden) {
+                      <span class="badge badge-muted" title="Nom personnalisé">
+                        custom
+                      </span>
+                    }
+                  </td>
+                  <td>{{ playlist.genreLabel }}</td>
+                  <td>{{ playlist.trackCount }}</td>
+                  <td class="actions-cell">
+                    <button
+                      class="action-btn"
+                      title="Consulter les titres"
+                      (click)="viewPlaylist(playlist)"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button
+                      class="action-btn"
+                      title="Renommer"
+                      (click)="openRenameDialog(playlist)"
+                    >
+                      <i class="fas fa-pen"></i>
+                    </button>
+                    <button
+                      class="action-btn"
+                      title="Rafraîchir depuis Deezer"
+                      [disabled]="refreshingId !== null"
+                      (click)="refreshPlaylist(playlist)"
+                    >
+                      @if (refreshingId === playlist.id) {
+                        <i class="fas fa-spinner fa-spin"></i>
+                      } @else {
+                        <i class="fas fa-sync-alt"></i>
+                      }
+                    </button>
+                    <button
+                      class="action-btn action-danger"
+                      title="Supprimer"
+                      (click)="openDeleteDialog(playlist)"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr class="no-data-row">
+                  <td colspan="5">Aucune playlist</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination-wrapper">
+          <div class="pagination-info">
+            <span>{{ getPaginationInfo() }}</span>
+          </div>
+
+          <div class="pagination-controls">
+            <button
+              class="pagination-btn"
+              (click)="goToFirstPage()"
+              [disabled]="currentPage === 0"
+            >
+              <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button
+              class="pagination-btn"
+              (click)="previousPage()"
+              [disabled]="currentPage === 0"
+            >
+              <i class="fas fa-angle-left"></i>
+            </button>
+            <span class="page-number"
+              >{{ currentPage + 1 }} / {{ totalPages || 1 }}</span
+            >
+            <button
+              class="pagination-btn"
+              (click)="nextPage()"
+              [disabled]="currentPage >= totalPages - 1"
+            >
+              <i class="fas fa-angle-right"></i>
+            </button>
+            <button
+              class="pagination-btn"
+              (click)="goToLastPage()"
+              [disabled]="currentPage >= totalPages - 1"
+            >
+              <i class="fas fa-angle-double-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  @switch (dialog.kind) {
+    @case ('import') {
+      <app-import-curated-playlist-dialog
+        (cancelled)="closeDialog()"
+        (confirmed)="onImportConfirmed($event)"
+      ></app-import-curated-playlist-dialog>
+    }
+    @case ('rename') {
+      <app-rename-curated-playlist-dialog
+        [initialName]="dialog.playlist.name"
+        (cancelled)="closeDialog()"
+        (confirmed)="onRenameConfirmed($event)"
+      ></app-rename-curated-playlist-dialog>
+    }
+    @case ('delete') {
+      <app-confirm-delete-curated-playlist-dialog
+        [playlistName]="dialog.playlist.name"
+        (cancelled)="closeDialog()"
+        (confirmed)="onDeleteConfirmed()"
+      ></app-confirm-delete-curated-playlist-dialog>
+    }
+  }
+</div>

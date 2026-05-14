@@ -346,7 +346,7 @@ describe('MainLayoutComponent', () => {
       );
 
       expect(gamesSection).toBeDefined();
-      expect(gamesSection?.items.length).toBe(2);
+      expect(gamesSection?.items.length).toBe(3);
     });
 
     it('should have users route in UTILISATEURS section', () => {

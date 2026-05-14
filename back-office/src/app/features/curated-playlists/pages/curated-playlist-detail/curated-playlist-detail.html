@@ -1,0 +1,105 @@
+<div class="detail-page">
+  <div class="page-header">
+    <button class="back-btn" (click)="back()" aria-label="Retour">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    @if (playlist) {
+      <div class="header-meta">
+        @if (playlist.coverUrl) {
+          <img
+            [src]="playlist.coverUrl"
+            [alt]="playlist.name"
+            class="header-cover"
+          />
+        } @else {
+          <div class="header-cover header-cover-placeholder">
+            <i class="fas fa-music"></i>
+          </div>
+        }
+        <div class="header-text">
+          <h1 class="page-title">{{ playlist.name }}</h1>
+          <div class="header-subtitle">
+            <span class="badge badge-genre">{{ playlist.genreLabel }}</span>
+            <span class="track-total">{{ playlist.trackCount }} titres</span>
+          </div>
+        </div>
+      </div>
+    } @else if (!isLoading) {
+      <h1 class="page-title">Playlist introuvable</h1>
+    }
+  </div>
+
+  <div class="page-content">
+    @if (playlist) {
+      <div class="filters-bar">
+        <div class="search-field">
+          <input
+            type="text"
+            placeholder="Rechercher un titre, artiste, album..."
+            (input)="onSearch($event)"
+            class="search-input"
+          />
+          <i class="fas fa-search search-icon"></i>
+        </div>
+        <div class="result-count">
+          {{ filteredTracks.length }} / {{ tracks.length }}
+        </div>
+      </div>
+    }
+
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+      </div>
+    }
+
+    @if (loadError && !isLoading) {
+      <div class="error-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>Impossible de charger les titres de cette playlist.</p>
+        <button class="secondary-btn" (click)="back()">
+          Retour à la liste
+        </button>
+      </div>
+    }
+
+    @if (!isLoading && !loadError && playlist) {
+      <div class="table-wrapper">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="index-header">#</th>
+                <th>TITRE</th>
+                <th>ARTISTE</th>
+                <th>ALBUM</th>
+                <th class="duration-header">DURÉE</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (
+                track of filteredTracks;
+                track track.id;
+                let i = $index
+              ) {
+                <tr>
+                  <td class="index-cell">{{ i + 1 }}</td>
+                  <td class="title-cell">{{ track.title }}</td>
+                  <td>{{ track.artist.name }}</td>
+                  <td>{{ track.album.title }}</td>
+                  <td class="duration-cell">
+                    {{ formatDuration(track.duration) }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr class="no-data-row">
+                  <td colspan="5">Aucun titre</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+</div>

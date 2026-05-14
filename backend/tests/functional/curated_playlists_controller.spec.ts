@@ -160,3 +160,450 @@ test.group(
     })
   }
 )
+
+const metaResponse = (body: Record<string, unknown>, status: number = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+
+const validMeta = (id: number, title: string = 'Imported') =>
+  metaResponse({
+    id,
+    title,
+    picture_xl: `https://cdn/${id}.jpg`,
+    nb_tracks: 100,
+  })
+
+test.group(
+  'CuratedPlaylistsController - GET /api/games/blindtest/playlists/:id/all-tracks',
+  (group) => {
+    deleteCuratedPlaylists(group)
+    let originalFetch: typeof fetch
+
+    group.each.setup(() => {
+      originalFetch = globalThis.fetch
+      CuratedPlaylistService.clearCache()
+    })
+
+    group.each.teardown(() => {
+      globalThis.fetch = originalFetch
+      CuratedPlaylistService.clearCache()
+    })
+
+    test('requires authentication', async ({ client }) => {
+      const response = await client.get('/api/games/blindtest/playlists/1/all-tracks')
+      response.assertStatus(401)
+    })
+
+    test('rejects non-admin users', async ({ client }) => {
+      const { token } = await createAuthenticatedUser('curated_all_user', 'user')
+      const response = await client
+        .get('/api/games/blindtest/playlists/1/all-tracks')
+        .bearerToken(token)
+      response.assertStatus(403)
+    })
+
+    test('returns 400 when the playlist id is not numeric', async ({ client }) => {
+      const { token } = await createAuthenticatedUser('curated_all_badid', 'admin')
+      const response = await client
+        .get('/api/games/blindtest/playlists/not-a-number/all-tracks')
+        .bearerToken(token)
+      response.assertStatus(400)
+    })
+
+    test('returns 404 when the playlist is unknown', async ({ client }) => {
+      const { token } = await createAuthenticatedUser('curated_all_missing', 'admin')
+      const response = await client
+        .get('/api/games/blindtest/playlists/9999999/all-tracks')
+        .bearerToken(token)
+      response.assertStatus(404)
+    })
+
+    test('returns every track in catalogue order for an admin', async ({ client, assert }) => {
+      const { token } = await createAuthenticatedUser('curated_all_admin', 'admin')
+      const playlist = await CuratedPlaylist.create({
+        deezerPlaylistId: 8000,
+        name: 'Full',
+        genreLabel: 'Pop',
+        coverUrl: null,
+      })
+
+      globalThis.fetch = async () =>
+        new Response(
+          JSON.stringify({ data: sampleDeezerTracks, total: sampleDeezerTracks.length }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+
+      const response = await client
+        .get(`/api/games/blindtest/playlists/${playlist.id}/all-tracks`)
+        .bearerToken(token)
+
+      response.assertStatus(200)
+      const tracks = response.body().tracks
+      assert.deepEqual(
+        tracks.map((t: { id: number }) => t.id),
+        sampleDeezerTracks.map((t) => t.id)
+      )
+    })
+
+    test('returns 502 when Deezer fails', async ({ client }) => {
+      const { token } = await createAuthenticatedUser('curated_all_502', 'admin')
+      const playlist = await CuratedPlaylist.create({
+        deezerPlaylistId: 8010,
+        name: 'Failing',
+        genreLabel: 'Pop',
+        coverUrl: null,
+      })
+
+      globalThis.fetch = async () => new Response('boom', { status: 500 })
+
+      const response = await client
+        .get(`/api/games/blindtest/playlists/${playlist.id}/all-tracks`)
+        .bearerToken(token)
+
+      response.assertStatus(502)
+    })
+  }
+)
+
+test.group('CuratedPlaylistsController - POST /api/games/blindtest/playlists', (group) => {
+  deleteCuratedPlaylists(group)
+  let originalFetch: typeof fetch
+
+  group.each.setup(() => {
+    originalFetch = globalThis.fetch
+    CuratedPlaylistService.clearCache()
+  })
+
+  group.each.teardown(() => {
+    globalThis.fetch = originalFetch
+    CuratedPlaylistService.clearCache()
+  })
+
+  test('requires authentication', async ({ client }) => {
+    const response = await client.post('/api/games/blindtest/playlists').json({
+      url: 'https://www.deezer.com/playlist/4000',
+      genreLabel: 'Pop',
+    })
+    response.assertStatus(401)
+  })
+
+  test('rejects non-admin users', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_post_user', 'user')
+    const response = await client
+      .post('/api/games/blindtest/playlists')
+      .json({ url: 'https://www.deezer.com/playlist/4000', genreLabel: 'Pop' })
+      .bearerToken(token)
+    response.assertStatus(403)
+  })
+
+  test('creates a curated playlist for an admin', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('curated_post_admin', 'admin')
+    globalThis.fetch = async () => validMeta(4010, 'Deezer Title')
+
+    const response = await client
+      .post('/api/games/blindtest/playlists')
+      .json({ url: 'https://www.deezer.com/fr/playlist/4010', genreLabel: 'Pop' })
+      .bearerToken(token)
+
+    response.assertStatus(201)
+    const playlist = response.body().playlist
+    assert.equal(playlist.deezerPlaylistId, 4010)
+    assert.equal(playlist.name, 'Deezer Title')
+    assert.equal(playlist.genreLabel, 'Pop')
+    assert.equal(playlist.nameOverridden, false)
+  })
+
+  test('returns 400 on invalid Deezer URL', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_post_bad_url', 'admin')
+    const response = await client
+      .post('/api/games/blindtest/playlists')
+      .json({ url: 'https://malicious.example/playlist/123', genreLabel: 'Pop' })
+      .bearerToken(token)
+    response.assertStatus(400)
+    response.assertBodyContains({ message: 'Invalid Deezer playlist URL' })
+  })
+
+  test('returns 422 on missing required fields', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_post_bad_body', 'admin')
+    const response = await client
+      .post('/api/games/blindtest/playlists')
+      .json({ genreLabel: 'Pop' })
+      .bearerToken(token)
+    response.assertStatus(422)
+  })
+
+  test('returns 409 when the Deezer playlist already exists', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_post_dup', 'admin')
+    await CuratedPlaylist.create({
+      deezerPlaylistId: 4020,
+      name: 'Existing',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+
+    const response = await client
+      .post('/api/games/blindtest/playlists')
+      .json({ url: 'https://www.deezer.com/playlist/4020', genreLabel: 'Pop' })
+      .bearerToken(token)
+
+    response.assertStatus(409)
+  })
+
+  test('returns 404 when Deezer reports the playlist missing', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_post_404', 'admin')
+    globalThis.fetch = async () =>
+      metaResponse({ error: { code: 800, type: 'DataException', message: 'no data' } })
+
+    const response = await client
+      .post('/api/games/blindtest/playlists')
+      .json({ url: 'https://www.deezer.com/playlist/4030', genreLabel: 'Pop' })
+      .bearerToken(token)
+
+    response.assertStatus(404)
+  })
+
+  test('returns 502 when Deezer is unreachable', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_post_502', 'admin')
+    globalThis.fetch = async () => new Response('boom', { status: 500 })
+
+    const response = await client
+      .post('/api/games/blindtest/playlists')
+      .json({ url: 'https://www.deezer.com/playlist/4040', genreLabel: 'Pop' })
+      .bearerToken(token)
+
+    response.assertStatus(502)
+  })
+})
+
+test.group('CuratedPlaylistsController - PATCH /api/games/blindtest/playlists/:id', (group) => {
+  deleteCuratedPlaylists(group)
+
+  test('requires authentication', async ({ client }) => {
+    const response = await client.patch('/api/games/blindtest/playlists/1').json({ name: 'New' })
+    response.assertStatus(401)
+  })
+
+  test('rejects non-admin users', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_patch_user', 'user')
+    const response = await client
+      .patch('/api/games/blindtest/playlists/1')
+      .json({ name: 'New' })
+      .bearerToken(token)
+    response.assertStatus(403)
+  })
+
+  test('renames the playlist and flips nameOverridden', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('curated_patch_admin', 'admin')
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 5000,
+      name: 'Initial',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+
+    const response = await client
+      .patch(`/api/games/blindtest/playlists/${playlist.id}`)
+      .json({ name: 'Renamed by admin' })
+      .bearerToken(token)
+
+    response.assertStatus(200)
+    const updated = response.body().playlist
+    assert.equal(updated.name, 'Renamed by admin')
+    assert.isTrue(updated.nameOverridden)
+  })
+
+  test('returns 422 on empty name', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_patch_empty', 'admin')
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 5010,
+      name: 'Initial',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+    const response = await client
+      .patch(`/api/games/blindtest/playlists/${playlist.id}`)
+      .json({ name: '' })
+      .bearerToken(token)
+    response.assertStatus(422)
+  })
+
+  test('returns 400 when the playlist id is not numeric', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_patch_badid', 'admin')
+    const response = await client
+      .patch('/api/games/blindtest/playlists/not-a-number')
+      .json({ name: 'whatever' })
+      .bearerToken(token)
+    response.assertStatus(400)
+  })
+
+  test('returns 404 when the playlist is unknown', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_patch_missing', 'admin')
+    const response = await client
+      .patch('/api/games/blindtest/playlists/9999999')
+      .json({ name: 'whatever' })
+      .bearerToken(token)
+    response.assertStatus(404)
+  })
+})
+
+test.group(
+  'CuratedPlaylistsController - POST /api/games/blindtest/playlists/:id/refresh',
+  (group) => {
+    deleteCuratedPlaylists(group)
+    let originalFetch: typeof fetch
+
+    group.each.setup(() => {
+      originalFetch = globalThis.fetch
+      CuratedPlaylistService.clearCache()
+    })
+
+    group.each.teardown(() => {
+      globalThis.fetch = originalFetch
+      CuratedPlaylistService.clearCache()
+    })
+
+    test('requires authentication', async ({ client }) => {
+      const response = await client.post('/api/games/blindtest/playlists/1/refresh')
+      response.assertStatus(401)
+    })
+
+    test('rejects non-admin users', async ({ client }) => {
+      const { token } = await createAuthenticatedUser('curated_refresh_user', 'user')
+      const response = await client
+        .post('/api/games/blindtest/playlists/1/refresh')
+        .bearerToken(token)
+      response.assertStatus(403)
+    })
+
+    test('refreshes Deezer metadata for an admin', async ({ client, assert }) => {
+      const { token } = await createAuthenticatedUser('curated_refresh_admin', 'admin')
+      const playlist = await CuratedPlaylist.create({
+        deezerPlaylistId: 6000,
+        name: 'Initial',
+        genreLabel: 'Pop',
+        coverUrl: 'https://old/cover.jpg',
+        trackCount: 1,
+      })
+
+      globalThis.fetch = async () =>
+        metaResponse({
+          id: 6000,
+          title: 'Fresh from Deezer',
+          picture_xl: 'https://new/cover.jpg',
+          nb_tracks: 250,
+        })
+
+      const response = await client
+        .post(`/api/games/blindtest/playlists/${playlist.id}/refresh`)
+        .bearerToken(token)
+
+      response.assertStatus(200)
+      const updated = response.body().playlist
+      assert.equal(updated.name, 'Fresh from Deezer')
+      assert.equal(updated.coverUrl, 'https://new/cover.jpg')
+      assert.equal(updated.trackCount, 250)
+    })
+
+    test('returns 400 when the playlist id is not numeric', async ({ client }) => {
+      const { token } = await createAuthenticatedUser('curated_refresh_badid', 'admin')
+      const response = await client
+        .post('/api/games/blindtest/playlists/not-a-number/refresh')
+        .bearerToken(token)
+      response.assertStatus(400)
+    })
+
+    test('returns 404 when the playlist is unknown', async ({ client }) => {
+      const { token } = await createAuthenticatedUser('curated_refresh_missing', 'admin')
+      const response = await client
+        .post('/api/games/blindtest/playlists/9999999/refresh')
+        .bearerToken(token)
+      response.assertStatus(404)
+    })
+
+    test('returns 404 when Deezer no longer hosts the playlist', async ({ client }) => {
+      const { token } = await createAuthenticatedUser('curated_refresh_deezer_404', 'admin')
+      const playlist = await CuratedPlaylist.create({
+        deezerPlaylistId: 6010,
+        name: 'Lost',
+        genreLabel: 'Pop',
+        coverUrl: null,
+      })
+      globalThis.fetch = async () =>
+        metaResponse({ error: { code: 800, type: 'DataException', message: 'no data' } })
+
+      const response = await client
+        .post(`/api/games/blindtest/playlists/${playlist.id}/refresh`)
+        .bearerToken(token)
+
+      response.assertStatus(404)
+    })
+
+    test('returns 502 when Deezer is unreachable', async ({ client }) => {
+      const { token } = await createAuthenticatedUser('curated_refresh_502', 'admin')
+      const playlist = await CuratedPlaylist.create({
+        deezerPlaylistId: 6020,
+        name: 'Fails',
+        genreLabel: 'Pop',
+        coverUrl: null,
+      })
+      globalThis.fetch = async () => new Response('boom', { status: 500 })
+
+      const response = await client
+        .post(`/api/games/blindtest/playlists/${playlist.id}/refresh`)
+        .bearerToken(token)
+
+      response.assertStatus(502)
+    })
+  }
+)
+
+test.group('CuratedPlaylistsController - DELETE /api/games/blindtest/playlists/:id', (group) => {
+  deleteCuratedPlaylists(group)
+
+  test('requires authentication', async ({ client }) => {
+    const response = await client.delete('/api/games/blindtest/playlists/1')
+    response.assertStatus(401)
+  })
+
+  test('rejects non-admin users', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_delete_user', 'user')
+    const response = await client.delete('/api/games/blindtest/playlists/1').bearerToken(token)
+    response.assertStatus(403)
+  })
+
+  test('deletes the playlist for an admin', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser('curated_delete_admin', 'admin')
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 7000,
+      name: 'Doomed',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+
+    const response = await client
+      .delete(`/api/games/blindtest/playlists/${playlist.id}`)
+      .bearerToken(token)
+
+    response.assertStatus(204)
+    const remaining = await CuratedPlaylist.query().where('id', playlist.id).first()
+    assert.isNull(remaining)
+  })
+
+  test('returns 400 when the playlist id is not numeric', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_delete_badid', 'admin')
+    const response = await client
+      .delete('/api/games/blindtest/playlists/not-a-number')
+      .bearerToken(token)
+    response.assertStatus(400)
+  })
+
+  test('returns 404 when the playlist is unknown', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('curated_delete_missing', 'admin')
+    const response = await client
+      .delete('/api/games/blindtest/playlists/9999999')
+      .bearerToken(token)
+    response.assertStatus(404)
+  })
+})
