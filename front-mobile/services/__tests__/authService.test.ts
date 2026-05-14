@@ -45,8 +45,8 @@ describe("authService.resendVerificationEmail", () => {
 });
 
 describe("authService.refreshAccessToken", () => {
-  it("POSTs to /api/auth/refresh with _isRetry to short-circuit the 401 refresh loop", async () => {
-    // Regression guard: without _isRetry: true on the refresh call itself,
+  it("POSTs to /api/auth/refresh with skipRefresh to short-circuit the 401 refresh loop", async () => {
+    // Regression guard: without skipRefresh: true on the refresh call itself,
     // a 401 on /api/auth/refresh re-enters handleTokenRefresh and awaits the
     // same in-flight refreshPromise → deadlock → splash stuck on launch.
     mockPost.mockResolvedValueOnce({ accessToken: "new-token" });
@@ -56,7 +56,7 @@ describe("authService.refreshAccessToken", () => {
     expect(mockPost).toHaveBeenCalledWith(
       "/api/auth/refresh",
       { refreshToken: "refresh-token" },
-      { skipAuth: true, _isRetry: true },
+      { skipAuth: true, skipRefresh: true },
     );
   });
 });

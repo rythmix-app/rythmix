@@ -33,7 +33,7 @@ let pendingRequests: PendingRequest[] = [];
 
 interface RequestOptions extends RequestInit {
   skipAuth?: boolean;
-  _isRetry?: boolean; // Flag interne pour éviter les boucles infinies
+  skipRefresh?: boolean; // Skip the 401→refresh→retry loop (used internally after retry, and externally by /api/auth/refresh itself to avoid recursion)
 }
 
 // Fonction pour gérer le refresh du token
@@ -125,8 +125,9 @@ const handleResponse = async <T>(
   options: RequestOptions,
 ): Promise<T> => {
   if (response.status === 401) {
-    // Si c'est un retry, ne pas réessayer le refresh (éviter boucles infinies)
-    if (options._isRetry) {
+    // Skip the refresh loop on requests already retried or on the refresh
+    // endpoint itself — otherwise handleTokenRefresh awaits its own promise.
+    if (options.skipRefresh) {
       if (onUnauthorized) onUnauthorized();
       const error: ApiError = {
         message: "Non autorisé",
@@ -139,7 +140,7 @@ const handleResponse = async <T>(
     const refreshToken = await getRefreshToken();
     if (refreshToken) {
       // Tenter le refresh
-      return handleTokenRefresh(endpoint, { ...options, _isRetry: true });
+      return handleTokenRefresh(endpoint, { ...options, skipRefresh: true });
     } else {
       // Pas de refreshToken: déconnecter
       if (onUnauthorized) onUnauthorized();
