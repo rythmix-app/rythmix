@@ -13,10 +13,26 @@
         <input
           type="text"
           placeholder="Rechercher par username ou email..."
-          (input)="applyFilter($event)"
+          (input)="onSearch($event)"
           class="search-input"
         />
         <i class="fas fa-search search-icon"></i>
+      </div>
+
+      <div class="dropdown-filter">
+        <label for="roleFilter" class="filter-label">Rôle :</label>
+        <div class="select-wrapper">
+          <select
+            id="roleFilter"
+            class="filter-select"
+            (change)="onRoleFilterChange($event)"
+          >
+            <option value="">Tous</option>
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
       </div>
 
       <label class="toggle-deleted">
