@@ -74,7 +74,7 @@ export const refreshAccessToken = async (
   const response = await post<RefreshTokenResponse>(
     "/api/auth/refresh",
     { refreshToken },
-    { skipAuth: true },
+    { skipAuth: true, _isRetry: true },
   );
 
   if (!response.accessToken) {

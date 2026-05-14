@@ -2,6 +2,7 @@ import { getToken, getRefreshToken } from "./storage";
 import { ApiError } from "@/types/auth";
 
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+const REQUEST_TIMEOUT_MS = 15000;
 
 // Gestion du refresh en cours
 let isRefreshing = false;
@@ -196,10 +197,19 @@ export const apiClient = async <T>(
 
   const url = `${BASE_URL}${endpoint}`;
 
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...fetchOptions,
+      headers,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   return handleResponse<T>(response, endpoint, options);
 };
