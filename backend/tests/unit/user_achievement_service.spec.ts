@@ -70,9 +70,7 @@ test.group('UserAchievementService', (group) => {
     assert.equal(result[1].achievementId, second.id)
   })
 
-  test('getUserAchievements sorts unlocked achievements by unlockedAt desc', async ({
-    assert,
-  }) => {
+  test('getUserAchievements sorts unlocked achievements by unlockedAt desc', async ({ assert }) => {
     const secondAchievement = await Achievement.create({
       type: AchievementType.FirstLike,
       description: 'Second',
