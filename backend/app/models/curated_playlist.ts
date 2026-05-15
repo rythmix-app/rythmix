@@ -27,6 +27,13 @@ export default class CuratedPlaylist extends BaseModel {
   @column()
   declare trackCount: number
 
+  @ApiProperty({
+    description: 'Whether the admin has manually overridden the Deezer name',
+    example: false,
+  })
+  @column()
+  declare nameOverridden: boolean
+
   @ApiProperty({ description: 'Creation timestamp' })
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

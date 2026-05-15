@@ -110,4 +110,146 @@ test.group('CuratedPlaylistsController - Unit Tests for Edge Cases', () => {
       service.getRandomTracks = original
     }
   })
+
+  test('allTracks rethrows unexpected errors', async ({ assert }) => {
+    const service = new CuratedPlaylistService()
+    const controller = new CuratedPlaylistsController(service)
+
+    const original = service.listAllTracks
+    service.listAllTracks = async () => {
+      throw new Error('totally unexpected')
+    }
+
+    const mockResponse = makeMockResponse()
+    const ctx = {
+      params: { id: '42' },
+      response: mockResponse,
+    } as unknown as HttpContext
+
+    try {
+      await assert.rejects(async () => {
+        await controller.allTracks(ctx)
+      }, /totally unexpected/)
+    } finally {
+      service.listAllTracks = original
+    }
+  })
+
+  test('allTracks returns 400 when the playlist id is not numeric', async ({ assert }) => {
+    const service = new CuratedPlaylistService()
+    const controller = new CuratedPlaylistsController(service)
+
+    const mockResponse = makeMockResponse()
+    const ctx = {
+      params: { id: 'not-a-number' },
+      response: mockResponse,
+    } as unknown as HttpContext
+
+    await controller.allTracks(ctx)
+    assert.equal(mockResponse.statusCode, 400)
+  })
+
+  test('store rethrows unexpected errors', async ({ assert }) => {
+    const service = new CuratedPlaylistService()
+    const controller = new CuratedPlaylistsController(service)
+
+    const original = service.createFromDeezerUrl
+    service.createFromDeezerUrl = async () => {
+      throw new Error('db down')
+    }
+
+    const mockResponse = makeMockResponse()
+    const ctx = {
+      request: {
+        validateUsing: async () => ({
+          url: 'https://www.deezer.com/playlist/1',
+          genreLabel: 'Pop',
+        }),
+      },
+      response: mockResponse,
+    } as unknown as HttpContext
+
+    try {
+      await assert.rejects(async () => {
+        await controller.store(ctx)
+      }, /db down/)
+    } finally {
+      service.createFromDeezerUrl = original
+    }
+  })
+
+  test('update rethrows unexpected errors', async ({ assert }) => {
+    const service = new CuratedPlaylistService()
+    const controller = new CuratedPlaylistsController(service)
+
+    const original = service.renamePlaylist
+    service.renamePlaylist = async () => {
+      throw new Error('db down')
+    }
+
+    const mockResponse = makeMockResponse()
+    const ctx = {
+      params: { id: '42' },
+      request: {
+        validateUsing: async () => ({ name: 'whatever' }),
+      },
+      response: mockResponse,
+    } as unknown as HttpContext
+
+    try {
+      await assert.rejects(async () => {
+        await controller.update(ctx)
+      }, /db down/)
+    } finally {
+      service.renamePlaylist = original
+    }
+  })
+
+  test('refresh rethrows unexpected errors', async ({ assert }) => {
+    const service = new CuratedPlaylistService()
+    const controller = new CuratedPlaylistsController(service)
+
+    const original = service.refreshPlaylist
+    service.refreshPlaylist = async () => {
+      throw new Error('db down')
+    }
+
+    const mockResponse = makeMockResponse()
+    const ctx = {
+      params: { id: '42' },
+      response: mockResponse,
+    } as unknown as HttpContext
+
+    try {
+      await assert.rejects(async () => {
+        await controller.refresh(ctx)
+      }, /db down/)
+    } finally {
+      service.refreshPlaylist = original
+    }
+  })
+
+  test('destroy rethrows unexpected errors', async ({ assert }) => {
+    const service = new CuratedPlaylistService()
+    const controller = new CuratedPlaylistsController(service)
+
+    const original = service.deletePlaylist
+    service.deletePlaylist = async () => {
+      throw new Error('db down')
+    }
+
+    const mockResponse = makeMockResponse()
+    const ctx = {
+      params: { id: '42' },
+      response: mockResponse,
+    } as unknown as HttpContext
+
+    try {
+      await assert.rejects(async () => {
+        await controller.destroy(ctx)
+      }, /db down/)
+    } finally {
+      service.deletePlaylist = original
+    }
+  })
 })

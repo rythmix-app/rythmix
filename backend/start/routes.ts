@@ -147,6 +147,21 @@ router
           .get('/blindtest/playlists', [CuratedPlaylistsController, 'index'])
           .use(middleware.auth())
         router
+          .post('/blindtest/playlists', [CuratedPlaylistsController, 'store'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .patch('/blindtest/playlists/:id', [CuratedPlaylistsController, 'update'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .post('/blindtest/playlists/:id/refresh', [CuratedPlaylistsController, 'refresh'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .delete('/blindtest/playlists/:id', [CuratedPlaylistsController, 'destroy'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
+          .get('/blindtest/playlists/:id/all-tracks', [CuratedPlaylistsController, 'allTracks'])
+          .use(middleware.role({ roles: ['admin'] }))
+        router
           .get('/blindtest/playlists/:id/tracks', [CuratedPlaylistsController, 'tracks'])
           .use(middleware.auth())
         router.post('/parkeur/start', [ParkeurController, 'start']).use(middleware.auth())
