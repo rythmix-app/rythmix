@@ -1,10 +1,62 @@
 import UserAchievement from '#models/user_achievement'
 import Achievement from '#models/achievement'
+import { AchievementProgressService } from '#services/achievement_progress_service'
 import db from '@adonisjs/lucid/services/db'
+import { DateTime } from 'luxon'
+
+export interface UserAchievementSummary {
+  id: string | null
+  userId: string
+  achievementId: number
+  currentProgress: number
+  requiredProgress: number
+  currentTier: number
+  progressData: Record<string, any>
+  unlockedAt: DateTime | null
+  achievement: Achievement
+}
 
 export class UserAchievementService {
-  async getUserAchievements(userId: string): Promise<UserAchievement[]> {
-    return UserAchievement.query().where('user_id', userId).preload('achievement')
+  private progressService = new AchievementProgressService()
+
+  async getUserAchievements(userId: string): Promise<UserAchievementSummary[]> {
+    const [achievements, tracked] = await Promise.all([
+      Achievement.query().orderBy('id', 'asc'),
+      UserAchievement.query().where('user_id', userId).preload('achievement'),
+    ])
+
+    const byAchievementId = new Map(tracked.map((ua) => [ua.achievementId, ua]))
+
+    const merged: UserAchievementSummary[] = []
+    for (const achievement of achievements) {
+      const requiredProgress = this.progressService.getRequiredProgress(achievement.type)
+      if (requiredProgress === undefined) continue
+      const existing = byAchievementId.get(achievement.id)
+      if (existing) {
+        merged.push(existing)
+        continue
+      }
+      merged.push({
+        id: null,
+        userId,
+        achievementId: achievement.id,
+        currentProgress: 0,
+        requiredProgress,
+        currentTier: 1,
+        progressData: {},
+        unlockedAt: null,
+        achievement,
+      })
+    }
+
+    return merged.sort((a, b) => {
+      if (a.unlockedAt && b.unlockedAt) {
+        return b.unlockedAt.toMillis() - a.unlockedAt.toMillis()
+      }
+      if (a.unlockedAt) return -1
+      if (b.unlockedAt) return 1
+      return a.achievementId - b.achievementId
+    })
   }
 
   async getAll(): Promise<UserAchievement[]> {
