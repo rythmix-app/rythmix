@@ -7,7 +7,7 @@ export interface Achievement {
 }
 
 export interface UserAchievement {
-  id: string;
+  id: string | null;
   userId: string;
   achievementId: number;
   currentProgress: number;
