@@ -46,6 +46,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'curated-playlists',
+    loadChildren: () =>
+      import('./features/curated-playlists/curated-playlists-module').then(
+        (m) => m.CuratedPlaylistsModule,
+      ),
+    canActivate: [authGuard],
+  },
+  {
     path: 'sessions',
     loadChildren: () =>
       import('./features/game-sessions/game-sessions-module').then(
