@@ -1,5 +1,3 @@
-process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
-
 import {
   getMyOnboardingArtists,
   getMyOnboardingStatus,
@@ -8,6 +6,8 @@ import {
   setMyOnboardingArtists,
 } from "../onboardingService";
 import { get, post } from "../api";
+
+process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
 
 jest.mock("../api", () => ({
   get: jest.fn(),

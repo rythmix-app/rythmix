@@ -7,14 +7,10 @@ import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 import OnboardingBanner from "@/components/OnboardingBanner";
 import ProfileSpotifySection from "@/components/profile/ProfileSpotifySection";
+import { ProfileRecentActivities } from "@/components/profile/ProfileRecentActivities";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
-
-// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'APIii
-const MOCK_STATS = {
-  swipes: 142,
-  matchs: 87,
-  gamesPlayed: 23,
-};
+import { useMyStats } from "@/hooks/useMyStats";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 // TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
 const MOCK_BADGES = [
@@ -28,37 +24,6 @@ const MOCK_BADGES = [
   { id: "8", name: "Légende", icon: "👑", unlocked: false },
   { id: "9", name: "Mélomane absolu", icon: "🎵", unlocked: false },
 ];
-
-// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
-const MOCK_RECENT_ACTIVITIES = [
-  {
-    id: "1",
-    name: "Partie Blurchette",
-    detail: "Score : 8/10",
-    relativeDate: "Il y a 2h",
-  },
-  {
-    id: "2",
-    name: "Titre mis en favori",
-    detail: "One More Time - Daft Punk",
-    relativeDate: "Il y a 5h",
-  },
-  {
-    id: "3",
-    name: "Partie Tracklist",
-    detail: "Score : 6/10",
-    relativeDate: "Hier",
-  },
-  {
-    id: "4",
-    name: "Titre mis en favori",
-    detail: "Papaoutai - Stromae",
-    relativeDate: "Il y a 2 jours",
-  },
-];
-
-// TODO: à modifier plus tard - niveau et titre à récupérer depuis l'API
-const MOCK_LEVEL = { level: 7, title: "Mélomane" };
 
 function getMemberSince(createdAt?: string): string {
   if (!createdAt) return "membre récemment";
@@ -78,6 +43,7 @@ function getMemberSince(createdAt?: string): string {
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const { status } = useOnboardingStatus();
+  const { stats, loading, error, retry } = useMyStats();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
@@ -108,22 +74,34 @@ export default function ProfileScreen() {
           <Text style={styles.memberSince}>
             {getMemberSince(user?.createdAt)}
           </Text>
-
-          <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>
-              Niveau {MOCK_LEVEL.level} — {MOCK_LEVEL.title}
-            </Text>
-          </View>
         </View>
 
         {/* ── Statistiques ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Statistiques</Text>
           <View style={styles.statsRow}>
-            <StatCard label="Swipes" value={MOCK_STATS.swipes} />
-            <StatCard label="Matchs" value={MOCK_STATS.matchs} />
-            <StatCard label="Jeux joués" value={MOCK_STATS.gamesPlayed} />
+            <StatCard
+              label="Swipes"
+              value={stats?.totalSwipes ?? 0}
+              loading={loading}
+            />
+            <StatCard
+              label="Parties jouées"
+              value={stats?.gamesPlayed ?? 0}
+              loading={loading}
+            />
+            <StatCard
+              label="Streak"
+              value={stats?.streak ?? 0}
+              loading={loading}
+              suffix={stats?.streak ? " j" : ""}
+            />
           </View>
+          {error && (
+            <Pressable onPress={retry} style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error} - Réessayer</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* ── Mes stats Spotify ── */}
@@ -158,19 +136,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* ── Activités récentes ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Activités récentes</Text>
-          {MOCK_RECENT_ACTIVITIES.map((activity) => (
-            <View key={activity.id} style={styles.activityItem}>
-              <View style={styles.activityDot} />
-              <View style={styles.activityContent}>
-                <Text style={styles.activityName}>{activity.name}</Text>
-                <Text style={styles.activityDetail}>{activity.detail}</Text>
-              </View>
-              <Text style={styles.activityDate}>{activity.relativeDate}</Text>
-            </View>
-          ))}
-        </View>
+        <ProfileRecentActivities />
 
         {/* ── Mes artistes favoris ── */}
         <View style={styles.section}>
@@ -215,10 +181,26 @@ export default function ProfileScreen() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({
+  label,
+  value,
+  loading,
+  suffix = "",
+}: {
+  label: string;
+  value: number;
+  loading?: boolean;
+  suffix?: string;
+}) {
+  if (loading) {
+    return <Skeleton height={84} style={styles.statCardSkeleton} />;
+  }
   return (
     <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statValue}>
+        {value}
+        {suffix}
+      </Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -274,20 +256,6 @@ const styles = StyleSheet.create({
     color: Colors.dark.icon,
     marginBottom: 10,
   },
-  levelBadge: {
-    backgroundColor: Colors.primary.CTADark,
-    borderWidth: 1,
-    borderColor: Colors.primary.CTA,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    marginBottom: 16,
-  },
-  levelText: {
-    color: Colors.primary.survol,
-    fontSize: 13,
-    fontWeight: "600",
-  },
 
   // Sections
   section: {
@@ -324,6 +292,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#2A2A2A",
   },
+  statCardSkeleton: {
+    flex: 1,
+    borderRadius: 12,
+  },
   statValue: {
     fontSize: 26,
     fontWeight: "800",
@@ -334,6 +306,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.dark.icon,
     textAlign: "center",
+  },
+  errorContainer: {
+    marginTop: 12,
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#FF4D4D",
+    fontSize: 13,
   },
 
   // Badges
@@ -367,41 +347,6 @@ const styles = StyleSheet.create({
   },
   badgeNameLocked: {
     color: Colors.dark.icon,
-  },
-
-  // Activities
-  activityItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1A1A1A",
-    gap: 12,
-  },
-  activityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary.CTA,
-    flexShrink: 0,
-  },
-  activityContent: {
-    flex: 1,
-  },
-  activityName: {
-    fontSize: 14,
-    color: Colors.dark.text,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  activityDetail: {
-    fontSize: 12,
-    color: Colors.dark.icon,
-  },
-  activityDate: {
-    fontSize: 11,
-    color: Colors.game.textMuted,
-    flexShrink: 0,
   },
 
   // Favorite artists
