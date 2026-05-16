@@ -28,6 +28,7 @@ export class UserDetail implements OnInit {
   selectedAchievement: UserAchievement | null = null;
   isLoading = false;
   isSubmitting = false;
+  isVerifying = false;
   route = inject(ActivatedRoute);
   router = inject(Router);
   fb = inject(FormBuilder);
@@ -204,6 +205,24 @@ export class UserDetail implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/users']);
+  }
+
+  verifyAccount(): void {
+    if (!this.userId || this.isVerifying || this.user?.emailVerifiedAt) return;
+
+    this.isVerifying = true;
+    this.userService.verifyUser(this.userId).subscribe({
+      next: (user) => {
+        this.user = user;
+        this.isVerifying = false;
+        this.showSnackbar('Compte validé', 'success');
+      },
+      error: (error) => {
+        console.error('Error verifying user:', error);
+        this.showSnackbar('Erreur lors de la validation', 'error');
+        this.isVerifying = false;
+      },
+    });
   }
 
   get title(): string {

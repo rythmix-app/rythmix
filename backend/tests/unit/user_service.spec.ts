@@ -252,6 +252,70 @@ test.group('UserService - Soft Delete Operations', (group) => {
     assert.equal(result.status, 404)
   })
 
+  test('verifyUser should set emailVerifiedAt for an unverified user', async ({ assert }) => {
+    const timestamp = Date.now()
+    const user = await User.create({
+      username: `verify_${timestamp}`,
+      email: `verify_${timestamp}@example.com`,
+      password: 'password123',
+    })
+    assert.notExists(user.emailVerifiedAt)
+
+    const result = await userService.verifyUser(user.id)
+
+    assert.instanceOf(result, User)
+    if (result instanceof User) {
+      assert.isNotNull(result.emailVerifiedAt)
+    }
+    await user.refresh()
+    assert.isNotNull(user.emailVerifiedAt)
+  })
+
+  test('verifyUser is idempotent when user is already verified', async ({ assert }) => {
+    const timestamp = Date.now()
+    const user = await User.create({
+      username: `already_verified_${timestamp}`,
+      email: `already_verified_${timestamp}@example.com`,
+      password: 'password123',
+    })
+    await userService.verifyUser(user.id)
+    await user.refresh()
+    const firstVerifiedAt = user.emailVerifiedAt
+
+    const result = await userService.verifyUser(user.id)
+
+    assert.instanceOf(result, User)
+    await user.refresh()
+    assert.equal(user.emailVerifiedAt?.toISO(), firstVerifiedAt?.toISO())
+  })
+
+  test('verifyUser should return 404 when user not found', async ({ assert }) => {
+    const result = await userService.verifyUser('non-existent-id')
+
+    assert.notInstanceOf(result, User)
+    if (!(result instanceof User)) {
+      assert.equal(result.error, 'User not found')
+      assert.equal(result.status, 404)
+    }
+  })
+
+  test('verifyUser should return 404 when user is soft-deleted', async ({ assert }) => {
+    const timestamp = Date.now()
+    const user = await User.create({
+      username: `deleted_verify_${timestamp}`,
+      email: `deleted_verify_${timestamp}@example.com`,
+      password: 'password123',
+    })
+    await user.softDelete()
+
+    const result = await userService.verifyUser(user.id)
+
+    assert.notInstanceOf(result, User)
+    if (!(result instanceof User)) {
+      assert.equal(result.status, 404)
+    }
+  })
+
   test('getAll should not return soft-deleted users', async ({ assert }) => {
     const timestamp = Date.now()
     const activeUser = await User.create({

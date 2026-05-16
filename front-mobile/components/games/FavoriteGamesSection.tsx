@@ -10,14 +10,13 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Colors } from "@/constants/Colors";
+import { GameIcon } from "@/components/games/GameIcon";
 import * as gameService from "@/services/gameService";
 import { Game } from "@/types/games";
-import { getGameIcon } from "@/utils/games";
 import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
 function FavoriteGameCard({ game }: Readonly<{ game: Game }>) {
   const scale = useSharedValue(1);
-  const gameIcon = getGameIcon(game.name);
   const playedGameIds = usePlayedGamesStore((state) => state.playedGameIds);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -67,10 +66,10 @@ function FavoriteGameCard({ game }: Readonly<{ game: Game }>) {
             colors={["#1a3a3a", "#0d2233"]}
             style={StyleSheet.absoluteFillObject}
           />
-          <MaterialIcons
-            name={gameIcon.name}
-            size={40}
-            color={Colors.primary.survol}
+          <GameIcon
+            gameName={game.name}
+            size={60}
+            fallbackColor={Colors.primary.survol}
           />
         </View>
 
@@ -122,8 +121,18 @@ export function FavoriteGamesSection() {
           <MaterialIcons name="star" size={20} color={Colors.primary.survol} />
           <Text style={styles.sectionTitle}>Jeux favoris</Text>
         </View>
-        <Pressable onPress={() => router.push("/(tabs)/games" as any)}>
-          <Text style={styles.seeAll}>Voir tout</Text>
+        <Pressable
+          style={styles.seeAllPill}
+          onPress={() => router.push("/(tabs)/games" as any)}
+          accessibilityLabel="Voir tous les jeux favoris"
+          accessibilityRole="button"
+        >
+          <Text style={styles.seeAllText}>VOIR TOUT</Text>
+          <MaterialIcons
+            name="chevron-right"
+            size={16}
+            color={Colors.primary.CTA}
+          />
         </Pressable>
       </View>
 
@@ -197,10 +206,17 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  seeAll: {
+  seeAllPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  seeAllText: {
     color: Colors.primary.CTA,
-    fontSize: 13,
-    fontFamily: "Regular",
+    fontSize: 12,
+    fontFamily: "Bold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 
   // Card

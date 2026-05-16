@@ -48,10 +48,7 @@ export class MainLayoutComponent implements OnInit {
     {
       title: 'UTILISATEURS',
       icon: 'fa-users',
-      items: [
-        { label: 'Utilisateurs', route: '/users', icon: 'fa-user' },
-        { label: 'Rôles', route: '/roles', icon: 'fa-shield-alt' },
-      ],
+      items: [{ label: 'Utilisateurs', route: '/users', icon: 'fa-user' }],
     },
     {
       title: 'CONTENU',
@@ -65,6 +62,11 @@ export class MainLayoutComponent implements OnInit {
       icon: 'fa-gamepad',
       items: [
         { label: 'Games', route: '/games', icon: 'fa-dice' },
+        {
+          label: 'Playlists Blindtest',
+          route: '/curated-playlists',
+          icon: 'fa-music',
+        },
         { label: 'Sessions', route: '/sessions', icon: 'fa-history' },
       ],
     },

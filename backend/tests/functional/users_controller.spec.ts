@@ -329,6 +329,65 @@ test.group('UsersController - Soft Delete Features', (group) => {
     response.assertStatus(404)
     response.assertBodyContains({ message: 'Deleted user not found' })
   })
+
+  test('POST /api/users/:id/verify should mark an unverified user as verified', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser('admin21', 'admin')
+    const user = await User.create(makeUser('verify'))
+    assert.notExists(user.emailVerifiedAt)
+
+    const response = await client.post(`/api/users/${user.id}/verify`).bearerToken(token)
+
+    response.assertStatus(200)
+    const returned = response.body().user
+    assert.equal(returned.id, user.id)
+    assert.isNotNull(returned.emailVerifiedAt)
+
+    await user.refresh()
+    assert.isNotNull(user.emailVerifiedAt)
+  })
+
+  test('POST /api/users/:id/verify is idempotent on already verified users', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser('admin22', 'admin')
+    const user = await User.create(makeUser('alreadyverified'))
+    await client.post(`/api/users/${user.id}/verify`).bearerToken(token)
+    await user.refresh()
+    const firstVerifiedAt = user.emailVerifiedAt
+
+    const response = await client.post(`/api/users/${user.id}/verify`).bearerToken(token)
+
+    response.assertStatus(200)
+    await user.refresh()
+    assert.equal(user.emailVerifiedAt?.toISO(), firstVerifiedAt?.toISO())
+  })
+
+  test('POST /api/users/:id/verify should return 404 for non-existent user', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('admin23', 'admin')
+    const response = await client.post('/api/users/non-existent-id/verify').bearerToken(token)
+
+    response.assertStatus(404)
+    response.assertBodyContains({ message: 'User not found' })
+  })
+
+  test('POST /api/users/:id/verify should return 403 for non-admin users', async ({ client }) => {
+    const { token } = await createAuthenticatedUser('user_verify', 'user')
+    const target = await User.create(makeUser('target_verify'))
+
+    const response = await client.post(`/api/users/${target.id}/verify`).bearerToken(token)
+
+    response.assertStatus(403)
+  })
+
+  test('POST /api/users/:id/verify should return 401 without auth', async ({ client }) => {
+    const target = await User.create(makeUser('unauth_verify'))
+    const response = await client.post(`/api/users/${target.id}/verify`)
+    response.assertStatus(401)
+  })
 })
 
 test.group('UsersController - Integration Scenarios', (group) => {

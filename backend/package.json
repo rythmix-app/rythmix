@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node bin/server.js",
     "build": "node ace build",
@@ -69,6 +72,7 @@
     "@adonisjs/mail": "^9.2.2",
     "@foadonis/openapi": "^0.4.1",
     "@vinejs/vine": "^3.0.1",
+    "cheerio": "^1.2.0",
     "edge.js": "^6.3.0",
     "luxon": "^3.7.1",
     "pg": "^8.16.3",

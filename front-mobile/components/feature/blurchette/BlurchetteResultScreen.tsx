@@ -102,13 +102,16 @@ const styles = StyleSheet.create({
   albumTitle: {
     color: "white",
     fontSize: 20,
-    fontWeight: "bold",
+    fontFamily: "Bold",
+    textTransform: "uppercase",
     textAlign: "center",
     marginBottom: 8,
   },
   artistName: {
     color: "#999",
     fontSize: 16,
+    fontFamily: "Bold",
+    textTransform: "uppercase",
     textAlign: "center",
   },
   resultActions: {

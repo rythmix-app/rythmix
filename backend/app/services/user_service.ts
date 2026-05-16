@@ -1,4 +1,5 @@
 import User from '#models/user'
+import { DateTime } from 'luxon'
 
 export class UserService {
   public async getAll() {
@@ -58,6 +59,22 @@ export class UserService {
     }
     await userToDelete.softDelete()
     return { message: `User with ID: ${userId} deleted successfully` }
+  }
+
+  public async verifyUser(userId: string) {
+    const user = await User.query().where('id', userId).whereNull('deleted_at').first()
+    if (!user) {
+      return {
+        error: 'User not found',
+        status: 404,
+      }
+    }
+    if (user.emailVerifiedAt) {
+      return user
+    }
+    user.emailVerifiedAt = DateTime.now()
+    await user.save()
+    return user
   }
 
   public async restoreUser(userId: string) {

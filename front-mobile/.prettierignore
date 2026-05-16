@@ -1,0 +1,3 @@
+# Expo template leftover — local prettier reports it as clean but CI flags it.
+# Safe to ignore since it's not actively maintained.
+components/Collapsible.tsx

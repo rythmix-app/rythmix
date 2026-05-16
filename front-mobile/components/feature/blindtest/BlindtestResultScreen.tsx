@@ -55,8 +55,8 @@ export default function BlindtestResultScreen({
             Récapitulatif
           </ThemedText>
 
-          {completedRounds.map((round) => (
-            <View key={round.trackId} style={styles.roundRow}>
+          {completedRounds.map((round, index) => (
+            <View key={`${round.trackId}-${index}`} style={styles.roundRow}>
               <Image
                 source={{ uri: round.coverUrl }}
                 style={styles.roundCover}
@@ -150,12 +150,15 @@ const styles = StyleSheet.create({
   roundArtist: {
     color: "white",
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: "Bold",
+    textTransform: "uppercase",
   },
   roundTrack: {
     color: "#999",
     fontSize: 13,
     marginTop: 2,
+    fontFamily: "Bold",
+    textTransform: "uppercase",
   },
   roundScoreBadge: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",

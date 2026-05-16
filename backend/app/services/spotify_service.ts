@@ -27,6 +27,25 @@ const REFRESH_LEEWAY_SECONDS = 60
 const MAX_RATE_LIMIT_RETRIES = 2
 const MAX_RETRY_DELAY_SECONDS = 30
 
+export class SpotifyApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly path: string,
+    public readonly body?: string
+  ) {
+    super(`Spotify API error ${status} on ${path}`)
+    this.name = 'SpotifyApiError'
+  }
+}
+
+export type SpotifyHttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+
+export interface SpotifyRequestOptions {
+  method?: SpotifyHttpMethod
+  query?: Record<string, string>
+  body?: unknown
+}
+
 export class SpotifyService {
   async findByUserId(userId: string): Promise<UserIntegration | null> {
     return UserIntegration.query()
@@ -150,15 +169,31 @@ export class SpotifyService {
     path: string,
     query: Record<string, string> = {}
   ): Promise<unknown> {
+    return this.spotifyApiRequest(userId, path, { method: 'GET', query })
+  }
+
+  async spotifyApiRequest<T = unknown>(
+    userId: string,
+    path: string,
+    options: SpotifyRequestOptions = {}
+  ): Promise<T> {
     const token = await this.getValidAccessToken(userId)
     const url = new URL(SPOTIFY_API_BASE + path)
-    for (const [key, value] of Object.entries(query)) {
-      url.searchParams.set(key, value)
+    if (options.query) {
+      for (const [key, value] of Object.entries(options.query)) {
+        url.searchParams.set(key, value)
+      }
     }
+    const method = options.method ?? 'GET'
 
     for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt++) {
       const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        },
+        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
       })
 
       if (response.status === 429) {
@@ -177,10 +212,15 @@ export class SpotifyService {
       }
 
       if (!response.ok) {
-        throw new Error(`Spotify API error ${response.status} on ${path}`)
+        const text = await response.text().catch(() => undefined)
+        throw new SpotifyApiError(response.status, path, text)
       }
 
-      return response.json()
+      if (response.status === 204) {
+        return undefined as T
+      }
+
+      return response.json() as Promise<T>
       /* c8 ignore start */
     }
     throw new Error(`Spotify API retry loop exited unexpectedly on ${path}`)

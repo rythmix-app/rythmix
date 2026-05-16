@@ -1,20 +1,62 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { deezerAPI, DeezerTrack } from "@/services/deezer-api";
 import { cacheManager } from "@/services/cache-manager";
+import { upsertMyTrackInteraction } from "@/services/trackInteractionsService";
 import {
-  createMyLikedTrack,
-  deleteMyLikedTrack,
-} from "@/services/likedTrackService";
+  InteractionAction,
+  SpotifyTriggerSnapshot,
+} from "@/types/trackInteraction";
 import { MusicCardData } from "@/components/swipe";
 import { deezerTracksToCardData } from "@/utils/deezer-adapter";
 import { useAudioPlayer } from "./useAudioPlayer";
 
+const buildGenreMappings = async (
+  feedTracks: DeezerTrack[],
+): Promise<{
+  genreMapping: Record<number, string>;
+  albumGenresMapping: Record<number, string[]>;
+}> => {
+  const genreMapping: Record<number, string> = {};
+  const albumGenresMapping: Record<number, string[]> = {};
+
+  // L'enrichissement de genres est best-effort : si Deezer rate-limit (réponse
+  // 200 OK avec body { error: ... }), on affiche les cartes sans tags plutôt
+  // que de bloquer tout le SwipeMix.
+  const [genresResult, ...albumsResult] = await Promise.allSettled([
+    deezerAPI.getGenres(),
+    ...feedTracks.map((track) => deezerAPI.getAlbum(track.album.id)),
+  ]);
+
+  if (genresResult.status === "fulfilled" && genresResult.value?.data) {
+    genresResult.value.data.forEach((genre) => {
+      genreMapping[genre.id] = genre.name.toUpperCase();
+    });
+  }
+
+  albumsResult.forEach((result) => {
+    if (result.status !== "fulfilled") return;
+    const album = result.value;
+    if (!album) return;
+    if (album.genres && album.genres.data?.length > 0) {
+      albumGenresMapping[album.id] = album.genres.data.map((g) =>
+        g.name.toUpperCase(),
+      );
+    } else if (album.genre_id && genreMapping[album.genre_id]) {
+      albumGenresMapping[album.id] = [genreMapping[album.genre_id]];
+    }
+  });
+
+  return { genreMapping, albumGenresMapping };
+};
+
 interface UseSwipeMixOptions {
   initialLimit?: number;
+  onInteractionAttempt?: (action: InteractionAction) => void;
+  onSpotifyResult?: (result: SpotifyTriggerSnapshot | undefined) => void;
 }
 
 export function useSwipeMix(options: UseSwipeMixOptions = {}) {
-  const { initialLimit = 10 } = options;
+  const { initialLimit = 10, onInteractionAttempt, onSpotifyResult } = options;
 
   const [cards, setCards] = useState<MusicCardData[]>([]);
   const [tracks, setTracks] = useState<Map<string, DeezerTrack>>(new Map());
@@ -26,8 +68,6 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
   const currentPageIndexRef = useRef(0);
   // Verrou synchrone pour éviter les appels concurrents à loadTracks
   const isLoadingRef = useRef(false);
-  // Tracks likés persistés en DB — utilisé pour rollback sur un dislike qui suit un like
-  const likedTrackIdsRef = useRef<Set<string>>(new Set());
 
   const handleRetry = useCallback(
     async (track: DeezerTrack): Promise<DeezerTrack | null> => {
@@ -64,33 +104,9 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         // Récupérer les morceaux tendances
         const response = await deezerAPI.getTopTracks(initialLimit, indexToUse);
 
-        // Récupérer les genres et les détails des albums (pour avoir le genre_id) en parallèle
-        // Note: deezerAPI utilise déjà le cacheManager
-        const [genresResponse, ...albums] = await Promise.all([
-          deezerAPI.getGenres(),
-          ...response.data.map((track) => deezerAPI.getAlbum(track.album.id)),
-        ]);
-
-        // Créer les mappings pour l'adapter
-        const genreMapping: Record<number, string> = {};
-        genresResponse.data.forEach((genre) => {
-          genreMapping[genre.id] = genre.name.toUpperCase();
-        });
-
-        const albumGenresMapping: Record<number, string[]> = {};
-        albums.forEach((album) => {
-          if (album) {
-            // Si l'album a une liste de genres, on les récupère tous
-            if (album.genres && album.genres.data.length > 0) {
-              albumGenresMapping[album.id] = album.genres.data.map((g) =>
-                g.name.toUpperCase(),
-              );
-            } else if (album.genre_id && genreMapping[album.genre_id]) {
-              // Fallback sur le genre_id principal si la liste est absente
-              albumGenresMapping[album.id] = [genreMapping[album.genre_id]];
-            }
-          }
-        });
+        const { genreMapping, albumGenresMapping } = await buildGenreMappings(
+          response.data,
+        );
 
         // Convertir en cartes avec les informations de genre
         const newCards = deezerTracksToCardData(
@@ -147,39 +163,68 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
     loadTracks();
   }, [loadTracks]);
 
+  const persistInteraction = useCallback(
+    async (card: MusicCardData, action: InteractionAction) => {
+      const cached = tracks.get(card.id);
+
+      // /chart ne retourne pas l'ISRC : on tente un backfill asynchrone pour les prochaines
+      // interactions sans bloquer le swipe courant.
+      if (cached?.isrc === undefined) {
+        void deezerAPI
+          .getTrack(Number(card.id))
+          .then((freshTrack) => {
+            setTracks((prev) => {
+              const current = prev.get(card.id);
+              if (current?.isrc === freshTrack.isrc) {
+                return prev;
+              }
+              const newMap = new Map(prev);
+              newMap.set(freshTrack.id.toString(), freshTrack);
+              return newMap;
+            });
+          })
+          .catch(() => {
+            // Best effort : ne pas impacter la persistance de l'interaction
+          });
+      }
+
+      onInteractionAttempt?.(action);
+
+      try {
+        const response = await upsertMyTrackInteraction({
+          deezerTrackId: card.id,
+          deezerArtistId: cached ? String(cached.artist.id) : undefined,
+          action,
+          title: card.title,
+          artist: card.artist,
+          isrc: cached?.isrc,
+        });
+        onSpotifyResult?.(response.spotifyResult);
+      } catch {
+        // Les échecs ne sont pas mis en file d'attente : l'interaction peut être perdue
+        // en cas d'erreur réseau.
+      }
+    },
+    [tracks, onInteractionAttempt, onSpotifyResult],
+  );
+
   // Handler pour swipe left (skip/dislike)
   const handleSwipeLeft = useCallback(
     (card: MusicCardData) => {
-      // Rollback d'un like précédent si l'utilisateur change d'avis via le bouton précédent
-      if (likedTrackIdsRef.current.has(card.id)) {
-        likedTrackIdsRef.current.delete(card.id);
-        deleteMyLikedTrack(card.id).catch(() => {
-          // Erreurs réseau ignorées silencieusement
-        });
-      }
+      persistInteraction(card, "disliked");
 
       // Arrêter la lecture si c'est le morceau actuel
       if (audioPlayer.currentTrack?.id.toString() === card.id) {
         audioPlayer.stop();
       }
     },
-    [audioPlayer],
+    [audioPlayer, persistInteraction],
   );
 
   // Handler pour swipe right (like/save)
   const handleSwipeRight = useCallback(
-    async (card: MusicCardData) => {
-      // Persister le like en arrière-plan sans bloquer l'UX
-      likedTrackIdsRef.current.add(card.id);
-      createMyLikedTrack({
-        deezerTrackId: card.id,
-        title: card.title,
-        artist: card.artist,
-        type: "track",
-      }).catch(() => {
-        // Erreurs réseau et 409 (déjà liké) ignorées silencieusement
-        likedTrackIdsRef.current.delete(card.id);
-      });
+    (card: MusicCardData) => {
+      persistInteraction(card, "liked");
 
       // Arrêter la lecture pour passer à la carte suivante
       // (la nouvelle carte démarrera automatiquement via onCardAppear)
@@ -187,7 +232,7 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
         audioPlayer.stop();
       }
     },
-    [audioPlayer],
+    [audioPlayer, persistInteraction],
   );
 
   // Handler pour play/pause

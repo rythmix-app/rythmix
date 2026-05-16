@@ -445,4 +445,33 @@ test.group('SpotifyService - API fetch', (group) => {
     const elapsed = Date.now() - start
     assert.isAtLeast(elapsed, 15)
   })
+
+  test('spotifyApiRequest returns undefined on a 204 No Content response', async ({ assert }) => {
+    const user = await createLinkedUser('no_content')
+    globalThis.fetch = async () => new Response(null, { status: 204 })
+
+    const result = await service.spotifyApiRequest(user.id, '/playlists/x/tracks', {
+      method: 'DELETE',
+      body: { tracks: [{ uri: 'spotify:track:y' }] },
+    })
+
+    assert.isUndefined(result)
+  })
+
+  test('spotifyApiRequest defaults the HTTP method to GET when not provided', async ({
+    assert,
+  }) => {
+    const user = await createLinkedUser('default_method')
+    let capturedMethod: string | null = null
+    globalThis.fetch = async (_input, init) => {
+      capturedMethod = (init as RequestInit | undefined)?.method ?? null
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    await service.spotifyApiRequest(user.id, '/me')
+    assert.equal(capturedMethod, 'GET')
+  })
 })

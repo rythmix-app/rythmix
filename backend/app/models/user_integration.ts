@@ -44,6 +44,13 @@ export default class UserIntegration extends BaseModel {
   @column()
   declare scopes: string | null
 
+  @ApiProperty({
+    description: 'Spotify "Rythmix Likes" playlist id',
+    nullable: true,
+  })
+  @column()
+  declare spotifyLikedPlaylistId: string | null
+
   @ApiProperty({ description: 'Creation timestamp' })
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

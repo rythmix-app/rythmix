@@ -16,9 +16,9 @@ help:
     @echo "  setup-dev-certs   - Generate development SSL certificates"
     @echo ""
     @echo "🔧 Environment Management:"
-    @echo "  up SERVICE        - Start environment (dev|prod|ngrok)"
-    @echo "  down SERVICE      - Stop environment (dev|prod)"
-    @echo "  logs SERVICE      - Show real-time logs (dev|prod)"
+    @echo "  up SERVICE        - Start environment (dev|staging|prod|ngrok)"
+    @echo "  down SERVICE      - Stop environment (dev|staging|prod)"
+    @echo "  logs SERVICE      - Show real-time logs (dev|staging|prod)"
     @echo ""
     @echo "🐚 Container shells:"
     @echo "  sh-backend        - Enter backend container shell"
@@ -105,6 +105,9 @@ up SERVICE:
         dev)
             {{_docker_cmd}} up --build --wait
             ;;
+        staging)
+            {{_docker_cmd}} -f docker-compose.yml -f docker-compose.staging.yml --profile ngrok up --build -d traefik backend ngrok
+            ;;
         prod)
             {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml up --build -d
             ;;
@@ -112,7 +115,7 @@ up SERVICE:
             {{_docker_cmd}} --profile ngrok up -d
             ;;
         *)
-            echo "❌ Invalid service. Use: dev, prod, or ngrok"
+            echo "❌ Invalid service. Use: dev, staging, prod, or ngrok"
             exit 1
             ;;
     esac
@@ -123,11 +126,14 @@ down SERVICE:
         dev)
             {{_docker_cmd}} down
             ;;
+        staging)
+            {{_docker_cmd}} -f docker-compose.yml -f docker-compose.staging.yml --profile ngrok down
+            ;;
         prod)
             {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml down
             ;;
         *)
-            echo "❌ Invalid service. Use: dev or prod"
+            echo "❌ Invalid service. Use: dev, staging, or prod"
             exit 1
             ;;
     esac
@@ -138,11 +144,14 @@ logs SERVICE:
         dev)
             {{_docker_cmd}} logs -f
             ;;
+        staging)
+            {{_docker_cmd}} -f docker-compose.yml -f docker-compose.staging.yml --profile ngrok logs -f
+            ;;
         prod)
             {{_docker_cmd}} -f docker-compose.yml -f docker-compose.prod.yml logs -f
             ;;
         *)
-            echo "❌ Invalid service. Use: dev or prod"
+            echo "❌ Invalid service. Use: dev, staging, or prod"
             exit 1
             ;;
     esac

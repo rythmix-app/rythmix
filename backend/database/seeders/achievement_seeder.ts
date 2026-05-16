@@ -4,7 +4,7 @@ import { AchievementType } from '#enums/achievement_type'
 
 export default class extends BaseSeeder {
   async run() {
-    await Achievement.createMany([
+    const achievements = [
       {
         name: "Bienvenue dans l'arène",
         description: 'Jouer sa toute première partie.',
@@ -131,6 +131,10 @@ export default class extends BaseSeeder {
         type: AchievementType.Comeback,
         icon: '🔄',
       },
-    ])
+    ]
+
+    for (const achievement of achievements) {
+      await Achievement.updateOrCreate({ type: achievement.type }, achievement)
+    }
   }
 }

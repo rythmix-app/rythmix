@@ -2,6 +2,7 @@ import { del, get, post } from "./api";
 import {
   SpotifyArtist,
   SpotifyPaged,
+  SpotifyPlaylistSyncResult,
   SpotifyRecentlyPlayedItem,
   SpotifyStatus,
   SpotifyTimeRange,
@@ -66,3 +67,12 @@ export const initSpotifyAuth = (
   returnUrl: string,
 ): Promise<SpotifyInitResponse> =>
   post<SpotifyInitResponse>("/api/auth/spotify/init", { returnUrl });
+
+export const syncSpotifyLikedPlaylist =
+  async (): Promise<SpotifyPlaylistSyncResult> => {
+    const data = await post<{ result: SpotifyPlaylistSyncResult }>(
+      "/api/me/spotify/playlist/sync",
+      {},
+    );
+    return data.result;
+  };

@@ -1,0 +1,100 @@
+name: EAS Staging
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - 'front-mobile/**'
+      - '.github/workflows/eas-staging.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: eas-staging
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: EAS Update + Discord notify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check for EXPO_TOKEN
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "EXPO_TOKEN secret is missing."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: front-mobile/package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          packager: npm
+
+      - name: Install dependencies
+        working-directory: front-mobile
+        run: npm ci
+
+      - name: Publish EAS update
+        id: update
+        working-directory: front-mobile
+        env:
+          EXPO_PUBLIC_DEEZER_BASE_URL: ${{ secrets.EXPO_PUBLIC_DEEZER_BASE_URL }}
+          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+        run: |
+          set -euo pipefail
+          eas update --auto --non-interactive --json > update.json
+          cat update.json
+          GROUP=$(jq -r '.[0].group' update.json)
+          BRANCH=$(jq -r '.[0].branch' update.json)
+          RUNTIME_VERSION=$(jq -r '.[0].runtimeVersion' update.json)
+          CREATED_AT=$(jq -r '.[0].createdAt' update.json)
+          PROJECT_ID=$(jq -r '.[0].projectId // "160a02f5-15f4-41a9-bdd9-e402672188b0"' update.json)
+          SLUG=$(jq -r '.expo.slug' app.json)
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          UPDATE_URL="https://expo.dev/accounts/rythmix/projects/front-mobile/updates/${GROUP}"
+          PREVIEW_URL="https://expo.dev/preview/update?message=$(printf %s "$COMMIT_MSG" | jq -sRr @uri)&updateRuntimeVersion=${RUNTIME_VERSION}&createdAt=$(printf %s "$CREATED_AT" | jq -sRr @uri)&slug=${SLUG}&projectId=${PROJECT_ID}&group=${GROUP}"
+          QR_URL="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=$(printf %s "$PREVIEW_URL" | jq -sRr @uri)"
+          {
+            echo "group=$GROUP"
+            echo "branch=$BRANCH"
+            echo "update_url=$UPDATE_URL"
+            echo "preview_url=$PREVIEW_URL"
+            echo "qr_url=$QR_URL"
+            echo "commit_msg=$COMMIT_MSG"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Docker Hub connection
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Notify Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_STAGING }}
+        uses: Ilshidur/action-discord@0.3.2
+        with:
+          args: |
+            📱 **EAS staging update published**
+
+            `${{ steps.update.outputs.commit_msg }}`
+
+            🌿 Branch : `${{ steps.update.outputs.branch }}` — commit `${{ github.sha }}`
+            📊 Détails : ${{ steps.update.outputs.update_url }}
+
+            📷 Scanne le QR (login Expo requis — demander les identifiants au propriétaire) :
+            ${{ steps.update.outputs.qr_url }}

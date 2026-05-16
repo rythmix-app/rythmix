@@ -1,5 +1,7 @@
 import GameSession from '#models/game_session'
 import { GameSessionStatus } from '#enums/game_session_status'
+import GameFinished from '#events/game_finished'
+import logger from '@adonisjs/core/services/logger'
 
 export class GameSessionService {
   public async getAll() {
@@ -38,6 +40,11 @@ export class GameSessionService {
     try {
       const gameSession = await GameSession.create(payload)
       await gameSession.load('game')
+
+      if (gameSession.status === GameSessionStatus.Completed) {
+        await this.emitGameFinished(gameSession)
+      }
+
       return gameSession
     } catch (error: any) {
       if (error.code === '23503') {
@@ -87,10 +94,19 @@ export class GameSessionService {
       mergedPayload.gameData = { ...gameSession.gameData, ...payload.gameData }
     }
 
+    const previousStatus = gameSession.status
     gameSession.merge(mergedPayload)
     try {
       await gameSession.save()
       await gameSession.load('game')
+
+      if (
+        previousStatus !== GameSessionStatus.Completed &&
+        gameSession.status === GameSessionStatus.Completed
+      ) {
+        await this.emitGameFinished(gameSession)
+      }
+
       return gameSession
     } catch (error: any) {
       if (error.code === '23503') {
@@ -206,7 +222,49 @@ export class GameSessionService {
   }
 
   public async getMyActiveSessionByGameId(userId: string, gameId: number) {
-    return this.getByUserIdAndGameId(userId, gameId, GameSessionStatus.Active)
+    const sessions = await this.getByUserIdAndGameId(userId, gameId, GameSessionStatus.Active)
+    return sessions[0] ?? null
+  }
+
+  private async emitGameFinished(gameSession: GameSession) {
+    const gameData =
+      gameSession.gameData &&
+      typeof gameSession.gameData === 'object' &&
+      !Array.isArray(gameSession.gameData)
+        ? (gameSession.gameData as Record<string, unknown>)
+        : {}
+    const toFiniteNumber = (value: unknown) => {
+      const number = Number(value)
+      return Number.isFinite(number) ? number : 0
+    }
+    const score = toFiniteNumber(gameData.score)
+    const maxScore = toFiniteNumber(gameData.maxScore)
+    const isPerfect = maxScore > 0 && score >= maxScore
+    const answers = Array.isArray(gameData.answers) ? gameData.answers : []
+    const correctAnswersCount = answers.filter((a: any) => a?.correct === true).length
+    const durationMs = Math.round(toFiniteNumber(gameData.timeElapsed) * 1000)
+    const answerTimes = answers.map((a: any) => toFiniteNumber(a?.durationMs)).filter((t) => t > 0)
+    const fastestAnswerMs = answerTimes.length > 0 ? Math.min(...answerTimes) : undefined
+
+    for (const player of gameSession.players) {
+      try {
+        await GameFinished.dispatch({
+          userId: player.userId,
+          gameId: gameSession.gameId,
+          score,
+          maxScore,
+          isPerfect,
+          durationMs,
+          fastestAnswerMs,
+          correctAnswersCount,
+        })
+      } catch (error) {
+        logger.error(
+          { err: error, userId: player.userId, gameSessionId: gameSession.id },
+          'GameFinished listener failed'
+        )
+      }
+    }
   }
 }
 

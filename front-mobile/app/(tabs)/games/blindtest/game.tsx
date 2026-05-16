@@ -6,7 +6,7 @@ import Button from "@/components/Button";
 import Header from "@/components/Header";
 import { Colors } from "@/constants/Colors";
 import { useBlindtestGame } from "@/hooks/feature/blindtest/useBlindtestGame";
-import BlindtestGenreSelection from "@/components/feature/blindtest/BlindtestGenreSelection";
+import BlindtestPlaylistSelection from "@/components/feature/blindtest/BlindtestPlaylistSelection";
 import BlindtestReadyScreen from "@/components/feature/blindtest/BlindtestReadyScreen";
 import BlindtestPlayingScreen from "@/components/feature/blindtest/BlindtestPlayingScreen";
 import BlindtestRoundReveal from "@/components/feature/blindtest/BlindtestRoundReveal";
@@ -15,8 +15,8 @@ import BlindtestResultScreen from "@/components/feature/blindtest/BlindtestResul
 export default function BlindtestGameScreen() {
   const {
     gameState,
-    genres,
-    loadingGenres,
+    playlists,
+    loadingPlaylists,
     loadingTracks,
     currentTrack,
     currentFeaturingNames,
@@ -71,14 +71,14 @@ export default function BlindtestGameScreen() {
     );
   }
 
-  if (gameState === "genreSelection") {
+  if (gameState === "playlistSelection") {
     return (
-      <BlindtestGenreSelection
+      <BlindtestPlaylistSelection
         sessionId={sessionId}
-        genres={genres}
-        loadingGenres={loadingGenres}
+        playlists={playlists}
+        loadingPlaylists={loadingPlaylists}
         loadingTracks={loadingTracks}
-        onSelectGenre={startGame}
+        onSelectPlaylist={startGame}
         onSave={autoSave}
       />
     );

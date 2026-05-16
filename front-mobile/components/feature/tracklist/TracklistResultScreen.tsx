@@ -195,11 +195,12 @@ const styles = StyleSheet.create({
   },
   trackResultText: {
     fontSize: 14,
+    fontFamily: "Bold",
+    textTransform: "uppercase",
     flex: 1,
   },
   answerCorrect: {
     color: Colors.game.success,
-    fontWeight: "bold",
   },
   answerIncorrect: {
     color: Colors.game.error,

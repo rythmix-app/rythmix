@@ -12,7 +12,7 @@ import {
 
 @inject()
 export default class UsersController {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @ApiOperation({ summary: 'List all users', description: 'Get a list of all users in the system' })
   @ApiSecurity('bearerAuth')
@@ -96,6 +96,25 @@ export default class UsersController {
       userId,
       request.only(['role', 'firstName', 'lastName', 'username'])
     )
+    if (!(result instanceof User)) {
+      return response.status(result.status || 500).json({ message: result.error })
+    }
+    return response.json({ user: result })
+  }
+
+  @ApiOperation({
+    summary: 'Verify a user account',
+    description: 'Manually mark a user account as verified by setting emailVerifiedAt (admin only)',
+  })
+  @ApiSecurity('bearerAuth')
+  @ApiParam({ name: 'id', description: 'User ID (UUID)', required: true })
+  @ApiResponse({ status: 200, description: 'User verified successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin role required' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  public async verify({ params, response }: HttpContext) {
+    const userId = params.id
+    const result = await this.userService.verifyUser(userId)
     if (!(result instanceof User)) {
       return response.status(result.status || 500).json({ message: result.error })
     }

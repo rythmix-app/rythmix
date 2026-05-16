@@ -318,6 +318,37 @@ describe('UserService', () => {
     });
   });
 
+  describe('verifyUser', () => {
+    it('should verify a user and return the updated user', (done) => {
+      const verifiedUser: User = {
+        ...mockUser,
+        emailVerifiedAt: new Date('2024-06-01T12:00:00Z'),
+      };
+      apiService.post.and.returnValue(of({ user: verifiedUser }));
+
+      service.verifyUser('1').subscribe({
+        next: (user) => {
+          expect(user).toEqual(verifiedUser);
+          expect(user.emailVerifiedAt).toBeTruthy();
+          expect(apiService.post).toHaveBeenCalledWith('/users/1/verify', {});
+          done();
+        },
+      });
+    });
+
+    it('should handle errors when verifying user', (done) => {
+      const error = new Error('User not found');
+      apiService.post.and.returnValue(throwError(() => error));
+
+      service.verifyUser('999').subscribe({
+        error: (err) => {
+          expect(err).toBe(error);
+          done();
+        },
+      });
+    });
+  });
+
   describe('permanentDeleteUser', () => {
     it('should permanently delete a user', (done) => {
       apiService.delete.and.returnValue(of(undefined));

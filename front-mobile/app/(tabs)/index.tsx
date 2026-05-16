@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 import { FavoriteGamesSection } from "@/components/games/FavoriteGamesSection";
+import OnboardingBanner from "@/components/OnboardingBanner";
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
@@ -16,6 +17,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
+      <OnboardingBanner />
       <ScrollView contentContainerStyle={styles.content}>
         {user && (
           <Text style={styles.welcomeText}>Bienvenue {user.username}</Text>

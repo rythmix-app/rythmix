@@ -4,7 +4,6 @@ export interface GameSessionPlayer {
   userId: string;
   status?: string;
   score?: number;
-  expGained?: number;
   rank?: number;
 }
 
@@ -138,6 +137,28 @@ export interface TracklistGameData {
   completedAt: string;
 }
 
+// Types spécifiques pour le jeu Higher or Lower
+export interface HigherOrLowerRound {
+  artistAId: number;
+  artistAName: string;
+  artistAFans: number;
+  artistBId: number;
+  artistBName: string;
+  artistBFans: number;
+  playerAnswer: "higher" | "lower";
+  isCorrect: boolean;
+}
+
+export interface HigherOrLowerGameData {
+  mode?: "artist" | "album";
+  totalRounds: number;
+  streak: number;
+  bestStreak: number;
+  rounds: HigherOrLowerRound[];
+  startedAt: string;
+  completedAt: string | null;
+}
+
 // Types spécifiques pour le jeu Blind Test
 export interface BlindtestRound {
   trackId: number;
@@ -156,9 +177,10 @@ export interface BlindtestRound {
 }
 
 export interface BlindtestGameData {
-  genre: {
+  playlist: {
     id: number;
     name: string;
+    genreLabel: string;
   };
   totalRounds: number;
   rounds: BlindtestRound[];
@@ -166,4 +188,36 @@ export interface BlindtestGameData {
   maxScore: number;
   startedAt: string;
   completedAt: string | null;
+}
+
+// Types spécifiques pour le jeu Parkeur (devine la suite des paroles)
+export interface ParkeurRound {
+  trackId: number;
+  artist: string;
+  title: string;
+  coverUrl: string | null;
+  lines: [string, string];
+  answerLine: string;
+}
+
+export interface ParkeurAnswer {
+  correct: boolean;
+  durationMs: number;
+  userInput: string;
+  expected: string;
+}
+
+export interface ParkeurGameData {
+  playlistId?: number;
+  playlistName?: string;
+  artistId?: number;
+  artistName?: string;
+  rounds: ParkeurRound[];
+  currentRound: number;
+  score: number;
+  maxScore: number;
+  answers: ParkeurAnswer[];
+  startedAt: string;
+  completedAt: string | null;
+  timeElapsed: number;
 }

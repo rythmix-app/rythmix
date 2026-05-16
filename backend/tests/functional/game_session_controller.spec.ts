@@ -27,7 +27,6 @@ test.group('GameSessionsController - Functional', (group) => {
           userId: 'user-123',
           status: 'actif',
           score: 100,
-          expGained: 50,
           rank: 1,
         },
       ],
@@ -52,7 +51,7 @@ test.group('GameSessionsController - Functional', (group) => {
     const session = await GameSession.create({
       gameId: game.id,
       status: 'en_cours',
-      players: [{ userId: 'user-1', status: 'actif', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId: 'user-1', status: 'actif', score: 0, rank: 1 }],
       gameData: { manche: 1 },
     })
 
@@ -75,7 +74,7 @@ test.group('GameSessionsController - Functional', (group) => {
     const session = await GameSession.create({
       gameId: game.id,
       status: 'en_cours',
-      players: [{ userId: 'user-1', status: 'actif', score: 50, expGained: 25, rank: 1 }],
+      players: [{ userId: 'user-1', status: 'actif', score: 50, rank: 1 }],
       gameData: { manche: 1 },
     })
 
@@ -84,7 +83,7 @@ test.group('GameSessionsController - Functional', (group) => {
       .bearerToken(token)
       .json({
         status: 'terminee',
-        players: [{ userId: 'user-1', status: 'termine', score: 200, expGained: 100, rank: 1 }],
+        players: [{ userId: 'user-1', status: 'termine', score: 200, rank: 1 }],
         gameData: { manche: 5, winner: 'user-1' },
       })
 
@@ -110,7 +109,7 @@ test.group('GameSessionsController - Functional', (group) => {
     const session = await GameSession.create({
       gameId: game.id,
       status: 'active',
-      players: [{ userId: 'user-1', status: 'playing', score: 50, expGained: 25, rank: 1 }],
+      players: [{ userId: 'user-1', status: 'playing', score: 50, rank: 1 }],
       gameData: { round: 2 },
     })
 
@@ -225,7 +224,7 @@ test.group('GameSessionsController - Functional', (group) => {
     await GameSession.create({
       gameId: game.id,
       status: 'active',
-      players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+      players: [{ userId, status: 'playing', score: 0, rank: 1 }],
       gameData: {},
     })
 
@@ -235,7 +234,7 @@ test.group('GameSessionsController - Functional', (group) => {
       .json({
         gameId: game.id,
         status: 'active',
-        players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+        players: [{ userId, status: 'playing', score: 0, rank: 1 }],
         gameData: {},
       })
 
@@ -254,7 +253,7 @@ test.group('GameSessionsController - Functional', (group) => {
     await GameSession.create({
       gameId: game.id,
       status: 'completed',
-      players: [{ userId, status: 'done', score: 100, expGained: 50, rank: 1 }],
+      players: [{ userId, status: 'done', score: 100, rank: 1 }],
       gameData: {},
     })
 
@@ -264,7 +263,7 @@ test.group('GameSessionsController - Functional', (group) => {
       .json({
         gameId: game.id,
         status: 'active',
-        players: [{ userId, status: 'playing', score: 0, expGained: 0, rank: 1 }],
+        players: [{ userId, status: 'playing', score: 0, rank: 1 }],
         gameData: {},
       })
 
@@ -298,14 +297,12 @@ test.group('GameSessionsController - Functional', (group) => {
           userId: 'user-1',
           status: 'actif',
           score: 150,
-          expGained: 75,
           rank: 1,
         },
         {
           userId: 'user-2',
           status: 'actif',
           score: 100,
-          expGained: 50,
           rank: 2,
         },
       ],

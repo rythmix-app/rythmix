@@ -45,6 +45,7 @@ export default class GamesController {
       properties: {
         name: { type: 'string', minLength: 1, example: 'Guess the Song' },
         description: { type: 'string', example: 'Players guess songs from audio clips' },
+        isEnabled: { type: 'boolean', example: true },
       },
     },
   })
@@ -54,7 +55,9 @@ export default class GamesController {
   @ApiResponse({ status: 500, description: 'Error creating game' })
   public async create({ request, response }: HttpContext) {
     try {
-      const result = await this.gameService.createGame(request.only(['name', 'description']))
+      const result = await this.gameService.createGame(
+        request.only(['name', 'description', 'isEnabled'])
+      )
       if (!(result instanceof Game)) {
         return response.status(result.status || 500).json({ message: result.error })
       }
@@ -101,6 +104,7 @@ export default class GamesController {
       properties: {
         name: { type: 'string', minLength: 1, example: 'Guess the Song' },
         description: { type: 'string', example: 'Players guess songs from audio clips' },
+        isEnabled: { type: 'boolean', example: true },
       },
     },
   })
@@ -114,7 +118,7 @@ export default class GamesController {
       const gameId = params.id
       const result = await this.gameService.updateGame(
         gameId,
-        request.only(['name', 'description'])
+        request.only(['name', 'description', 'isEnabled'])
       )
       if (!(result instanceof Game)) {
         return response.status(result.status || 500).json({ message: result.error })

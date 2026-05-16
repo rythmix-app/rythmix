@@ -3,7 +3,7 @@ import { deezerAPI, DeezerArtist } from "@/services/deezer-api";
 import { useToast } from "@/components/Toast";
 
 const SEARCH_DEBOUNCE_MS = 400;
-const MIN_QUERY_LENGTH = 3;
+const MIN_QUERY_LENGTH = 1;
 const TOP_ARTISTS_LIMIT = 20;
 const SEARCH_RESULTS_LIMIT = 20;
 

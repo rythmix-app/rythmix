@@ -72,6 +72,8 @@ export default function MusicCard({
 
 const styles = StyleSheet.create({
   container: {
+    width: "100%",
+    height: "100%",
     borderRadius: 10,
     overflow: "hidden",
     paddingVertical: 16,

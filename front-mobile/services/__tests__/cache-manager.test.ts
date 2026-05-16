@@ -48,6 +48,21 @@ describe("CacheManager", () => {
       const result = await cacheManager.get("corrupted");
       expect(result).toBeNull();
     });
+
+    it("should auto-invalidate entries whose value contains a top-level error key", async () => {
+      // Reproduit le bug Deezer rate-limit : un body { error: { ... } } a été mis
+      // en cache. Sans auto-invalidation, on le sert pendant 24h.
+      const pollutedBody = {
+        error: { type: "Exception", message: "Quota limit exceeded", code: 4 },
+      };
+      await cacheManager.set("genres", pollutedBody, 60000);
+
+      const result = await cacheManager.get("genres");
+      expect(result).toBeNull();
+
+      const stored = await AsyncStorage.getItem("@rythmix_cache:genres");
+      expect(stored).toBeNull();
+    });
   });
 
   describe("set", () => {

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { router } from "expo-router";
 import { User, LoginCredentials, RegisterData } from "@/types/auth";
 import * as authService from "@/services/authService";
 import * as storage from "@/services/storage";
@@ -20,16 +21,33 @@ interface AuthState {
   checkAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => {
+let onSessionExpired: (() => void) | null = null;
+export const setSessionExpiredHandler = (handler: (() => void) | null) => {
+  onSessionExpired = handler;
+};
+
+export const useAuthStore = create<AuthState>((set, get) => {
   // Handler pour déconnexion (401 sans refresh ou échec du refresh)
   setUnauthorizedHandler(() => {
+    const wasAuthenticated = get().isAuthenticated;
+    // isInitializing: false unblocks the splash if 401 fires during the
+    // initial checkAuth, before its own catch block resets the flag.
     set({
       user: null,
       token: null,
       refreshToken: null,
       isAuthenticated: false,
+      isInitializing: false,
     });
-    storage.clearAll();
+    storage.clearAll().catch((error) => {
+      console.error("Failed to clear storage on unauthorized:", error);
+    });
+    if (wasAuthenticated) {
+      router.replace("/auth/login");
+      if (onSessionExpired) {
+        onSessionExpired();
+      }
+    }
   });
 
   // Handler pour refresh réussi (met à jour le token dans le store)
@@ -91,21 +109,14 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     checkAuth: async () => {
-      set({ isInitializing: true });
+      // isInitializing defaults to true on store creation; do not re-toggle it
+      // on foreground revalidation, otherwise _layout.tsx unmounts the UI.
       try {
         const token = await storage.getToken();
         const refreshToken = await storage.getRefreshToken();
-        const user = await storage.getUser();
+        const cachedUser = await storage.getUser();
 
-        if (token && user) {
-          set({
-            user,
-            token,
-            refreshToken,
-            isAuthenticated: true,
-            isInitializing: false,
-          });
-        } else {
+        if (!token || !cachedUser) {
           set({
             user: null,
             token: null,
@@ -113,6 +124,39 @@ export const useAuthStore = create<AuthState>((set) => {
             isAuthenticated: false,
             isInitializing: false,
           });
+          return;
+        }
+
+        // Valider le token côté serveur (évite l'état "zombie" après expiration)
+        try {
+          const freshUser = await authService.getUserInfo();
+          await storage.setUser(freshUser);
+          set({
+            user: freshUser,
+            token,
+            refreshToken,
+            isAuthenticated: true,
+            isInitializing: false,
+          });
+        } catch (error) {
+          const statusCode = (error as { statusCode?: number })?.statusCode;
+          if (statusCode !== undefined) {
+            // Le serveur a répondu : setUnauthorizedHandler a déjà nettoyé
+            // l'état si c'était un 401. Pour les autres erreurs (4xx/5xx),
+            // ne pas restaurer la session cachée — la cohérence avec le
+            // storage déjà nettoyé prime.
+            set({ isInitializing: false });
+          } else {
+            // Erreur réseau / offline — garder la session cachée pour
+            // ne pas déconnecter à tort.
+            set({
+              user: cachedUser,
+              token,
+              refreshToken,
+              isAuthenticated: true,
+              isInitializing: false,
+            });
+          }
         }
       } catch {
         set({

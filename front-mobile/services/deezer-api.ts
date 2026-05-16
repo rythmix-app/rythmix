@@ -15,6 +15,8 @@ export interface DeezerTrack {
   explicit_content_cover: number;
   preview: string;
   md5_image: string;
+  // ISRC n'est retourné que par /track/{id} (pas par /chart/0/tracks)
+  isrc?: string;
   artist: {
     id: number;
     name: string;
@@ -179,7 +181,25 @@ class DeezerAPI {
             );
           }
 
-          return await response.json();
+          const body = await response.json();
+
+          // Deezer renvoie parfois 200 OK avec un body d'erreur applicative,
+          // par exemple { error: { type, message, code } } lors d'un quota dépassé.
+          // Sans ce garde, l'objet pollue le cache et fait planter les consommateurs.
+          if (body && typeof body === "object" && "error" in body) {
+            const errorBody = (
+              body as { error: { message?: string; code?: number } }
+            ).error;
+            const code = errorBody?.code;
+            const message = errorBody?.message ?? "Deezer application error";
+            // Codes Deezer 4 (quota global) et 200 (quota individuel) = rate limit
+            if (code === 4 || code === 200) {
+              throw DeezerAPIError.quota(message);
+            }
+            throw new DeezerAPIError(message, code);
+          }
+
+          return body;
         } catch (error) {
           // Si c'est déjà une DeezerAPIError, la relancer
           if (error instanceof DeezerAPIError) {
@@ -291,6 +311,21 @@ class DeezerAPI {
     }
 
     return await this.fetchWithRetry<DeezerTrack>(url);
+  }
+
+  async getArtist(id: number): Promise<DeezerArtist> {
+    const cacheKey = `artist:${id}`;
+    const url = `${this.baseUrl}/artist/${id}`;
+
+    if (this.enableCache) {
+      return await cacheManager.getOrSet(
+        cacheKey,
+        () => this.fetchWithRetry<DeezerArtist>(url),
+        DEFAULT_TTL.TRACKS,
+      );
+    }
+
+    return await this.fetchWithRetry<DeezerArtist>(url);
   }
 
   async getGenres(): Promise<DeezerGenresResponse> {
@@ -430,6 +465,10 @@ class DeezerAPI {
 
   async getTopArtists(limit: number = 20): Promise<DeezerArtistsResponse> {
     return this.getGenreTopArtists(0, limit);
+  }
+
+  async getTopAlbums(limit: number = 20): Promise<DeezerAlbumsResponse> {
+    return this.getGenreAlbums(0, limit);
   }
 
   async getArtistAlbums(

@@ -56,6 +56,13 @@
             >
               {{ user.deletedAt ? "Supprimé" : "Actif" }}
             </span>
+            <span
+              class="badge"
+              [class.badge-active]="user.emailVerifiedAt"
+              [class.badge-deleted]="!user.emailVerifiedAt"
+            >
+              {{ user.emailVerifiedAt ? "Vérifié" : "Non vérifié" }}
+            </span>
           </div>
         </div>
 
@@ -122,6 +129,29 @@
                   }}</span>
                 </div>
               }
+              <div class="field-row">
+                <span class="field-key">Vérification</span>
+                @if (user.emailVerifiedAt) {
+                  <span class="field-val">
+                    Validé le
+                    {{ user.emailVerifiedAt | date: "dd/MM/yyyy HH:mm" }}
+                  </span>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn-verify"
+                    [disabled]="isVerifying"
+                    (click)="verifyAccount()"
+                  >
+                    @if (isVerifying) {
+                      <i class="fas fa-spinner fa-spin"></i>
+                    } @else {
+                      <i class="fas fa-check"></i>
+                    }
+                    <span>Valider le compte</span>
+                  </button>
+                }
+              </div>
               <div class="field-row">
                 <span class="field-key">Statut</span>
                 <span

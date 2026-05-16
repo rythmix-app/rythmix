@@ -5,11 +5,18 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useRef, useEffect } from "react";
 import CardStack from "@/components/swipe/CardStack";
 import { useSwipeMix } from "@/hooks/useSwipeMix";
+import { useSpotifyLikeFeedback } from "@/hooks/useSpotifyLikeFeedback";
+import SpotifyConnectModal from "@/components/SpotifyConnectModal";
+import OnboardingBanner from "@/components/OnboardingBanner";
 
 export default function SwipeMixScreen() {
   const { top, bottom } = useSafeAreaInsets();
+  const spotifyFeedback = useSpotifyLikeFeedback();
   const { cards, isLoadingCards, handlers, audioPlayer, error, actions } =
-    useSwipeMix();
+    useSwipeMix({
+      onInteractionAttempt: spotifyFeedback.onLikeAttempted,
+      onSpotifyResult: spotifyFeedback.onInteractionResult,
+    });
 
   // Utiliser une ref pour garder une référence stable à la fonction stop
   const audioPlayerStopRef = useRef(audioPlayer.stop);
@@ -30,31 +37,40 @@ export default function SwipeMixScreen() {
   );
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <View
-        style={[styles.container, { paddingTop: top, paddingBottom: bottom }]}
-      >
-        {(error || audioPlayer.error) && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error || audioPlayer.error}</Text>
+    <>
+      <OnboardingBanner />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View
+          style={[styles.container, { paddingTop: top, paddingBottom: bottom }]}
+        >
+          {(error || audioPlayer.error) && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error || audioPlayer.error}</Text>
+            </View>
+          )}
+          <View style={styles.swipeCardContainer}>
+            <CardStack
+              cards={cards}
+              isLoadingCards={isLoadingCards}
+              onSwipeLeft={handlers.onSwipeLeft}
+              onSwipeRight={handlers.onSwipeRight}
+              onEmpty={handlers.onEmpty}
+              onLoadMore={actions.loadMore}
+              currentTrackId={audioPlayer.currentTrack?.id.toString()}
+              isPlaying={audioPlayer.isPlaying}
+              onTogglePlay={handlers.onTogglePlay}
+              onCardAppear={handlers.onCardAppear}
+            />
           </View>
-        )}
-        <View style={styles.swipeCardContainer}>
-          <CardStack
-            cards={cards}
-            isLoadingCards={isLoadingCards}
-            onSwipeLeft={handlers.onSwipeLeft}
-            onSwipeRight={handlers.onSwipeRight}
-            onEmpty={handlers.onEmpty}
-            onLoadMore={actions.loadMore}
-            currentTrackId={audioPlayer.currentTrack?.id.toString()}
-            isPlaying={audioPlayer.isPlaying}
-            onTogglePlay={handlers.onTogglePlay}
-            onCardAppear={handlers.onCardAppear}
+          <SpotifyConnectModal
+            visible={spotifyFeedback.connectModalVisible}
+            isConnecting={spotifyFeedback.isConnecting}
+            onConnect={spotifyFeedback.onConnectFromModal}
+            onDismiss={spotifyFeedback.onDismissModal}
           />
         </View>
-      </View>
-    </GestureHandlerRootView>
+      </GestureHandlerRootView>
+    </>
   );
 }
 

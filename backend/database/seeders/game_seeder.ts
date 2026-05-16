@@ -3,12 +3,12 @@ import Game from '#models/game'
 
 export default class extends BaseSeeder {
   async run() {
-    await Game.createMany([
+    const games = [
       {
         name: 'Blind Test',
         description: 'Devinez les morceaux le plus rapidement possible en temps réel.',
         isMultiplayer: false,
-        isEnabled: false,
+        isEnabled: true,
       },
       {
         name: 'Qui dit ça ?',
@@ -32,7 +32,7 @@ export default class extends BaseSeeder {
         name: 'Plus ou Moins',
         description: 'Comparez la popularité des artistes : streams, abonnés, récompenses.',
         isMultiplayer: false,
-        isEnabled: false,
+        isEnabled: true,
       },
       {
         name: 'Fausse Punch',
@@ -50,8 +50,12 @@ export default class extends BaseSeeder {
         name: 'Parkeur',
         description: 'Complétez les paroles manquantes des chansons.',
         isMultiplayer: false,
-        isEnabled: false,
+        isEnabled: true,
       },
-    ])
+    ]
+
+    for (const game of games) {
+      await Game.updateOrCreate({ name: game.name }, game)
+    }
   }
 }

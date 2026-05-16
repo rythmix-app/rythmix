@@ -13,10 +13,26 @@
         <input
           type="text"
           placeholder="Rechercher par username ou email..."
-          (input)="applyFilter($event)"
+          (input)="onSearch($event)"
           class="search-input"
         />
         <i class="fas fa-search search-icon"></i>
+      </div>
+
+      <div class="dropdown-filter">
+        <label for="roleFilter" class="filter-label">Rôle :</label>
+        <div class="select-wrapper">
+          <select
+            id="roleFilter"
+            class="filter-select"
+            (change)="onRoleFilterChange($event)"
+          >
+            <option value="">Tous</option>
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
       </div>
 
       <label class="toggle-deleted">
@@ -100,6 +116,7 @@
                   ></i>
                 </th>
                 <th>STATUT</th>
+                <th>VÉRIFIÉ</th>
                 <th class="actions-header"></th>
               </tr>
             </thead>
@@ -142,6 +159,20 @@
                       {{ isUserDeleted(user) ? "Supprimé" : "Actif" }}
                     </span>
                   </td>
+                  <td>
+                    <span
+                      class="badge"
+                      [class.badge-active]="user.emailVerifiedAt"
+                      [class.badge-danger]="!user.emailVerifiedAt"
+                      [title]="
+                        user.emailVerifiedAt
+                          ? (user.emailVerifiedAt | date: 'dd/MM/yyyy HH:mm')
+                          : ''
+                      "
+                    >
+                      {{ user.emailVerifiedAt ? "Oui" : "Non" }}
+                    </span>
+                  </td>
                   <td class="actions-cell">
                     @if (!isUserDeleted(user)) {
                       <button
@@ -179,7 +210,7 @@
                 </tr>
               } @empty {
                 <tr class="no-data-row">
-                  <td colspan="6">Aucun utilisateur trouvé</td>
+                  <td colspan="7">Aucun utilisateur trouvé</td>
                 </tr>
               }
             </tbody>

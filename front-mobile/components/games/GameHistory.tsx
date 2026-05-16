@@ -159,8 +159,14 @@ export function HistoryRow({
   const playerEntry = currentUserId
     ? session.players?.find((p) => p.userId === currentUserId)
     : undefined;
-  const score = playerEntry?.score;
-  const expGained = playerEntry?.expGained;
+  // gameData.score is the authoritative final score for solo games (mobile updates
+  // it on completion). players[].score stays at 0 in the DB, so prefer gameData.
+  const rawScore = (session.gameData as { score?: unknown } | undefined)?.score;
+  const numericScore =
+    typeof rawScore === "number" ? rawScore : Number(rawScore);
+  const score = Number.isFinite(numericScore)
+    ? numericScore
+    : playerEntry?.score;
   const rank = playerEntry?.rank;
   const playerCount = session.players?.length ?? 0;
   const isMultiplayer = playerCount > 1;
@@ -209,9 +215,6 @@ export function HistoryRow({
             </ThemedText>
           </View>
         )}
-        <View style={[styles.pill, styles.expPill]}>
-          <ThemedText style={styles.expText}>+{expGained ?? 0} XP</ThemedText>
-        </View>
         {typeof score === "number" && (
           <View style={[styles.pill, styles.scorePill]}>
             <ThemedText style={styles.scoreText}>{score} pts</ThemedText>
@@ -315,14 +318,6 @@ const styles = StyleSheet.create({
   rankText: {
     fontSize: 12,
     fontWeight: "700",
-  },
-  expPill: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-  },
-  expText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "600",
   },
   scorePill: {
     backgroundColor: "rgba(20, 255, 236, 0.12)",

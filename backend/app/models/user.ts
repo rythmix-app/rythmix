@@ -6,9 +6,10 @@ import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { randomUUID } from 'node:crypto'
 import { hasMany } from '@adonisjs/lucid/orm'
-import LikedTrack from '#models/liked_track'
+import UserTrackInteraction from '#models/user_track_interaction'
 import FavoriteGame from '#models/favorite_game'
 import UserIntegration from '#models/user_integration'
+import UserOnboardingArtist from '#models/user_onboarding_artist'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import { ApiProperty } from '@foadonis/openapi/decorators'
 
@@ -71,14 +72,28 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime()
   declare emailVerifiedAt: DateTime | null
 
-  @hasMany(() => LikedTrack)
-  declare likedTracks: HasMany<typeof LikedTrack>
+  @ApiProperty({ description: 'Last login timestamp', nullable: true })
+  @column.dateTime()
+  declare lastLoginAt: DateTime | null
+
+  @ApiProperty({
+    description: 'Whether the user opted-in to the newsletter at registration',
+    example: false,
+  })
+  @column()
+  declare optInNewsletter: boolean
+
+  @hasMany(() => UserTrackInteraction)
+  declare trackInteractions: HasMany<typeof UserTrackInteraction>
 
   @hasMany(() => FavoriteGame)
   declare favoriteGames: HasMany<typeof FavoriteGame>
 
   @hasMany(() => UserIntegration)
   declare integrations: HasMany<typeof UserIntegration>
+
+  @hasMany(() => UserOnboardingArtist)
+  declare onboardingArtists: HasMany<typeof UserOnboardingArtist>
 
   @column({ serializeAs: null })
   declare verificationToken: string | null

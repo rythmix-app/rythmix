@@ -6,6 +6,7 @@ export interface User {
   email: string;
   password?: string;
   role?: 'user' | 'admin';
+  emailVerifiedAt?: Date | null;
   createdAt: Date;
   updatedAt?: Date | null;
   deletedAt?: Date | null;
