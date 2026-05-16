@@ -264,27 +264,6 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     marginTop: 12,
-<<<<<<< HEAD
-    alignItems: "center",
-  },
-  errorText: {
-    color: "#FF4D4D",
-    fontSize: 13,
-  },
-
-  // Badges
-  badgesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  badgeItem: {
-    width: "31%",
-    backgroundColor: "#1A1A1A",
-    borderRadius: 12,
-    padding: 12,
-=======
->>>>>>> origin/MIX-314
     alignItems: "center",
   },
   errorText: {
