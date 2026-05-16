@@ -7,23 +7,11 @@ import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 import OnboardingBanner from "@/components/OnboardingBanner";
 import ProfileSpotifySection from "@/components/profile/ProfileSpotifySection";
+import ProfileAchievementsSection from "@/components/profile/ProfileAchievementsSection";
 import { ProfileRecentActivities } from "@/components/profile/ProfileRecentActivities";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useMyStats } from "@/hooks/useMyStats";
 import { Skeleton } from "@/components/ui/Skeleton";
-
-// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
-const MOCK_BADGES = [
-  { id: "1", name: "Bienvenue dans l'arène", icon: "🏟️", unlocked: true },
-  { id: "2", name: "Premier pas", icon: "👣", unlocked: true },
-  { id: "3", name: "Première victoire", icon: "🥇", unlocked: true },
-  { id: "4", name: "Oreille d'or", icon: "🎧", unlocked: true },
-  { id: "5", name: "Éclair", icon: "⚡", unlocked: true },
-  { id: "6", name: "Perfectionniste", icon: "💎", unlocked: false },
-  { id: "7", name: "Vétéran", icon: "🏆", unlocked: false },
-  { id: "8", name: "Légende", icon: "👑", unlocked: false },
-  { id: "9", name: "Mélomane absolu", icon: "🎵", unlocked: false },
-];
 
 function getMemberSince(createdAt?: string): string {
   if (!createdAt) return "membre récemment";
@@ -108,32 +96,7 @@ export default function ProfileScreen() {
         <ProfileSpotifySection />
 
         {/* ── Succès & Récompenses ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitleCentered}>Succès & Récompenses</Text>
-          <View style={styles.badgesGrid}>
-            {MOCK_BADGES.map((badge) => (
-              <View
-                key={badge.id}
-                style={[
-                  styles.badgeItem,
-                  !badge.unlocked && styles.badgeLocked,
-                ]}
-              >
-                <Text style={styles.badgeIcon}>
-                  {badge.unlocked ? badge.icon : "🔒"}
-                </Text>
-                <Text
-                  style={[
-                    styles.badgeName,
-                    !badge.unlocked && styles.badgeNameLocked,
-                  ]}
-                >
-                  {badge.name}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
+        <ProfileAchievementsSection />
 
         {/* ── Activités récentes ── */}
         <ProfileRecentActivities />
@@ -270,14 +233,6 @@ const styles = StyleSheet.create({
     borderLeftColor: Colors.primary.CTA,
     paddingLeft: 10,
   },
-  sectionTitleCentered: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.dark.text,
-    marginBottom: 14,
-    textAlign: "center",
-  },
-
   // Stats
   statsRow: {
     flexDirection: "row",
@@ -309,6 +264,7 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     marginTop: 12,
+<<<<<<< HEAD
     alignItems: "center",
   },
   errorText: {
@@ -327,26 +283,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A1A1A",
     borderRadius: 12,
     padding: 12,
+=======
+>>>>>>> origin/MIX-314
     alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: Colors.primary.CTA,
   },
-  badgeLocked: {
-    borderColor: "#2A2A2A",
-    opacity: 0.5,
-  },
-  badgeIcon: {
-    fontSize: 28,
-  },
-  badgeName: {
-    fontSize: 11,
-    color: Colors.dark.text,
-    textAlign: "center",
-    fontWeight: "600",
-  },
-  badgeNameLocked: {
-    color: Colors.dark.icon,
+  errorText: {
+    color: "#FF4D4D",
+    fontSize: 13,
   },
 
   // Favorite artists

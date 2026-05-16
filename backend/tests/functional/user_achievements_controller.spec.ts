@@ -22,7 +22,7 @@ test.group('UserAchievementsController', (group) => {
     adminToken = adminAuth.token
 
     achievement = await Achievement.create({
-      type: 'test_achievement' as AchievementType,
+      type: AchievementType.FirstGame,
       description: 'Test description',
     })
   })
