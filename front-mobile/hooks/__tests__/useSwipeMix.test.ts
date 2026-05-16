@@ -231,6 +231,27 @@ describe("useSwipeMix", () => {
         "Erreur lors du chargement des musiques",
       );
     });
+
+    it("should still render cards when Deezer genres/album enrichment fails", async () => {
+      // Régression : avant le fix, un échec sur getGenres (cas du quota Deezer
+      // dépassé) faisait crash genresResponse.data.forEach et bloquait tout le
+      // SwipeMix. Maintenant on dégrade gracieusement : cards sans tags.
+      mockDeezerAPI.getGenres.mockRejectedValueOnce(
+        new Error("Quota limit exceeded"),
+      );
+      mockDeezerAPI.getAlbum.mockRejectedValue(
+        new Error("Quota limit exceeded"),
+      );
+
+      const { result } = renderHook(() => useSwipeMix());
+
+      await waitFor(() => {
+        expect(result.current.isLoadingCards).toBe(false);
+      });
+
+      expect(result.current.error).toBeNull();
+      expect(result.current.cards).toHaveLength(10);
+    });
   });
 
   describe("swipe handlers", () => {
