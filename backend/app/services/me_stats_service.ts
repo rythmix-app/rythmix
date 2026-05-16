@@ -1,0 +1,93 @@
+import UserTrackInteraction from '#models/user_track_interaction'
+import GameSession from '#models/game_session'
+import { GameSessionStatus } from '#enums/game_session_status'
+import { DateTime } from 'luxon'
+
+const STREAK_LOOKBACK_DAYS = 365
+
+export class MeStatsService {
+  /**
+   * Get aggregated stats for the authenticated user
+   */
+  public async getStats(userId: string, timezone: string = 'UTC') {
+    const [totalSwipes, gamesPlayed, streak] = await Promise.all([
+      this.getTotalSwipes(userId),
+      this.getGamesPlayed(userId),
+      this.getStreak(userId, timezone),
+    ])
+
+    return {
+      totalSwipes,
+      gamesPlayed,
+      streak,
+    }
+  }
+
+  /**
+   * Count all track interactions (likes and dislikes)
+   */
+  private async getTotalSwipes(userId: string) {
+    const result = await UserTrackInteraction.query().where('userId', userId).count('* as total')
+    return Number(result[0].$extras.total)
+  }
+
+  /**
+   * Count all completed game sessions
+   */
+  private async getGamesPlayed(userId: string) {
+    const result = await GameSession.query()
+      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+      .where('status', GameSessionStatus.Completed)
+      .count('* as total')
+    return Number(result[0].$extras.total)
+  }
+
+  /**
+   * Calculate consecutive days streak ending today
+   * Bounded to STREAK_LOOKBACK_DAYS to keep the query cheap.
+   */
+  private async getStreak(userId: string, timezone: string = 'UTC') {
+    // We use updatedAt as finished_at is not currently in the schema
+    const cutoff = DateTime.now().minus({ days: STREAK_LOOKBACK_DAYS }).toSQL()
+
+    const sessions = await GameSession.query()
+      .whereRaw('players::jsonb @> ?::jsonb', [JSON.stringify([{ userId }])])
+      .where('status', GameSessionStatus.Completed)
+      .where('updated_at', '>=', cutoff!)
+      .select('updated_at')
+      .orderBy('updated_at', 'desc')
+
+    if (sessions.length === 0) {
+      return 0
+    }
+
+    const uniqueDates = new Set<string>()
+    for (const session of sessions) {
+      uniqueDates.add(session.updatedAt.setZone(timezone).toISODate()!)
+    }
+
+    const sortedDates = Array.from(uniqueDates).sort().reverse()
+    const today = DateTime.now().setZone(timezone).toISODate()!
+
+    // If the most recent game was not today, streak is 0 (as per ticket requirements)
+    if (sortedDates[0] !== today) {
+      return 0
+    }
+
+    let streak = 0
+    let currentDay = DateTime.fromISO(today, { zone: timezone })
+
+    for (const dateStr of sortedDates) {
+      if (dateStr === currentDay.toISODate()) {
+        streak++
+        currentDay = currentDay.minus({ days: 1 })
+      } else {
+        break
+      }
+    }
+
+    return streak
+  }
+}
+
+export default MeStatsService

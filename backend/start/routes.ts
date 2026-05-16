@@ -18,8 +18,8 @@ const SpotifyAuthController = () => import('#controllers/spotify_auth_controller
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
 const OnboardingController = () => import('#controllers/onboarding_controller')
+const MeStatsController = () => import('#controllers/me_stats_controller')
 const CuratedPlaylistsController = () => import('#controllers/curated_playlists_controller')
-const ParkeurController = () => import('#controllers/parkeur_controller')
 
 // Register OpenAPI/Swagger routes: /docs, /docs.json, /docs.yaml
 openapi.registerRoutes('/docs')
@@ -86,6 +86,8 @@ router
           'spotifySuggestions',
         ])
 
+        router.get('/stats', [MeStatsController, 'index'])
+
         router.get('/swipemix/feed', [SwipemixFeedController, 'index'])
         router.get('/swipemix/interactions', [TrackInteractionsController, 'index'])
         router.post('/swipemix/interactions', [TrackInteractionsController, 'upsert'])
@@ -140,24 +142,8 @@ router
           .get('/blindtest/playlists', [CuratedPlaylistsController, 'index'])
           .use(middleware.auth())
         router
-          .post('/blindtest/playlists', [CuratedPlaylistsController, 'store'])
-          .use(middleware.role({ roles: ['admin'] }))
-        router
-          .patch('/blindtest/playlists/:id', [CuratedPlaylistsController, 'update'])
-          .use(middleware.role({ roles: ['admin'] }))
-        router
-          .post('/blindtest/playlists/:id/refresh', [CuratedPlaylistsController, 'refresh'])
-          .use(middleware.role({ roles: ['admin'] }))
-        router
-          .delete('/blindtest/playlists/:id', [CuratedPlaylistsController, 'destroy'])
-          .use(middleware.role({ roles: ['admin'] }))
-        router
-          .get('/blindtest/playlists/:id/all-tracks', [CuratedPlaylistsController, 'allTracks'])
-          .use(middleware.role({ roles: ['admin'] }))
-        router
           .get('/blindtest/playlists/:id/tracks', [CuratedPlaylistsController, 'tracks'])
           .use(middleware.auth())
-        router.post('/parkeur/start', [ParkeurController, 'start']).use(middleware.auth())
         router.get('/:id', [GamesController, 'show']).use(middleware.silentAuth())
         router.patch('/:id', [GamesController, 'update']).use(middleware.role({ roles: ['admin'] }))
         router
