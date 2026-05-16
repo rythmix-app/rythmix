@@ -21,7 +21,7 @@ export default function BlindtestPlaylistSelection({
   loadingTracks,
   onSelectPlaylist,
   onSave,
-}: BlindtestPlaylistSelectionProps) {
+}: Readonly<BlindtestPlaylistSelectionProps>) {
   return (
     <GameLayout title="Blind Test" sessionId={sessionId} onSave={onSave}>
       <View style={styles.container}>

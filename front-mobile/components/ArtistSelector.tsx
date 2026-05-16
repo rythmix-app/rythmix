@@ -32,7 +32,7 @@ export default function ArtistSelector({
   selectedIds,
   maxReached = false,
   pinnedArtists,
-}: ArtistSelectorProps) {
+}: Readonly<ArtistSelectorProps>) {
   const { topArtists, searchResults, isSearching, isInitialLoading, hasQuery } =
     useArtistSearch(query);
 

@@ -53,7 +53,7 @@ export default function BlurchettePlayingScreen({
   onSubmitAnswer,
   onAbandon,
   onSave,
-}: BlurchettePlayingScreenProps) {
+}: Readonly<BlurchettePlayingScreenProps>) {
   return (
     <GameErrorFeedback
       shakeAnimation={shakeAnimation}

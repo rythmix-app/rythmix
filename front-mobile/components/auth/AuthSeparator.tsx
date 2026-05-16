@@ -7,7 +7,7 @@ type AuthSeparatorProps = {
   style?: ViewStyle;
 };
 
-export const AuthSeparator: React.FC<AuthSeparatorProps> = ({
+export const AuthSeparator: React.FC<Readonly<AuthSeparatorProps>> = ({
   label = "OU",
   style,
 }) => {

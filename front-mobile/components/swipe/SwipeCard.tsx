@@ -49,7 +49,7 @@ export default function SwipeCard({
   isPlaying = false,
   onTogglePlay,
   entryDirection,
-}: SwipeCardProps) {
+}: Readonly<SwipeCardProps>) {
   const initialEntryOffset =
     entryDirection === "right"
       ? SCREEN_WIDTH * 1.5

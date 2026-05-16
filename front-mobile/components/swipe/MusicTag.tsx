@@ -6,7 +6,7 @@ type MusicTagProps = {
   color: "primary" | "secondary";
 };
 
-const MusicTag: React.FC<MusicTagProps> = ({ text, color }) => {
+const MusicTag: React.FC<Readonly<MusicTagProps>> = ({ text, color }) => {
   const containerStyle = [
     styles.container,
     color === "primary" ? styles.primary : styles.secondary,

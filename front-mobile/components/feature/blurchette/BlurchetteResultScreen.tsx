@@ -16,7 +16,7 @@ export default function BlurchetteResultScreen({
   currentTrack,
   foundCorrect,
   onReplay,
-}: BlurchetteResultScreenProps) {
+}: Readonly<BlurchetteResultScreenProps>) {
   return (
     <>
       <Header title="Blurchette" variant="withBack" />

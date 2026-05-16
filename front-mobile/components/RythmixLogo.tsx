@@ -7,7 +7,7 @@ type RythmixLogoProps = {
   style?: ViewStyle;
 };
 
-export const RythmixLogo: React.FC<RythmixLogoProps> = ({
+export const RythmixLogo: React.FC<Readonly<RythmixLogoProps>> = ({
   size = 96,
   style,
 }) => {

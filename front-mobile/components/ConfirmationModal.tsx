@@ -25,7 +25,7 @@ export default function ConfirmationModal({
   secondaryLabel,
   onSecondary,
   variant = "primary",
-}: ConfirmationModalProps) {
+}: Readonly<ConfirmationModalProps>) {
   return (
     <Modal
       animationType="fade"

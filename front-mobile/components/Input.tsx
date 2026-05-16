@@ -22,7 +22,7 @@ interface InputProps extends TextInputProps {
   errorStyle?: TextStyle;
 }
 
-const Input: React.FC<InputProps> = ({
+const Input: React.FC<Readonly<InputProps>> = ({
   label,
   error,
   size = "medium",

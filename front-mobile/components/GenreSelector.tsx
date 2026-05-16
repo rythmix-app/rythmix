@@ -26,7 +26,7 @@ export default function GenreSelector({
   onSelect,
   title = "Choisissez votre style",
   subtitle = "Sélectionnez un genre musical pour commencer",
-}: GenreSelectorProps) {
+}: Readonly<GenreSelectorProps>) {
   return (
     <View style={styles.container}>
       <ThemedText type="title" style={styles.title}>

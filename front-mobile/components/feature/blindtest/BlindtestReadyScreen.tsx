@@ -15,7 +15,7 @@ export default function BlindtestReadyScreen({
   totalRounds,
   loading,
   onStart,
-}: BlindtestReadyScreenProps) {
+}: Readonly<BlindtestReadyScreenProps>) {
   return (
     <>
       <Header title="Blind Test" variant="withBack" />

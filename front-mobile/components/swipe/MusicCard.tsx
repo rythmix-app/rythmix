@@ -25,7 +25,7 @@ export default function MusicCard({
   data,
   isPlaying = false,
   onTogglePlay,
-}: MusicCardProps) {
+}: Readonly<MusicCardProps>) {
   return (
     <View style={[styles.container, styles[data.color]]}>
       <View style={styles.coverContainer}>

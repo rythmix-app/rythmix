@@ -37,7 +37,7 @@ export default function CardStack({
   isPlaying = false,
   onTogglePlay,
   onCardAppear,
-}: CardStackProps) {
+}: Readonly<CardStackProps>) {
   const cards = initialCards;
   const [currentIndex, setCurrentIndex] = useState(0);
   const swipeDirectionsRef = useRef<Record<string, SwipeDirection>>({});
