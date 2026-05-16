@@ -21,14 +21,14 @@ test.group('UserAchievementService', (group) => {
     })
 
     achievement = await Achievement.create({
-      type: 'test_achievement' as AchievementType,
+      type: AchievementType.FirstGame,
       description: 'Test description',
     })
   })
 
   deleteUserAchievement(group)
 
-  test('getUserAchievements returns user achievements with achievement preloaded', async ({
+  test('getUserAchievements returns existing user achievement with achievement preloaded', async ({
     assert,
   }) => {
     await UserAchievement.create({
@@ -46,7 +46,100 @@ test.group('UserAchievementService', (group) => {
     assert.equal(result[0].userId, user.id)
     assert.equal(result[0].achievementId, achievement.id)
     assert.exists(result[0].achievement)
-    assert.equal(result[0].achievement.type, 'test_achievement')
+    assert.equal(result[0].achievement.type, AchievementType.FirstGame)
+    assert.equal(result[0].currentProgress, 50)
+  })
+
+  test('getUserAchievements returns wired achievements with defaults when never tracked', async ({
+    assert,
+  }) => {
+    const second = await Achievement.create({
+      type: AchievementType.FirstLike,
+      description: 'Second wired',
+    })
+
+    const result = await service.getUserAchievements(user.id)
+
+    assert.lengthOf(result, 2)
+    assert.isNull(result[0].id)
+    assert.equal(result[0].achievementId, achievement.id)
+    assert.equal(result[0].currentProgress, 0)
+    assert.equal(result[0].requiredProgress, 1)
+    assert.isNull(result[0].unlockedAt)
+    assert.exists(result[0].achievement)
+    assert.equal(result[1].achievementId, second.id)
+  })
+
+  test('getUserAchievements sorts unlocked achievements by unlockedAt desc', async ({ assert }) => {
+    const secondAchievement = await Achievement.create({
+      type: AchievementType.FirstLike,
+      description: 'Second',
+    })
+    const older = DateTime.now().minus({ days: 2 })
+    const newer = DateTime.now().minus({ hours: 1 })
+    await UserAchievement.create({
+      userId: user.id,
+      achievementId: achievement.id,
+      currentProgress: 1,
+      requiredProgress: 1,
+      currentTier: 1,
+      progressData: {},
+      unlockedAt: older,
+    })
+    await UserAchievement.create({
+      userId: user.id,
+      achievementId: secondAchievement.id,
+      currentProgress: 1,
+      requiredProgress: 1,
+      currentTier: 1,
+      progressData: {},
+      unlockedAt: newer,
+    })
+
+    const result = await service.getUserAchievements(user.id)
+
+    assert.lengthOf(result, 2)
+    assert.equal(result[0].achievementId, secondAchievement.id)
+    assert.equal(result[1].achievementId, achievement.id)
+  })
+
+  test('getUserAchievements places unlocked before locked regardless of insertion order', async ({
+    assert,
+  }) => {
+    const secondAchievement = await Achievement.create({
+      type: AchievementType.FirstLike,
+      description: 'Higher id unlocked',
+    })
+    await UserAchievement.create({
+      userId: user.id,
+      achievementId: secondAchievement.id,
+      currentProgress: 1,
+      requiredProgress: 1,
+      currentTier: 1,
+      progressData: {},
+      unlockedAt: DateTime.now(),
+    })
+
+    const result = await service.getUserAchievements(user.id)
+
+    assert.lengthOf(result, 2)
+    assert.equal(result[0].achievementId, secondAchievement.id)
+    assert.exists(result[0].unlockedAt)
+    assert.isNull(result[1].unlockedAt)
+  })
+
+  test('getUserAchievements filters out achievements not wired to any event', async ({
+    assert,
+  }) => {
+    await Achievement.create({
+      type: 'unwired_type' as AchievementType,
+      description: 'Should not appear',
+    })
+
+    const result = await service.getUserAchievements(user.id)
+
+    assert.lengthOf(result, 1)
+    assert.equal(result[0].achievement.type, AchievementType.FirstGame)
   })
 
   test('getAll returns all user achievements with user and achievement preloaded', async ({
@@ -67,7 +160,7 @@ test.group('UserAchievementService', (group) => {
     assert.exists(result[0].user)
     assert.exists(result[0].achievement)
     assert.isNotNull(result[0].user.username)
-    assert.equal(result[0].achievement.type, 'test_achievement')
+    assert.equal(result[0].achievement.type, AchievementType.FirstGame)
   })
 
   test('startTracking creates user achievement with default values', async ({ assert }) => {
