@@ -22,6 +22,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { ApiError } from "@/types/auth";
 import { useToast } from "@/components/Toast";
 import { resendVerificationEmail } from "@/services/authService";
+import { AUTH_ERROR_CODE, getErrorMessage } from "@/utils/error-messages";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -60,21 +61,23 @@ export default function LoginScreen() {
       router.replace("/(tabs)");
     } catch (error) {
       const apiError = error as ApiError;
-      if (apiError.statusCode === 403) {
+      if (apiError.code === AUTH_ERROR_CODE.EmailNotVerified) {
         setUnverifiedEmail(email);
       }
       show({
         type: "error",
-        message: apiError.message || "Une erreur est survenue",
+        message:
+          getErrorMessage(apiError.code) ??
+          apiError.message ??
+          "Une erreur est survenue",
       });
     }
   };
 
-  const handleResendVerification = async () => {
-    if (!unverifiedEmail) return;
+  const sendVerificationEmail = async (target: string) => {
     setIsResending(true);
     try {
-      await resendVerificationEmail(unverifiedEmail);
+      await resendVerificationEmail(target);
       show({
         type: "success",
         message: "Un nouvel email de vérification t'a été envoyé",
@@ -83,11 +86,19 @@ export default function LoginScreen() {
       const apiError = error as ApiError;
       show({
         type: "error",
-        message: apiError.message || "Impossible d'envoyer l'email",
+        message:
+          getErrorMessage(apiError.code) ??
+          apiError.message ??
+          "Impossible d'envoyer l'email",
       });
     } finally {
       setIsResending(false);
     }
+  };
+
+  const handleResendVerification = async () => {
+    if (!unverifiedEmail) return;
+    await sendVerificationEmail(unverifiedEmail);
   };
 
   return (

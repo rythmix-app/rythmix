@@ -9,6 +9,7 @@ import { RythmixLogo } from "@/components/RythmixLogo";
 import { resendVerificationEmail } from "@/services/authService";
 import { useToast } from "@/components/Toast";
 import { ApiError } from "@/types/auth";
+import { getErrorMessage } from "@/utils/error-messages";
 
 export default function VerifyEmailPendingScreen() {
   const { email } = useLocalSearchParams<{ email?: string }>();
@@ -34,7 +35,10 @@ export default function VerifyEmailPendingScreen() {
       const apiError = error as ApiError;
       show({
         type: "error",
-        message: apiError.message || "Impossible d'envoyer l'email",
+        message:
+          getErrorMessage(apiError.code) ??
+          apiError.message ??
+          "Impossible d'envoyer l'email",
       });
     } finally {
       setIsResending(false);

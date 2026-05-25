@@ -288,6 +288,7 @@ test.group('AuthController - Login', (group) => {
 
     response.assertStatus(401)
     response.assertBodyContains({
+      code: 'E_INVALID_CREDENTIALS',
       message: 'Invalid credentials',
     })
   })
@@ -306,6 +307,7 @@ test.group('AuthController - Login', (group) => {
 
     response.assertStatus(401)
     response.assertBodyContains({
+      code: 'E_INVALID_CREDENTIALS',
       message: 'Invalid credentials',
     })
   })
@@ -321,7 +323,8 @@ test.group('AuthController - Login', (group) => {
 
     response.assertStatus(403)
     response.assertBodyContains({
-      message: 'Please verify your email before logging in',
+      code: 'E_EMAIL_NOT_VERIFIED',
+      message: 'Email not verified',
     })
   })
 
@@ -389,6 +392,7 @@ test.group('AuthController - Refresh Token', (group) => {
 
     response.assertStatus(401)
     response.assertBodyContains({
+      code: 'E_INVALID_REFRESH_TOKEN',
       message: 'Invalid refresh token',
     })
   })
@@ -400,6 +404,7 @@ test.group('AuthController - Refresh Token', (group) => {
 
     response.assertStatus(401)
     response.assertBodyContains({
+      code: 'E_INVALID_REFRESH_TOKEN',
       message: 'Invalid refresh token',
     })
   })
@@ -428,6 +433,7 @@ test.group('AuthController - Refresh Token', (group) => {
 
     response.assertStatus(401)
     response.assertBodyContains({
+      code: 'E_REFRESH_TOKEN_EXPIRED',
       message: 'Refresh token expired',
     })
 
@@ -554,6 +560,7 @@ test.group('AuthController - Email Verification', (group) => {
 
     response.assertStatus(400)
     response.assertBodyContains({
+      code: 'E_INVALID_VERIFICATION_TOKEN',
       message: 'Invalid verification token',
     })
   })
@@ -579,7 +586,8 @@ test.group('AuthController - Email Verification', (group) => {
 
     response.assertStatus(400)
     response.assertBodyContains({
-      message: 'Verification token expired. Please request a new one.',
+      code: 'E_VERIFICATION_TOKEN_EXPIRED',
+      message: 'Verification token expired',
     })
   })
 
@@ -590,6 +598,7 @@ test.group('AuthController - Email Verification', (group) => {
 
     response.assertStatus(400)
     response.assertBodyContains({
+      code: 'E_INVALID_VERIFICATION_TOKEN',
       message: 'Invalid verification token',
     })
   })
@@ -699,12 +708,18 @@ test.group('AuthController - Me Endpoint', (group) => {
     const response = await client.get('/api/auth/me')
 
     response.assertStatus(401)
+    response.assertBodyContains({
+      code: 'E_UNAUTHORIZED',
+    })
   })
 
   test('GET /api/auth/me should fail with invalid token', async ({ client }) => {
     const response = await client.get('/api/auth/me').bearerToken('invalid-token')
 
     response.assertStatus(401)
+    response.assertBodyContains({
+      code: 'E_UNAUTHORIZED',
+    })
   })
 })
 

@@ -8,6 +8,7 @@ import {
 } from '#validators/auth_validator'
 import { errors } from '@vinejs/vine'
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity } from '@foadonis/openapi/decorators'
+import { AuthException } from '#exceptions/auth_exception'
 
 export default class AuthController {
   private authService: AuthService
@@ -118,15 +119,10 @@ export default class AuthController {
         })
       }
 
-      if (error instanceof Error && error.message === 'Invalid credentials') {
-        return response.unauthorized({
-          message: 'Invalid credentials',
-        })
-      }
-
-      if (error instanceof Error && error.message === 'Email not verified') {
-        return response.forbidden({
-          message: 'Please verify your email before logging in',
+      if (error instanceof AuthException) {
+        return response.status(error.statusCode).send({
+          code: error.code,
+          message: error.message,
         })
       }
 
@@ -171,11 +167,9 @@ export default class AuthController {
         })
       }
 
-      if (
-        error instanceof Error &&
-        (error.message === 'Invalid refresh token' || error.message === 'Refresh token expired')
-      ) {
-        return response.unauthorized({
+      if (error instanceof AuthException) {
+        return response.status(error.statusCode).send({
+          code: error.code,
           message: error.message,
         })
       }
@@ -264,15 +258,10 @@ export default class AuthController {
         },
       })
     } catch (error: unknown) {
-      if (error instanceof Error && error.message === 'Invalid verification token') {
-        return response.badRequest({
-          message: 'Invalid verification token',
-        })
-      }
-
-      if (error instanceof Error && error.message === 'Verification token expired') {
-        return response.badRequest({
-          message: 'Verification token expired. Please request a new one.',
+      if (error instanceof AuthException) {
+        return response.status(error.statusCode).send({
+          code: error.code,
+          message: error.message,
         })
       }
 

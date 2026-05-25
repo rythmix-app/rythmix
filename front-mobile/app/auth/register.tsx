@@ -19,6 +19,7 @@ import {
   MIN_PASSWORD_STRENGTH,
   evaluatePasswordStrength,
 } from "@/utils/password-strength";
+import { getErrorMessage } from "@/utils/error-messages";
 
 export default function RegisterScreen() {
   const [firstName, setFirstName] = useState("");
@@ -119,7 +120,10 @@ export default function RegisterScreen() {
       const apiError = error as ApiError;
       show({
         type: "error",
-        message: apiError.message || "Une erreur est survenue",
+        message:
+          getErrorMessage(apiError.code) ??
+          apiError.message ??
+          "Une erreur est survenue",
       });
     }
   };
