@@ -602,6 +602,92 @@ test.group('AuthController - Email Verification', (group) => {
       message: 'Invalid verification token',
     })
   })
+
+  test('GET /api/auth/verify-email should redirect with status=ok on success', async ({
+    client,
+    assert,
+  }) => {
+    const userData = makeUser('verify_get_ok')
+    const user = await User.create(userData)
+
+    const selector = `verify_get_ok_${Date.now()}_${Math.floor(Math.random() * 1000000)}`
+    const verifier = 'verify_get_verifier'
+    const tokenHash = await hash.make(verifier)
+
+    await EmailVerificationToken.create({
+      userId: user.id,
+      selector: selector,
+      tokenHash: tokenHash,
+      expiresAt: DateTime.now().plus({ hours: 24 }),
+    })
+
+    const response = await client
+      .get('/api/auth/verify-email')
+      .qs({ token: `${selector}.${verifier}` })
+      .redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'frontmobile://verify-email')
+    assert.include(location, 'status=ok')
+  })
+
+  test('GET /api/auth/verify-email should redirect with reason on invalid token', async ({
+    client,
+    assert,
+  }) => {
+    const response = await client
+      .get('/api/auth/verify-email')
+      .qs({ token: 'invalid.token' })
+      .redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'frontmobile://verify-email')
+    assert.include(location, 'status=error')
+    assert.include(location, 'reason=E_INVALID_VERIFICATION_TOKEN')
+  })
+
+  test('GET /api/auth/verify-email should redirect with reason on expired token', async ({
+    client,
+    assert,
+  }) => {
+    const userData = makeUser('verify_get_expired')
+    const user = await User.create(userData)
+
+    const selector = `verify_get_expired_${Date.now()}_${Math.floor(Math.random() * 1000000)}`
+    const verifier = 'verify_get_expired_verifier'
+    const tokenHash = await hash.make(verifier)
+
+    await EmailVerificationToken.create({
+      userId: user.id,
+      selector: selector,
+      tokenHash: tokenHash,
+      expiresAt: DateTime.now().minus({ hours: 1 }),
+    })
+
+    const response = await client
+      .get('/api/auth/verify-email')
+      .qs({ token: `${selector}.${verifier}` })
+      .redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'status=error')
+    assert.include(location, 'reason=E_VERIFICATION_TOKEN_EXPIRED')
+  })
+
+  test('GET /api/auth/verify-email should redirect with reason when token is missing', async ({
+    client,
+    assert,
+  }) => {
+    const response = await client.get('/api/auth/verify-email').redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'status=error')
+    assert.include(location, 'reason=E_INVALID_VERIFICATION_TOKEN')
+  })
 })
 
 test.group('AuthController - Resend Verification Email', (group) => {

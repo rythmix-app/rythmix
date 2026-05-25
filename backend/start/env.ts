@@ -47,6 +47,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   FRONTEND_URL: Env.schema.string(),
+  MOBILE_DEEP_LINK_SCHEME: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------

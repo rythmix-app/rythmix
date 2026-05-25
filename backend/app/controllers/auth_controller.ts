@@ -9,6 +9,9 @@ import {
 import { errors } from '@vinejs/vine'
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity } from '@foadonis/openapi/decorators'
 import { AuthException } from '#exceptions/auth_exception'
+import env from '#start/env'
+
+const VERIFY_EMAIL_DEEP_LINK_PATH = 'verify-email'
 
 export default class AuthController {
   private authService: AuthService
@@ -269,6 +272,37 @@ export default class AuthController {
         message: 'An error occurred during email verification',
       })
     }
+  }
+
+  @ApiOperation({
+    summary: 'Verify email from link and redirect to mobile app',
+    description:
+      'Handles the email verification link click: validates the token and redirects to the mobile deep-link with status=ok or status=error&reason=<code>. Mirrors the Spotify OAuth callback pattern.',
+  })
+  @ApiResponse({ status: 302, description: 'Redirect to the mobile deep-link' })
+  async verifyEmailFromLink({ request, response }: HttpContext) {
+    const token = request.qs().token as string | undefined
+
+    if (!token) {
+      return response.redirect(this.buildRedirectUrl('error', 'E_INVALID_VERIFICATION_TOKEN'))
+    }
+
+    try {
+      await this.authService.verifyEmail(token)
+      return response.redirect(this.buildRedirectUrl('ok'))
+    } catch (error: unknown) {
+      if (error instanceof AuthException) {
+        return response.redirect(this.buildRedirectUrl('error', error.code))
+      }
+      return response.redirect(this.buildRedirectUrl('error', 'E_UNKNOWN'))
+    }
+  }
+
+  private buildRedirectUrl(status: 'ok' | 'error', reason?: string): string {
+    const scheme = env.get('MOBILE_DEEP_LINK_SCHEME', 'frontmobile')
+    const params = new URLSearchParams({ status })
+    if (reason) params.set('reason', reason)
+    return `${scheme}://${VERIFY_EMAIL_DEEP_LINK_PATH}?${params.toString()}`
   }
 
   @ApiOperation({

@@ -534,6 +534,42 @@ test.group('AuthController - Unit Tests for Error Handling', () => {
     assert.equal(mockResponse.statusCode, 400)
   })
 
+  test('verifyEmailFromLink should redirect with E_UNKNOWN on non-AuthException error', async ({
+    assert,
+  }) => {
+    const mockAuthService = {
+      verifyEmail: async () => {
+        throw new Error('Boom')
+      },
+    } as any
+
+    const controller = new AuthController()
+    ;(controller as any).authService = mockAuthService
+
+    let redirectedTo = ''
+    const mockResponse = {
+      redirect: function (url: string) {
+        redirectedTo = url
+        return url
+      },
+    }
+
+    const mockRequest = {
+      qs: () => ({ token: 'any.token' }),
+    }
+
+    const ctx = {
+      request: mockRequest,
+      response: mockResponse,
+    } as any as HttpContext
+
+    await controller.verifyEmailFromLink(ctx)
+
+    assert.include(redirectedTo, 'frontmobile://verify-email')
+    assert.include(redirectedTo, 'status=error')
+    assert.include(redirectedTo, 'reason=E_UNKNOWN')
+  })
+
   test('verifyEmail should handle expired verification token error', async ({ assert }) => {
     const mockAuthService = {
       verifyEmail: async () => {
