@@ -39,6 +39,7 @@ export interface RefreshTokenResponse {
 export interface ApiError {
   message: string;
   statusCode?: number;
+  code?: string;
 }
 
 export interface GetUserInfoResponse {

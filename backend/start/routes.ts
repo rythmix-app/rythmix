@@ -57,7 +57,7 @@ router
         router.post('/login', [AuthController, 'login']).use(loginThrottle)
         router.post('/refresh', [AuthController, 'refresh'])
         router.post('/logout', [AuthController, 'logout']).use(middleware.auth())
-        router.get('/verify-email', [AuthController, 'verifyEmail'])
+        router.get('/verify-email', [AuthController, 'verifyEmailFromLink'])
         router.post('/verify-email', [AuthController, 'verifyEmail'])
         router
           .post('/resend-verification', [AuthController, 'resendVerificationEmail'])
@@ -93,7 +93,6 @@ router
         router.get('/activities', [MeActivitiesController, 'index'])
 
         router.get('/swipemix/feed', [SwipemixFeedController, 'index'])
-
         router.get('/swipemix/interactions', [TrackInteractionsController, 'index'])
         router.post('/swipemix/interactions', [TrackInteractionsController, 'upsert'])
         router.delete('/swipemix/interactions/:deezerTrackId', [

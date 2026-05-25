@@ -7,6 +7,7 @@ import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import AuthSessionCreated from '#events/auth_session_created'
+import { AuthException } from '#exceptions/auth_exception'
 
 export class AuthService {
   async register(data: {
@@ -65,22 +66,17 @@ export class AuthService {
     const user = await User.findBy('email', email)
 
     if (!user) {
-      throw new Error('Invalid credentials')
+      throw AuthException.invalidCredentials()
     }
 
     const isPasswordValid = await hash.verify(user.password, password)
 
     if (!isPasswordValid) {
-      throw new Error('Invalid credentials')
+      throw AuthException.invalidCredentials()
     }
 
-    // make this check optional for dev mode
-    // if (!user.emailVerifiedAt) {
-    //   throw new Error('Email not verified')
-    // }
-
     if (!user.emailVerifiedAt) {
-      throw new Error('Email not verified')
+      throw AuthException.emailNotVerified()
     }
 
     await this.recordSession(user)
@@ -103,7 +99,7 @@ export class AuthService {
   async refresh(refreshTokenValue: string) {
     const parts = refreshTokenValue.split('.')
     if (parts.length !== 2) {
-      throw new Error('Invalid refresh token')
+      throw AuthException.invalidRefreshToken()
     }
 
     const [selector, verifier] = parts
@@ -114,17 +110,17 @@ export class AuthService {
       .first()
 
     if (!refreshToken) {
-      throw new Error('Invalid refresh token')
+      throw AuthException.invalidRefreshToken()
     }
 
     if (refreshToken.expiresAt < DateTime.now()) {
       await refreshToken.delete()
-      throw new Error('Refresh token expired')
+      throw AuthException.refreshTokenExpired()
     }
 
     const isValid = await hash.verify(refreshToken.tokenHash, verifier)
     if (!isValid) {
-      throw new Error('Invalid refresh token')
+      throw AuthException.invalidRefreshToken()
     }
 
     const accessToken = await User.accessTokens.create(refreshToken.user, ['*'], {
@@ -180,7 +176,7 @@ export class AuthService {
   async verifyEmail(token: string) {
     const parts = token.split('.')
     if (parts.length !== 2) {
-      throw new Error('Invalid verification token')
+      throw AuthException.invalidVerificationToken()
     }
 
     const [selector, verifier] = parts
@@ -191,17 +187,17 @@ export class AuthService {
       .first()
 
     if (!verificationToken) {
-      throw new Error('Invalid verification token')
+      throw AuthException.invalidVerificationToken()
     }
 
     if (verificationToken.expiresAt < DateTime.now()) {
       await verificationToken.delete()
-      throw new Error('Verification token expired')
+      throw AuthException.verificationTokenExpired()
     }
 
     const isValid = await hash.verify(verificationToken.tokenHash, verifier)
     if (!isValid) {
-      throw new Error('Invalid verification token')
+      throw AuthException.invalidVerificationToken()
     }
 
     const user = verificationToken.user

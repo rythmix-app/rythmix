@@ -2,6 +2,7 @@ import { test } from '@japa/runner'
 import AuthController from '#controllers/auth_controller'
 import { HttpContext } from '@adonisjs/core/http'
 import { errors } from '@vinejs/vine'
+import { AuthException } from '#exceptions/auth_exception'
 
 test.group('AuthController - Unit Tests for Error Handling', () => {
   test('register should handle internal server error', async ({ assert }) => {
@@ -493,7 +494,7 @@ test.group('AuthController - Unit Tests for Error Handling', () => {
   test('verifyEmail should handle invalid verification token error', async ({ assert }) => {
     const mockAuthService = {
       verifyEmail: async () => {
-        throw new Error('Invalid verification token')
+        throw AuthException.invalidVerificationToken()
       },
     } as any
 
@@ -506,8 +507,11 @@ test.group('AuthController - Unit Tests for Error Handling', () => {
         this.statusCode = 200
         return data
       },
-      badRequest: function (data: any) {
-        this.statusCode = 400
+      status: function (code: number) {
+        this.statusCode = code
+        return this
+      },
+      send: function (data: any) {
         return data
       },
       internalServerError: function (data: any) {
@@ -530,10 +534,46 @@ test.group('AuthController - Unit Tests for Error Handling', () => {
     assert.equal(mockResponse.statusCode, 400)
   })
 
+  test('verifyEmailFromLink should redirect with E_UNKNOWN on non-AuthException error', async ({
+    assert,
+  }) => {
+    const mockAuthService = {
+      verifyEmail: async () => {
+        throw new Error('Boom')
+      },
+    } as any
+
+    const controller = new AuthController()
+    ;(controller as any).authService = mockAuthService
+
+    let redirectedTo = ''
+    const mockResponse = {
+      redirect: function (url: string) {
+        redirectedTo = url
+        return url
+      },
+    }
+
+    const mockRequest = {
+      qs: () => ({ token: 'any.token' }),
+    }
+
+    const ctx = {
+      request: mockRequest,
+      response: mockResponse,
+    } as any as HttpContext
+
+    await controller.verifyEmailFromLink(ctx)
+
+    assert.include(redirectedTo, 'frontmobile://verify-email')
+    assert.include(redirectedTo, 'status=error')
+    assert.include(redirectedTo, 'reason=E_UNKNOWN')
+  })
+
   test('verifyEmail should handle expired verification token error', async ({ assert }) => {
     const mockAuthService = {
       verifyEmail: async () => {
-        throw new Error('Verification token expired')
+        throw AuthException.verificationTokenExpired()
       },
     } as any
 
@@ -546,8 +586,11 @@ test.group('AuthController - Unit Tests for Error Handling', () => {
         this.statusCode = 200
         return data
       },
-      badRequest: function (data: any) {
-        this.statusCode = 400
+      status: function (code: number) {
+        this.statusCode = code
+        return this
+      },
+      send: function (data: any) {
         return data
       },
       internalServerError: function (data: any) {
@@ -687,7 +730,7 @@ test.group('AuthController - Unit Tests for Error Handling', () => {
   test('login should handle invalid credentials error', async ({ assert }) => {
     const mockAuthService = {
       login: async () => {
-        throw new Error('Invalid credentials')
+        throw AuthException.invalidCredentials()
       },
     } as any
 
@@ -700,12 +743,11 @@ test.group('AuthController - Unit Tests for Error Handling', () => {
         this.statusCode = 200
         return data
       },
-      unauthorized: function (data: any) {
-        this.statusCode = 401
-        return data
+      status: function (code: number) {
+        this.statusCode = code
+        return this
       },
-      forbidden: function (data: any) {
-        this.statusCode = 403
+      send: function (data: any) {
         return data
       },
       unprocessableEntity: function (data: any) {
@@ -738,7 +780,7 @@ test.group('AuthController - Unit Tests for Error Handling', () => {
   test('login should handle email not verified error', async ({ assert }) => {
     const mockAuthService = {
       login: async () => {
-        throw new Error('Email not verified')
+        throw AuthException.emailNotVerified()
       },
     } as any
 
@@ -751,12 +793,11 @@ test.group('AuthController - Unit Tests for Error Handling', () => {
         this.statusCode = 200
         return data
       },
-      unauthorized: function (data: any) {
-        this.statusCode = 401
-        return data
+      status: function (code: number) {
+        this.statusCode = code
+        return this
       },
-      forbidden: function (data: any) {
-        this.statusCode = 403
+      send: function (data: any) {
         return data
       },
       unprocessableEntity: function (data: any) {

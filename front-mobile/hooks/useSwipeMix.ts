@@ -51,6 +51,40 @@ const buildGenreMappings = async (
   return { genreMapping, albumGenresMapping };
 };
 
+const getApiErrorStatus = (error: unknown): number | undefined => {
+  if (typeof error !== "object" || error === null) return undefined;
+  const status = (error as ApiError).statusCode;
+  return typeof status === "number" ? status : undefined;
+};
+
+const extractErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+  return "Erreur lors du chargement des musiques";
+};
+
+const shouldFallbackToDeezer = (error: unknown): boolean => {
+  const status = getApiErrorStatus(error);
+  return status === undefined || status >= 500;
+};
+
+const fetchFeedWithFallback = async (
+  limit: number,
+  offset: number,
+): Promise<DeezerTrack[]> => {
+  try {
+    const tracks = await getSwipemixFeed(limit, offset);
+    if (tracks.length > 0) return tracks;
+  } catch (error) {
+    if (!shouldFallbackToDeezer(error)) throw error;
+  }
+  const response = await deezerAPI.getTopTracks(limit, offset);
+  return response.data;
+};
+
 interface UseSwipeMixOptions {
   initialLimit?: number;
   onInteractionAttempt?: (action: InteractionAction) => void;
@@ -109,9 +143,8 @@ export function useSwipeMix(options: UseSwipeMixOptions = {}) {
           indexToUse,
         );
 
-        const { genreMapping, albumGenresMapping } = await buildGenreMappings(
-          response.data,
-        );
+        const { genreMapping, albumGenresMapping } =
+          await buildGenreMappings(feedTracks);
 
         // Convertir en cartes avec les informations de genre
         const newCards = deezerTracksToCardData(
