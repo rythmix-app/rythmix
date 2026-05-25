@@ -101,6 +101,22 @@ export default function LoginScreen() {
     await sendVerificationEmail(unverifiedEmail);
   };
 
+  const handleResendFromForm = async () => {
+    if (!email.trim()) {
+      show({
+        type: "error",
+        message: "Saisis ton email pour recevoir le lien",
+      });
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      show({ type: "error", message: "L'email n'est pas valide" });
+      return;
+    }
+    await sendVerificationEmail(email);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
@@ -185,6 +201,18 @@ export default function LoginScreen() {
                 disabled={isLoading}
                 style={{ marginTop: 24, width: "100%" }}
               />
+
+              <TouchableOpacity
+                onPress={handleResendFromForm}
+                disabled={isResending || isLoading}
+                style={styles.resendLink}
+              >
+                <Text style={styles.resendLinkText}>
+                  {isResending
+                    ? "Envoi en cours..."
+                    : "Email de vérification non reçu ?"}
+                </Text>
+              </TouchableOpacity>
 
               {unverifiedEmail ? (
                 <View style={styles.resendBlock}>
@@ -296,6 +324,15 @@ const styles = StyleSheet.create({
   resendText: {
     color: Colors.light.background,
     fontSize: 13,
+    textAlign: "center",
+  },
+  resendLink: {
+    marginTop: 12,
+    alignSelf: "center",
+  },
+  resendLinkText: {
+    color: Colors.secondary.turquoise,
+    fontSize: 12,
     textAlign: "center",
   },
 });
