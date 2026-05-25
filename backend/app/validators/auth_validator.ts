@@ -1,5 +1,11 @@
 import vine from '@vinejs/vine'
 
+const verifyDeepLinkUrlRule = vine
+  .string()
+  .url({ require_protocol: true, protocols: ['exp', 'frontmobile'] })
+  .maxLength(2048)
+  .optional()
+
 export const registerValidator = vine.compile(
   vine.object({
     email: vine
@@ -24,6 +30,7 @@ export const registerValidator = vine.compile(
     lastName: vine.string().minLength(1).maxLength(100).optional(),
     role: vine.enum(['user', 'admin']).optional(),
     optInNewsletter: vine.boolean().optional(),
+    verifyDeepLinkUrl: verifyDeepLinkUrlRule,
   })
 )
 
@@ -43,5 +50,6 @@ export const refreshTokenValidator = vine.compile(
 export const resendVerificationValidator = vine.compile(
   vine.object({
     email: vine.string().email().normalizeEmail(),
+    verifyDeepLinkUrl: verifyDeepLinkUrlRule,
   })
 )

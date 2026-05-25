@@ -507,6 +507,29 @@ test.group('AuthService - Email Verification', (group) => {
 
     mail.restore()
   }).timeout(10000)
+
+  test('sendVerificationEmail should append return= when deepLinkUrl is provided', async ({
+    assert,
+  }) => {
+    const timestamp = Date.now()
+    const user = await User.create({
+      email: `send_verify_return_${timestamp}@example.com`,
+      username: `send_verify_return_${timestamp}`,
+      password: 'password123',
+    })
+
+    const mailer = mail.fake()
+
+    const deepLinkUrl = 'exp://u.expo.dev/project/--/verify-email?channel-name=staging'
+    await authService.sendVerificationEmail(user, deepLinkUrl)
+
+    mailer.messages.assertSentCount(1)
+    const message = mailer.messages.sent()[0]
+    const html = typeof message.html === 'string' ? message.html : ''
+    assert.include(html, `&return=${encodeURIComponent(deepLinkUrl)}`)
+
+    mail.restore()
+  }).timeout(10000)
 })
 
 test.group('AuthService - Resend Verification Email', (group) => {

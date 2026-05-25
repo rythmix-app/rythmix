@@ -1,3 +1,5 @@
+import * as Linking from "expo-linking";
+
 import { get, post } from "./api";
 import {
   AuthResponse,
@@ -8,6 +10,14 @@ import {
   User,
 } from "@/types/auth";
 import { clearAll, setRefreshToken, setToken, setUser } from "./storage";
+
+const getVerifyDeepLinkUrl = (): string | undefined => {
+  try {
+    return Linking.createURL("verify-email");
+  } catch {
+    return undefined;
+  }
+};
 
 export const getUserInfo = async (): Promise<User> => {
   const response = await get<GetUserInfoResponse>("/api/auth/me");
@@ -55,13 +65,21 @@ export const login = async (
 };
 
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
-  return await post<AuthResponse>("/api/auth/register", data, {
-    skipAuth: true,
-  });
+  return await post<AuthResponse>(
+    "/api/auth/register",
+    { ...data, verifyDeepLinkUrl: getVerifyDeepLinkUrl() },
+    {
+      skipAuth: true,
+    },
+  );
 };
 
 export const resendVerificationEmail = async (email: string): Promise<void> => {
-  await post("/api/auth/resend-verification", { email }, { skipAuth: true });
+  await post(
+    "/api/auth/resend-verification",
+    { email, verifyDeepLinkUrl: getVerifyDeepLinkUrl() },
+    { skipAuth: true },
+  );
 };
 
 export const logout = async (): Promise<void> => {

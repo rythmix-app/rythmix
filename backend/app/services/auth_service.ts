@@ -18,6 +18,7 @@ export class AuthService {
     lastName?: string
     role?: string
     optInNewsletter?: boolean
+    verifyDeepLinkUrl?: string
   }) {
     const user = await User.create({
       email: data.email,
@@ -34,7 +35,7 @@ export class AuthService {
     if (user.isAdmin) {
       user.emailVerifiedAt = DateTime.now()
     } else {
-      await this.sendVerificationEmail(user)
+      await this.sendVerificationEmail(user, data.verifyDeepLinkUrl)
     }
 
     return user
@@ -144,7 +145,7 @@ export class AuthService {
     }
   }
 
-  async sendVerificationEmail(user: User) {
+  async sendVerificationEmail(user: User, deepLinkUrl?: string) {
     await EmailVerificationToken.query().where('userId', user.id).delete()
 
     const selector = randomBytes(32).toString('hex')
@@ -160,7 +161,10 @@ export class AuthService {
 
     const fullToken = `${selector}.${verifier}`
     const frontendUrl = env.get('FRONTEND_URL')
-    const verificationUrl = `${frontendUrl}/api/auth/verify-email?token=${fullToken}`
+    let verificationUrl = `${frontendUrl}/api/auth/verify-email?token=${fullToken}`
+    if (deepLinkUrl) {
+      verificationUrl += `&return=${encodeURIComponent(deepLinkUrl)}`
+    }
 
     await mail.send((message) => {
       message
@@ -210,14 +214,14 @@ export class AuthService {
     return user
   }
 
-  async resendVerificationEmail(email: string) {
+  async resendVerificationEmail(email: string, deepLinkUrl?: string) {
     const user = await User.findBy('email', email)
 
     if (!user || user.emailVerifiedAt) {
       return null
     }
 
-    await this.sendVerificationEmail(user)
+    await this.sendVerificationEmail(user, deepLinkUrl)
 
     return user
   }
