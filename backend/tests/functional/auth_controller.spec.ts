@@ -688,6 +688,52 @@ test.group('AuthController - Email Verification', (group) => {
     assert.include(location, 'status=error')
     assert.include(location, 'reason=E_INVALID_VERIFICATION_TOKEN')
   })
+
+  test('GET /api/auth/verify-email should redirect to the provided return URL when allowed', async ({
+    client,
+    assert,
+  }) => {
+    const userData = makeUser('verify_get_return')
+    const user = await User.create(userData)
+
+    const selector = `verify_get_return_${Date.now()}_${Math.floor(Math.random() * 1000000)}`
+    const verifier = 'verify_get_return_verifier'
+    const tokenHash = await hash.make(verifier)
+
+    await EmailVerificationToken.create({
+      userId: user.id,
+      selector: selector,
+      tokenHash: tokenHash,
+      expiresAt: DateTime.now().plus({ hours: 24 }),
+    })
+
+    const returnUrl = 'exp://u.expo.dev/abc/--/verify-email?channel-name=staging'
+    const response = await client
+      .get('/api/auth/verify-email')
+      .qs({ token: `${selector}.${verifier}`, return: returnUrl })
+      .redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'exp://u.expo.dev/abc/--/verify-email')
+    assert.include(location, 'channel-name=staging')
+    assert.include(location, 'status=ok')
+  })
+
+  test('GET /api/auth/verify-email should ignore an unsafe return URL and fall back to default', async ({
+    client,
+    assert,
+  }) => {
+    const response = await client
+      .get('/api/auth/verify-email')
+      .qs({ token: 'invalid.token', return: 'https://evil.com/phish' })
+      .redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.include(location, 'frontmobile://verify-email')
+    assert.notInclude(location, 'evil.com')
+  })
 })
 
 test.group('AuthController - Resend Verification Email', (group) => {

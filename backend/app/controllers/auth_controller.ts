@@ -282,27 +282,35 @@ export default class AuthController {
   @ApiResponse({ status: 302, description: 'Redirect to the mobile deep-link' })
   async verifyEmailFromLink({ request, response }: HttpContext) {
     const token = request.qs().token as string | undefined
+    const returnBase = request.qs().return as string | undefined
 
     if (!token) {
-      return response.redirect(this.buildRedirectUrl('error', 'E_INVALID_VERIFICATION_TOKEN'))
+      return response.redirect(
+        this.buildRedirectUrl('error', 'E_INVALID_VERIFICATION_TOKEN', returnBase)
+      )
     }
 
     try {
       await this.authService.verifyEmail(token)
-      return response.redirect(this.buildRedirectUrl('ok'))
+      return response.redirect(this.buildRedirectUrl('ok', undefined, returnBase))
     } catch (error: unknown) {
       if (error instanceof AuthException) {
-        return response.redirect(this.buildRedirectUrl('error', error.code))
+        return response.redirect(this.buildRedirectUrl('error', error.code, returnBase))
       }
-      return response.redirect(this.buildRedirectUrl('error', 'E_UNKNOWN'))
+      return response.redirect(this.buildRedirectUrl('error', 'E_UNKNOWN', returnBase))
     }
   }
 
-  private buildRedirectUrl(status: 'ok' | 'error', reason?: string): string {
-    const scheme = env.get('MOBILE_DEEP_LINK_SCHEME', 'frontmobile')
+  private buildRedirectUrl(status: 'ok' | 'error', reason?: string, returnBase?: string): string {
+    const baseUrl =
+      returnBase && /^(exp|frontmobile):\/\//.test(returnBase)
+        ? returnBase
+        : `${env.get('MOBILE_DEEP_LINK_SCHEME', 'frontmobile')}://${VERIFY_EMAIL_DEEP_LINK_PATH}`
+
+    const separator = baseUrl.includes('?') ? '&' : '?'
     const params = new URLSearchParams({ status })
     if (reason) params.set('reason', reason)
-    return `${scheme}://${VERIFY_EMAIL_DEEP_LINK_PATH}?${params.toString()}`
+    return `${baseUrl}${separator}${params.toString()}`
   }
 
   @ApiOperation({
@@ -324,9 +332,9 @@ export default class AuthController {
   @ApiResponse({ status: 422, description: 'Validation failed' })
   async resendVerificationEmail({ request, response }: HttpContext) {
     try {
-      const { email } = await request.validateUsing(resendVerificationValidator)
+      const { email, verifyDeepLinkUrl } = await request.validateUsing(resendVerificationValidator)
 
-      await this.authService.resendVerificationEmail(email)
+      await this.authService.resendVerificationEmail(email, verifyDeepLinkUrl)
 
       return response.ok({
         message: 'If the email exists and is not verified, a verification email has been sent',
