@@ -8,6 +8,11 @@ import {
 } from '#validators/auth_validator'
 import { errors } from '@vinejs/vine'
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity } from '@foadonis/openapi/decorators'
+import { AuthException } from '#exceptions/auth_exception'
+import env from '#start/env'
+
+const VERIFY_EMAIL_DEEP_LINK_PATH = 'verify-email'
+const ALLOWED_DEEP_LINK_SCHEMES = /^(exp|frontmobile):\/\//
 
 export default class AuthController {
   private authService: AuthService
@@ -118,15 +123,10 @@ export default class AuthController {
         })
       }
 
-      if (error instanceof Error && error.message === 'Invalid credentials') {
-        return response.unauthorized({
-          message: 'Invalid credentials',
-        })
-      }
-
-      if (error instanceof Error && error.message === 'Email not verified') {
-        return response.forbidden({
-          message: 'Please verify your email before logging in',
+      if (error instanceof AuthException) {
+        return response.status(error.statusCode).send({
+          code: error.code,
+          message: error.message,
         })
       }
 
@@ -171,11 +171,9 @@ export default class AuthController {
         })
       }
 
-      if (
-        error instanceof Error &&
-        (error.message === 'Invalid refresh token' || error.message === 'Refresh token expired')
-      ) {
-        return response.unauthorized({
+      if (error instanceof AuthException) {
+        return response.status(error.statusCode).send({
+          code: error.code,
           message: error.message,
         })
       }
@@ -264,15 +262,10 @@ export default class AuthController {
         },
       })
     } catch (error: unknown) {
-      if (error instanceof Error && error.message === 'Invalid verification token') {
-        return response.badRequest({
-          message: 'Invalid verification token',
-        })
-      }
-
-      if (error instanceof Error && error.message === 'Verification token expired') {
-        return response.badRequest({
-          message: 'Verification token expired. Please request a new one.',
+      if (error instanceof AuthException) {
+        return response.status(error.statusCode).send({
+          code: error.code,
+          message: error.message,
         })
       }
 
@@ -280,6 +273,45 @@ export default class AuthController {
         message: 'An error occurred during email verification',
       })
     }
+  }
+
+  @ApiOperation({
+    summary: 'Verify email from link and redirect to mobile app',
+    description:
+      'Handles the email verification link click: validates the token and redirects to the mobile deep-link with status=ok or status=error&reason=<code>. Mirrors the Spotify OAuth callback pattern.',
+  })
+  @ApiResponse({ status: 302, description: 'Redirect to the mobile deep-link' })
+  async verifyEmailFromLink({ request, response }: HttpContext) {
+    const token = request.qs().token as string | undefined
+    const returnBase = request.qs().return as string | undefined
+
+    if (!token) {
+      return response.redirect(
+        this.buildRedirectUrl('error', 'E_INVALID_VERIFICATION_TOKEN', returnBase)
+      )
+    }
+
+    try {
+      await this.authService.verifyEmail(token)
+      return response.redirect(this.buildRedirectUrl('ok', undefined, returnBase))
+    } catch (error: unknown) {
+      if (error instanceof AuthException) {
+        return response.redirect(this.buildRedirectUrl('error', error.code, returnBase))
+      }
+      return response.redirect(this.buildRedirectUrl('error', 'E_UNKNOWN', returnBase))
+    }
+  }
+
+  private buildRedirectUrl(status: 'ok' | 'error', reason?: string, returnBase?: string): string {
+    const baseUrl =
+      returnBase && ALLOWED_DEEP_LINK_SCHEMES.test(returnBase)
+        ? returnBase
+        : `${env.get('MOBILE_DEEP_LINK_SCHEME', 'frontmobile')}://${VERIFY_EMAIL_DEEP_LINK_PATH}`
+
+    const separator = baseUrl.includes('?') ? '&' : '?'
+    const params = new URLSearchParams({ status })
+    if (reason) params.set('reason', reason)
+    return `${baseUrl}${separator}${params.toString()}`
   }
 
   @ApiOperation({
@@ -301,9 +333,9 @@ export default class AuthController {
   @ApiResponse({ status: 422, description: 'Validation failed' })
   async resendVerificationEmail({ request, response }: HttpContext) {
     try {
-      const { email } = await request.validateUsing(resendVerificationValidator)
+      const { email, verifyDeepLinkUrl } = await request.validateUsing(resendVerificationValidator)
 
-      await this.authService.resendVerificationEmail(email)
+      await this.authService.resendVerificationEmail(email, verifyDeepLinkUrl)
 
       return response.ok({
         message: 'If the email exists and is not verified, a verification email has been sent',

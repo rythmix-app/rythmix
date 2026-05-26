@@ -7,6 +7,7 @@ import hash from '@adonisjs/core/services/hash'
 import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import AuthSessionCreated from '#events/auth_session_created'
+import { AuthException } from '#exceptions/auth_exception'
 
 export class AuthService {
   async register(data: {
@@ -17,6 +18,7 @@ export class AuthService {
     lastName?: string
     role?: string
     optInNewsletter?: boolean
+    verifyDeepLinkUrl?: string
   }) {
     const user = await User.create({
       email: data.email,
@@ -33,7 +35,7 @@ export class AuthService {
     if (user.isAdmin) {
       user.emailVerifiedAt = DateTime.now()
     } else {
-      await this.sendVerificationEmail(user)
+      await this.sendVerificationEmail(user, data.verifyDeepLinkUrl)
     }
 
     return user
@@ -65,22 +67,17 @@ export class AuthService {
     const user = await User.findBy('email', email)
 
     if (!user) {
-      throw new Error('Invalid credentials')
+      throw AuthException.invalidCredentials()
     }
 
     const isPasswordValid = await hash.verify(user.password, password)
 
     if (!isPasswordValid) {
-      throw new Error('Invalid credentials')
+      throw AuthException.invalidCredentials()
     }
 
-    // make this check optional for dev mode
-    // if (!user.emailVerifiedAt) {
-    //   throw new Error('Email not verified')
-    // }
-
     if (!user.emailVerifiedAt) {
-      throw new Error('Email not verified')
+      throw AuthException.emailNotVerified()
     }
 
     await this.recordSession(user)
@@ -103,7 +100,7 @@ export class AuthService {
   async refresh(refreshTokenValue: string) {
     const parts = refreshTokenValue.split('.')
     if (parts.length !== 2) {
-      throw new Error('Invalid refresh token')
+      throw AuthException.invalidRefreshToken()
     }
 
     const [selector, verifier] = parts
@@ -114,17 +111,17 @@ export class AuthService {
       .first()
 
     if (!refreshToken) {
-      throw new Error('Invalid refresh token')
+      throw AuthException.invalidRefreshToken()
     }
 
     if (refreshToken.expiresAt < DateTime.now()) {
       await refreshToken.delete()
-      throw new Error('Refresh token expired')
+      throw AuthException.refreshTokenExpired()
     }
 
     const isValid = await hash.verify(refreshToken.tokenHash, verifier)
     if (!isValid) {
-      throw new Error('Invalid refresh token')
+      throw AuthException.invalidRefreshToken()
     }
 
     const accessToken = await User.accessTokens.create(refreshToken.user, ['*'], {
@@ -148,7 +145,7 @@ export class AuthService {
     }
   }
 
-  async sendVerificationEmail(user: User) {
+  async sendVerificationEmail(user: User, deepLinkUrl?: string) {
     await EmailVerificationToken.query().where('userId', user.id).delete()
 
     const selector = randomBytes(32).toString('hex')
@@ -164,7 +161,10 @@ export class AuthService {
 
     const fullToken = `${selector}.${verifier}`
     const frontendUrl = env.get('FRONTEND_URL')
-    const verificationUrl = `${frontendUrl}/api/auth/verify-email?token=${fullToken}`
+    let verificationUrl = `${frontendUrl}/api/auth/verify-email?token=${fullToken}`
+    if (deepLinkUrl) {
+      verificationUrl += `&return=${encodeURIComponent(deepLinkUrl)}`
+    }
 
     await mail.send((message) => {
       message
@@ -180,7 +180,7 @@ export class AuthService {
   async verifyEmail(token: string) {
     const parts = token.split('.')
     if (parts.length !== 2) {
-      throw new Error('Invalid verification token')
+      throw AuthException.invalidVerificationToken()
     }
 
     const [selector, verifier] = parts
@@ -191,17 +191,17 @@ export class AuthService {
       .first()
 
     if (!verificationToken) {
-      throw new Error('Invalid verification token')
+      throw AuthException.invalidVerificationToken()
     }
 
     if (verificationToken.expiresAt < DateTime.now()) {
       await verificationToken.delete()
-      throw new Error('Verification token expired')
+      throw AuthException.verificationTokenExpired()
     }
 
     const isValid = await hash.verify(verificationToken.tokenHash, verifier)
     if (!isValid) {
-      throw new Error('Invalid verification token')
+      throw AuthException.invalidVerificationToken()
     }
 
     const user = verificationToken.user
@@ -214,14 +214,14 @@ export class AuthService {
     return user
   }
 
-  async resendVerificationEmail(email: string) {
+  async resendVerificationEmail(email: string, deepLinkUrl?: string) {
     const user = await User.findBy('email', email)
 
     if (!user || user.emailVerifiedAt) {
       return null
     }
 
-    await this.sendVerificationEmail(user)
+    await this.sendVerificationEmail(user, deepLinkUrl)
 
     return user
   }

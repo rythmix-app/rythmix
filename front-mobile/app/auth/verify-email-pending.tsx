@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Linking from "expo-linking";
 
 import Button from "@/components/Button";
 import { Colors } from "@/constants/Colors";
@@ -9,11 +10,51 @@ import { RythmixLogo } from "@/components/RythmixLogo";
 import { resendVerificationEmail } from "@/services/authService";
 import { useToast } from "@/components/Toast";
 import { ApiError } from "@/types/auth";
+import { getErrorMessage } from "@/utils/error-messages";
+
+const VERIFY_EMAIL_DEEP_LINK_PATH = "verify-email";
 
 export default function VerifyEmailPendingScreen() {
   const { email } = useLocalSearchParams<{ email?: string }>();
   const { show } = useToast();
   const [isResending, setIsResending] = useState(false);
+
+  useEffect(() => {
+    const handleIncomingUrl = (url: string) => {
+      const parsed = Linking.parse(url);
+      if (parsed.path !== VERIFY_EMAIL_DEEP_LINK_PATH) return;
+
+      const status = parsed.queryParams?.status;
+      if (status === "ok") {
+        show({
+          type: "success",
+          message: "Email vérifié, tu peux maintenant te connecter.",
+        });
+        router.replace("/auth/login");
+        return;
+      }
+
+      const reason =
+        typeof parsed.queryParams?.reason === "string"
+          ? parsed.queryParams.reason
+          : undefined;
+      show({
+        type: "error",
+        message:
+          getErrorMessage(reason) ??
+          "La vérification a échoué. Demande un nouveau mail.",
+      });
+    };
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handleIncomingUrl(url);
+    });
+
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      handleIncomingUrl(url);
+    });
+    return () => subscription.remove();
+  }, [show]);
 
   const handleResend = async () => {
     if (!email) {
@@ -34,7 +75,10 @@ export default function VerifyEmailPendingScreen() {
       const apiError = error as ApiError;
       show({
         type: "error",
-        message: apiError.message || "Impossible d'envoyer l'email",
+        message:
+          getErrorMessage(apiError.code) ??
+          apiError.message ??
+          "Impossible d'envoyer l'email",
       });
     } finally {
       setIsResending(false);

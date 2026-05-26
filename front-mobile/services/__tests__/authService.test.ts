@@ -42,6 +42,19 @@ describe("authService.resendVerificationEmail", () => {
       apiError,
     );
   });
+
+  it("propagates the typed error code from the backend", async () => {
+    const apiError = {
+      code: "E_EMAIL_NOT_VERIFIED",
+      message: "Email not verified",
+      statusCode: 403,
+    };
+    mockPost.mockRejectedValueOnce(apiError);
+
+    await expect(resendVerificationEmail("user@example.com")).rejects.toEqual(
+      apiError,
+    );
+  });
 });
 
 describe("authService.refreshAccessToken", () => {

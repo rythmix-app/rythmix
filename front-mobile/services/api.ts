@@ -1,5 +1,6 @@
 import { getToken, getRefreshToken } from "./storage";
 import { ApiError } from "@/types/auth";
+import { AUTH_ERROR_CODE } from "@/utils/error-messages";
 
 export const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const REQUEST_TIMEOUT_MS = 15000;
@@ -36,6 +37,24 @@ interface RequestOptions extends RequestInit {
   skipRefresh?: boolean; // Skip the 401→refresh→retry loop (used internally after retry, and externally by /api/auth/refresh itself to avoid recursion)
 }
 
+const buildApiError = async (response: Response): Promise<ApiError> => {
+  let code: string | undefined;
+  let message = `Erreur ${response.status}`;
+  try {
+    const errorData = await response.json();
+    if (typeof errorData?.code === "string") {
+      code = errorData.code;
+    }
+    if (typeof errorData?.message === "string") {
+      message = errorData.message;
+    }
+  } catch {
+    // body was not JSON — keep the default message
+  }
+
+  return { code, message, statusCode: response.status };
+};
+
 // Fonction pour gérer le refresh du token
 const handleTokenRefresh = async (
   endpoint: string,
@@ -60,7 +79,8 @@ const handleTokenRefresh = async (
     isRefreshing = false;
     if (onUnauthorized) onUnauthorized();
     const error: ApiError = {
-      message: "Non autorisé",
+      code: AUTH_ERROR_CODE.NoRefreshToken,
+      message: "No refresh token available",
       statusCode: 401,
     };
     throw error;
@@ -129,11 +149,7 @@ const handleResponse = async <T>(
     // endpoint itself — otherwise handleTokenRefresh awaits its own promise.
     if (options.skipRefresh) {
       if (onUnauthorized) onUnauthorized();
-      const error: ApiError = {
-        message: "Non autorisé",
-        statusCode: 401,
-      };
-      throw error;
+      throw await buildApiError(response);
     }
 
     // Vérifier si on a un refreshToken
@@ -144,28 +160,12 @@ const handleResponse = async <T>(
     } else {
       // Pas de refreshToken: déconnecter
       if (onUnauthorized) onUnauthorized();
-      const error: ApiError = {
-        message: "Non autorisé",
-        statusCode: 401,
-      };
-      throw error;
+      throw await buildApiError(response);
     }
   }
 
   if (!response.ok) {
-    let errorMessage = "Une erreur est survenue";
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.message || errorMessage;
-    } catch {
-      errorMessage = `Erreur ${response.status}`;
-    }
-
-    const error: ApiError = {
-      message: errorMessage,
-      statusCode: response.status,
-    };
-    throw error;
+    throw await buildApiError(response);
   }
 
   try {
