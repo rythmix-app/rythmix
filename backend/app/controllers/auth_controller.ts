@@ -12,6 +12,7 @@ import { AuthException } from '#exceptions/auth_exception'
 import env from '#start/env'
 
 const VERIFY_EMAIL_DEEP_LINK_PATH = 'verify-email'
+const ALLOWED_DEEP_LINK_SCHEMES = /^(exp|frontmobile):\/\//
 
 export default class AuthController {
   private authService: AuthService
@@ -303,7 +304,7 @@ export default class AuthController {
 
   private buildRedirectUrl(status: 'ok' | 'error', reason?: string, returnBase?: string): string {
     const baseUrl =
-      returnBase && /^(exp|frontmobile):\/\//.test(returnBase)
+      returnBase && ALLOWED_DEEP_LINK_SCHEMES.test(returnBase)
         ? returnBase
         : `${env.get('MOBILE_DEEP_LINK_SCHEME', 'frontmobile')}://${VERIFY_EMAIL_DEEP_LINK_PATH}`
 
