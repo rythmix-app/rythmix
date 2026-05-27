@@ -36,7 +36,6 @@ const MOCK_BADGES = [
 // TODO: à modifier plus tard - niveau et titre à récupérer depuis l'API
 const MOCK_LEVEL = { level: 7, title: "Mélomane" };
 
-
 function getMemberSince(createdAt?: string): string {
   if (!createdAt) return "membre récemment";
   const created = new Date(createdAt);

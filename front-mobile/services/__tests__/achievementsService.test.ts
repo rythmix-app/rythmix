@@ -2,8 +2,6 @@ import { getMyAchievements } from "../achievementsService";
 import { get } from "../api";
 import { UserAchievement } from "@/types/achievement";
 
-process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
-
 jest.mock("../api", () => ({
   get: jest.fn(),
 }));
