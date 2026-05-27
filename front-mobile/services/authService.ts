@@ -26,14 +26,6 @@ const getVerifyDeepLinkUrl = (): string | undefined => {
   }
 };
 
-const getVerifyDeepLinkUrl = (): string | undefined => {
-  try {
-    return Linking.createURL("verify-email");
-  } catch {
-    return undefined;
-  }
-};
-
 export const getUserInfo = async (): Promise<User> => {
   const response = await get<GetUserInfoResponse>("/api/auth/me");
   const data = response?.data;
