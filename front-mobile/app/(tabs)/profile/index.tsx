@@ -325,6 +325,7 @@ const styles = StyleSheet.create({
   },
   badgeNameLocked: {
     color: Colors.dark.icon,
+  },
   errorContainer: {
     marginTop: 12,
     alignItems: "center",
