@@ -3,6 +3,8 @@ import { Group } from '@japa/runner/core'
 import { HttpContext } from '@adonisjs/core/http'
 import mail from '@adonisjs/mail/services/main'
 import User from '#models/user'
+import { encodeOauthState } from '#helpers/oauth_redirect'
+import { OauthProvider } from '#enums/oauth_provider'
 import { deleteAuthData } from '#tests/utils/auth_cleanup_helpers'
 
 interface AllyMockScenario {
@@ -214,5 +216,45 @@ test.group('GoogleAuthController - Callback', (group) => {
     const { params } = parseLocation(response.headers().location as string)
     assert.equal(params.get('status'), 'error')
     assert.equal(params.get('reason'), 'oauth_error')
+  })
+
+  test('callback redirects with status=error&reason=oauth_error when hasError() is true', async ({
+    client,
+    assert,
+  }) => {
+    installAllyMock({ error: true })
+
+    const response = await client.get('/api/auth/google/callback').redirects(0)
+
+    response.assertStatus(302)
+    const { params } = parseLocation(response.headers().location as string)
+    assert.equal(params.get('status'), 'error')
+    assert.equal(params.get('reason'), 'oauth_error')
+  })
+
+  test('callback redirects with reason=oauth_no_email when Google omits the email', async ({
+    client,
+    assert,
+  }) => {
+    installAllyMock({ userResponse: { id: 'g-noemail', email: null, name: 'No Email' } })
+
+    const response = await client.get('/api/auth/google/callback').redirects(0)
+
+    response.assertStatus(302)
+    const { params } = parseLocation(response.headers().location as string)
+    assert.equal(params.get('status'), 'error')
+    assert.equal(params.get('reason'), 'oauth_no_email')
+  })
+
+  test('callback uses the returnUrl from a valid encrypted state', async ({ client, assert }) => {
+    const email = `google_state_${Date.now()}@example.com`
+    installAllyMock({ userResponse: { id: 'g-state', email, name: 'State Test' } })
+
+    const state = encodeOauthState(OauthProvider.GOOGLE, 'exp+frontmobile://auth/oauth-callback')
+    const response = await client.get('/api/auth/google/callback').qs({ state }).redirects(0)
+
+    response.assertStatus(302)
+    const location = response.headers().location as string
+    assert.match(location, /^exp\+frontmobile:\/\//)
   })
 })

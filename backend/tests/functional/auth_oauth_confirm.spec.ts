@@ -5,6 +5,7 @@ import hash from '@adonisjs/core/services/hash'
 import User from '#models/user'
 import OAuthLinkConfirmationToken from '#models/oauth_link_confirmation_token'
 import UserIntegration from '#models/user_integration'
+import { AuthService } from '#services/auth_service'
 import { OauthProvider } from '#enums/oauth_provider'
 import { IntegrationProvider } from '#enums/integration_provider'
 import { deleteAuthData } from '#tests/utils/auth_cleanup_helpers'
@@ -79,6 +80,41 @@ test.group('AuthController - confirmOAuthLink', (group) => {
 
     const remaining = await OAuthLinkConfirmationToken.query().where('userId', user.id)
     assert.lengthOf(remaining, 0)
+  })
+
+  test('valid Spotify confirmation handles a payload with no expiresAt', async ({
+    client,
+    assert,
+  }) => {
+    const user = await User.create({
+      email: `confirm_sp_noexp_${Date.now()}@example.com`,
+      username: `cspn_${Date.now()}`,
+      password: 'password123',
+      role: 'user',
+      emailVerifiedAt: DateTime.now(),
+    })
+
+    const token = await createConfirmation({
+      user,
+      provider: OauthProvider.SPOTIFY,
+      providerUserId: 'sp-noexp',
+      payload: {
+        accessToken: 'sp-noexp-access',
+        refreshToken: null,
+        expiresAt: null,
+        scopes: null,
+      },
+    })
+
+    const response = await client.get('/api/auth/oauth/confirm').qs({ token }).redirects(0)
+
+    response.assertStatus(302)
+    const integration = await UserIntegration.query()
+      .where('userId', user.id)
+      .where('provider', IntegrationProvider.SPOTIFY)
+      .first()
+    assert.isNotNull(integration)
+    assert.isNull(integration!.expiresAt)
   })
 
   test('valid Spotify token upserts the UserIntegration with payload tokens', async ({
@@ -188,5 +224,107 @@ test.group('AuthController - confirmOAuthLink', (group) => {
     const { params } = parseLocation(second.headers().location as string)
     assert.equal(params.get('status'), 'error')
     assert.equal(params.get('reason'), 'oauth_confirmation_invalid')
+  })
+
+  test('missing token query param returns oauth_confirmation_invalid', async ({
+    client,
+    assert,
+  }) => {
+    const response = await client.get('/api/auth/oauth/confirm').redirects(0)
+
+    response.assertStatus(302)
+    const { params } = parseLocation(response.headers().location as string)
+    assert.equal(params.get('status'), 'error')
+    assert.equal(params.get('reason'), 'oauth_confirmation_invalid')
+  })
+
+  test('valid selector with a tampered verifier returns oauth_confirmation_invalid', async ({
+    client,
+    assert,
+  }) => {
+    const user = await User.create({
+      email: `confirm_tamper_${Date.now()}@example.com`,
+      username: `ctp_${Date.now()}`,
+      password: 'password123',
+      role: 'user',
+      emailVerifiedAt: DateTime.now(),
+    })
+
+    const selector = randomBytes(32).toString('hex')
+    const realVerifier = randomBytes(32).toString('hex')
+    const tokenHash = await hash.make(realVerifier)
+
+    await OAuthLinkConfirmationToken.create({
+      userId: user.id,
+      provider: OauthProvider.GOOGLE,
+      providerUserId: 'g-tamper',
+      providerPayload: null,
+      selector,
+      tokenHash,
+      expiresAt: DateTime.now().plus({ hours: 1 }),
+    })
+
+    const wrongVerifier = randomBytes(32).toString('hex')
+    const response = await client
+      .get('/api/auth/oauth/confirm')
+      .qs({ token: `${selector}.${wrongVerifier}` })
+      .redirects(0)
+
+    response.assertStatus(302)
+    const { params } = parseLocation(response.headers().location as string)
+    assert.equal(params.get('status'), 'error')
+    assert.equal(params.get('reason'), 'oauth_confirmation_invalid')
+
+    await user.refresh()
+    assert.isNull(user.googleId)
+  })
+
+  test('confirmation also marks email as verified for previously unverified users', async ({
+    client,
+    assert,
+  }) => {
+    const user = await User.create({
+      email: `confirm_unverified_${Date.now()}@example.com`,
+      username: `cuv_${Date.now()}`,
+      password: 'password123',
+      role: 'user',
+      emailVerifiedAt: null,
+    })
+
+    const token = await createConfirmation({
+      user,
+      provider: OauthProvider.GOOGLE,
+      providerUserId: 'g-verify',
+    })
+
+    const response = await client.get('/api/auth/oauth/confirm').qs({ token }).redirects(0)
+    response.assertStatus(302)
+
+    await user.refresh()
+    assert.isNotNull(user.emailVerifiedAt)
+  })
+
+  test('non-AuthException errors from the service produce a generic oauth_error redirect', async ({
+    client,
+    assert,
+    cleanup,
+  }) => {
+    const original = AuthService.prototype.confirmOAuthLink
+    AuthService.prototype.confirmOAuthLink = async () => {
+      throw new Error('unexpected failure')
+    }
+    cleanup(() => {
+      AuthService.prototype.confirmOAuthLink = original
+    })
+
+    const response = await client
+      .get('/api/auth/oauth/confirm')
+      .qs({ token: 'sel.ver' })
+      .redirects(0)
+
+    response.assertStatus(302)
+    const { params } = parseLocation(response.headers().location as string)
+    assert.equal(params.get('status'), 'error')
+    assert.equal(params.get('reason'), 'oauth_error')
   })
 })
