@@ -1,11 +1,11 @@
-process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
-
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { WebBrowserResultType } from "expo-web-browser";
 
 import { startOAuthFlow } from "../authService";
+
+process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
 
 jest.mock("expo-web-browser", () => ({
   openAuthSessionAsync: jest.fn(),
