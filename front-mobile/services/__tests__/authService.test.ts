@@ -1,7 +1,7 @@
-process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
-
 import { refreshAccessToken, resendVerificationEmail } from "../authService";
 import { post } from "../api";
+
+process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
 
 jest.mock("../api", () => ({
   get: jest.fn(),

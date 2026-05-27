@@ -46,4 +46,20 @@ export class AuthException extends Error {
   static unauthorized(): AuthException {
     return new AuthException(AUTH_ERROR_CODE.Unauthorized, 'Unauthorized access', 401)
   }
+
+  static oauthConfirmationInvalid(): AuthException {
+    return new AuthException(
+      AUTH_ERROR_CODE.OauthConfirmationInvalid,
+      'Invalid OAuth confirmation token',
+      400
+    )
+  }
+
+  static oauthConfirmationExpired(): AuthException {
+    return new AuthException(
+      AUTH_ERROR_CODE.OauthConfirmationExpired,
+      'OAuth confirmation token expired',
+      400
+    )
+  }
 }

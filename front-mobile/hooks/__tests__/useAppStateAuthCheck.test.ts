@@ -1,6 +1,8 @@
 import { renderHook } from "@testing-library/react-native";
 import { AppState } from "react-native";
 
+import { useAppStateAuthCheck } from "../useAppStateAuthCheck";
+
 const mockCheckAuth = jest.fn();
 const mockGetState = jest.fn();
 
@@ -11,8 +13,6 @@ jest.mock("@/stores/authStore", () => {
     mockGetState();
   return { useAuthStore };
 });
-
-import { useAppStateAuthCheck } from "../useAppStateAuthCheck";
 
 describe("useAppStateAuthCheck", () => {
   let listener: ((state: string) => void) | null = null;

@@ -10,8 +10,10 @@ import { errors } from '@vinejs/vine'
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity } from '@foadonis/openapi/decorators'
 import { AuthException } from '#exceptions/auth_exception'
 import env from '#start/env'
+import { buildOauthRedirectUrl } from '#helpers/oauth_redirect'
 
 const VERIFY_EMAIL_DEEP_LINK_PATH = 'verify-email'
+const ALLOWED_DEEP_LINK_SCHEMES = /^(exp|frontmobile):\/\//
 
 export default class AuthController {
   private authService: AuthService
@@ -303,7 +305,7 @@ export default class AuthController {
 
   private buildRedirectUrl(status: 'ok' | 'error', reason?: string, returnBase?: string): string {
     const baseUrl =
-      returnBase && /^(exp|frontmobile):\/\//.test(returnBase)
+      returnBase && ALLOWED_DEEP_LINK_SCHEMES.test(returnBase)
         ? returnBase
         : `${env.get('MOBILE_DEEP_LINK_SCHEME', 'frontmobile')}://${VERIFY_EMAIL_DEEP_LINK_PATH}`
 
@@ -350,6 +352,50 @@ export default class AuthController {
       return response.internalServerError({
         message: 'An error occurred while sending verification email',
       })
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Confirm OAuth provider link from email',
+    description:
+      'Handles the OAuth link confirmation link click: validates the token, links the provider to the user, issues Rythmix tokens and redirects to the mobile deep-link with status=ok&confirmed=true (or status=error).',
+  })
+  @ApiResponse({ status: 302, description: 'Redirect to the mobile deep-link' })
+  async confirmOAuthLink({ request, response }: HttpContext) {
+    const token = request.qs().token as string | undefined
+    const returnBase = request.qs().return as string | undefined
+
+    if (!token) {
+      return response.redirect(
+        buildOauthRedirectUrl(returnBase, {
+          status: 'error',
+          reason: 'oauth_confirmation_invalid',
+        })
+      )
+    }
+
+    try {
+      const result = await this.authService.confirmOAuthLink(token)
+      return response.redirect(
+        buildOauthRedirectUrl(returnBase, {
+          status: 'ok',
+          provider: result.provider,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          confirmed: 'true',
+        })
+      )
+    } catch (error: unknown) {
+      if (error instanceof AuthException) {
+        const reason =
+          error.code === 'E_OAUTH_CONFIRMATION_EXPIRED'
+            ? 'oauth_confirmation_expired'
+            : 'oauth_confirmation_invalid'
+        return response.redirect(buildOauthRedirectUrl(returnBase, { status: 'error', reason }))
+      }
+      return response.redirect(
+        buildOauthRedirectUrl(returnBase, { status: 'error', reason: 'oauth_error' })
+      )
     }
   }
 

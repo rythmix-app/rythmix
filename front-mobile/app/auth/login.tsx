@@ -21,7 +21,10 @@ import Button from "@/components/Button";
 import { useAuthStore } from "@/stores/authStore";
 import { ApiError } from "@/types/auth";
 import { useToast } from "@/components/Toast";
-import { resendVerificationEmail } from "@/services/authService";
+import {
+  resendVerificationEmail,
+  startOAuthFlow,
+} from "@/services/authService";
 import { AUTH_ERROR_CODE, getErrorMessage } from "@/utils/error-messages";
 
 export default function LoginScreen() {
@@ -29,6 +32,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
+  const [isOAuthLoading, setIsOAuthLoading] = useState<
+    "google" | "spotify" | null
+  >(null);
   const { login, isLoading } = useAuthStore();
   const { show } = useToast();
 
@@ -134,18 +140,38 @@ export default function LoginScreen() {
             <View style={styles.socialContainer}>
               <AuthSocialButton
                 provider="spotify"
-                label="Continuer avec Spotify"
-                onPress={() => {
-                  // TODO: logique OAuth Spotify
+                label={
+                  isOAuthLoading === "spotify"
+                    ? "Ouverture de Spotify..."
+                    : "Continuer avec Spotify"
+                }
+                onPress={async () => {
+                  if (isOAuthLoading) return;
+                  setIsOAuthLoading("spotify");
+                  try {
+                    await startOAuthFlow("spotify");
+                  } finally {
+                    setIsOAuthLoading(null);
+                  }
                 }}
                 style={{ marginBottom: 12 }}
               />
 
               <AuthSocialButton
                 provider="google"
-                label="Continuer avec Google"
-                onPress={() => {
-                  // TODO: logique OAuth Google
+                label={
+                  isOAuthLoading === "google"
+                    ? "Ouverture de Google..."
+                    : "Continuer avec Google"
+                }
+                onPress={async () => {
+                  if (isOAuthLoading) return;
+                  setIsOAuthLoading("google");
+                  try {
+                    await startOAuthFlow("google");
+                  } finally {
+                    setIsOAuthLoading(null);
+                  }
                 }}
               />
             </View>

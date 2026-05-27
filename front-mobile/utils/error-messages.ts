@@ -9,6 +9,15 @@ export const AUTH_ERROR_CODE = {
   NoRefreshToken: "E_NO_REFRESH_TOKEN",
 } as const;
 
+export const OAUTH_REASON = {
+  Denied: "oauth_denied",
+  Error: "oauth_error",
+  Cancelled: "oauth_cancelled",
+  NoEmail: "oauth_no_email",
+  ConfirmationInvalid: "oauth_confirmation_invalid",
+  ConfirmationExpired: "oauth_confirmation_expired",
+} as const;
+
 export type AuthErrorCode =
   (typeof AUTH_ERROR_CODE)[keyof typeof AUTH_ERROR_CODE];
 
@@ -28,6 +37,14 @@ const ERROR_MESSAGES: Record<string, string> = {
     "Vous devez être connecté pour effectuer cette action.",
   [AUTH_ERROR_CODE.NoRefreshToken]:
     "Aucune session active. Merci de vous reconnecter.",
+  [OAUTH_REASON.Denied]: "La connexion a été refusée par le fournisseur.",
+  [OAUTH_REASON.Error]: "La connexion via le fournisseur a échoué.",
+  [OAUTH_REASON.Cancelled]: "Connexion annulée.",
+  [OAUTH_REASON.NoEmail]: "Le fournisseur n'a pas partagé ton adresse email.",
+  [OAUTH_REASON.ConfirmationInvalid]:
+    "Lien de confirmation invalide ou déjà utilisé.",
+  [OAUTH_REASON.ConfirmationExpired]:
+    "Lien de confirmation expiré. Relance la connexion.",
 };
 
 export function getErrorMessage(code?: string): string | undefined {
