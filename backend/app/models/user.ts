@@ -83,6 +83,14 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   declare optInNewsletter: boolean
 
+  @ApiProperty({ description: 'Linked Google account id', nullable: true })
+  @column({ serializeAs: null })
+  declare googleId: string | null
+
+  @ApiProperty({ description: 'Linked Spotify account id', nullable: true })
+  @column({ serializeAs: null })
+  declare spotifyId: string | null
+
   @hasMany(() => UserTrackInteraction)
   declare trackInteractions: HasMany<typeof UserTrackInteraction>
 
