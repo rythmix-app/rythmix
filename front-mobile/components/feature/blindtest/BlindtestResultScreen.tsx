@@ -19,7 +19,7 @@ export default function BlindtestResultScreen({
   maxScore,
   completedRounds,
   onReplay,
-}: BlindtestResultScreenProps) {
+}: Readonly<BlindtestResultScreenProps>) {
   const percentage =
     maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 

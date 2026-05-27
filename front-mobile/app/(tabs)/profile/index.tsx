@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/authStore";
 import OnboardingBanner from "@/components/OnboardingBanner";
 import ProfileSpotifySection from "@/components/profile/ProfileSpotifySection";
 import ProfileAchievementsSection from "@/components/profile/ProfileAchievementsSection";
+import { ProfileRecentActivities } from "@/components/profile/ProfileRecentActivities";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useMyStats } from "@/hooks/useMyStats";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -96,6 +97,9 @@ export default function ProfileScreen() {
 
         {/* ── Succès & Récompenses ── */}
         <ProfileAchievementsSection />
+
+        {/* ── Activités récentes ── */}
+        <ProfileRecentActivities />
 
         {/* ── Mes artistes favoris ── */}
         <View style={styles.section}>
@@ -229,14 +233,6 @@ const styles = StyleSheet.create({
     borderLeftColor: Colors.primary.CTA,
     paddingLeft: 10,
   },
-  sectionTitleCentered: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.dark.text,
-    marginBottom: 14,
-    textAlign: "center",
-  },
-
   // Stats
   statsRow: {
     flexDirection: "row",

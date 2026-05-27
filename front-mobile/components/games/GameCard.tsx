@@ -31,7 +31,7 @@ export function GameCard({
   onPress,
   onToggleFavorite,
   hasSavedGame,
-}: GameCardProps) {
+}: Readonly<GameCardProps>) {
   const { width } = useWindowDimensions();
   const cardScale = useSharedValue(1);
   const favoriteScale = useSharedValue(1);

@@ -8,7 +8,7 @@ type AuthHeaderProps = {
   style?: ViewStyle;
 };
 
-export const AuthHeader: React.FC<AuthHeaderProps> = ({
+export const AuthHeader: React.FC<Readonly<AuthHeaderProps>> = ({
   baseline = "L'application qui vous fait redécouvrir la musique !",
   style,
 }) => {

@@ -15,7 +15,7 @@ import * as gameService from "@/services/gameService";
 import { Game } from "@/types/games";
 import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 
-function FavoriteGameCard({ game }: { game: Game }) {
+function FavoriteGameCard({ game }: Readonly<{ game: Game }>) {
   const scale = useSharedValue(1);
   const playedGameIds = usePlayedGamesStore((state) => state.playedGameIds);
 

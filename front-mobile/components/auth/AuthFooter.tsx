@@ -9,7 +9,7 @@ type AuthFooterProps = {
   copyrightText?: string;
 };
 
-export const AuthFooter: React.FC<AuthFooterProps> = ({
+export const AuthFooter: React.FC<Readonly<AuthFooterProps>> = ({
   onPressTerms,
   onPressPrivacy,
   copyrightText = "© 2025 Rythmix. Tous droits réservés.",

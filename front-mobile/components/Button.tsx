@@ -29,7 +29,7 @@ interface ButtonProps {
   textStyle?: TextStyle;
 }
 
-const Button: React.FC<ButtonProps> = ({
+const Button: React.FC<Readonly<ButtonProps>> = ({
   title = "Button",
   onPress,
   variant = "primary",

@@ -18,6 +18,7 @@ const SpotifyAuthController = () => import('#controllers/spotify_auth_controller
 const SpotifyLoginController = () => import('#controllers/spotify_login_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const MeIntegrationsController = () => import('#controllers/me_integrations_controller')
+const MeActivitiesController = () => import('#controllers/me_activities_controller')
 const OnboardingController = () => import('#controllers/onboarding_controller')
 const MeStatsController = () => import('#controllers/me_stats_controller')
 const CuratedPlaylistsController = () => import('#controllers/curated_playlists_controller')
@@ -92,6 +93,8 @@ router
         ])
 
         router.get('/stats', [MeStatsController, 'index'])
+
+        router.get('/activities', [MeActivitiesController, 'index'])
 
         router.get('/swipemix/feed', [SwipemixFeedController, 'index'])
         router.get('/swipemix/interactions', [TrackInteractionsController, 'index'])

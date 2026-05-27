@@ -39,16 +39,18 @@ const BORDER = {
 };
 
 const ICONS = {
-  like: ({ size }: { size: number }) => (
+  like: ({ size }: Readonly<{ size: number }>) => (
     <FontAwesome name="heart" size={size} />
   ),
-  dislike: ({ size }: { size: number }) => <Entypo name="cross" size={size} />,
-  previous: ({ size }: { size: number }) => (
+  dislike: ({ size }: Readonly<{ size: number }>) => (
+    <Entypo name="cross" size={size} />
+  ),
+  previous: ({ size }: Readonly<{ size: number }>) => (
     <MaterialCommunityIcons name="skip-previous" size={size} />
   ),
 };
 
-const SwipeButton: React.FC<SwipeButtonProps> = ({
+const SwipeButton: React.FC<Readonly<SwipeButtonProps>> = ({
   type,
   size = "medium",
   onPress,

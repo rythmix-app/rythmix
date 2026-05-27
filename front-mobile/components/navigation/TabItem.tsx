@@ -24,7 +24,7 @@ export function TabItem({
   onPress,
   activeBg = "#0D7377",
   inactiveColor = "#FFFFFF",
-}: Props) {
+}: Readonly<Props>) {
   const t = useRef(new Animated.Value(active ? 1 : 0)).current;
 
   useEffect(() => {

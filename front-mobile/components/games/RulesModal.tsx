@@ -31,7 +31,7 @@ export default function RulesModal({
   title,
   objective,
   steps,
-}: RulesModalProps) {
+}: Readonly<RulesModalProps>) {
   const { height: screenHeight } = useWindowDimensions();
   const [mounted, setMounted] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;

@@ -34,7 +34,7 @@ const providerStyles: Record<
   },
 };
 
-export const AuthSocialButton: React.FC<AuthSocialButtonProps> = ({
+export const AuthSocialButton: React.FC<Readonly<AuthSocialButtonProps>> = ({
   provider,
   label,
   onPress,

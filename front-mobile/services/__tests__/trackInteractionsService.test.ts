@@ -1,11 +1,11 @@
-process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
-
 import {
   deleteMyTrackInteraction,
   getMyTrackInteractions,
   upsertMyTrackInteraction,
 } from "../trackInteractionsService";
 import { del, get, post } from "../api";
+
+process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
 
 jest.mock("../api", () => ({
   get: jest.fn(),

@@ -16,7 +16,7 @@ export function CentralTabItem({
   bgColor = "#0D7377",
   borderColor = "#FFFFFF",
   iconColor = "#FFFFFF",
-}: Props) {
+}: Readonly<Props>) {
   const scale = useRef(new Animated.Value(1)).current;
   const lift = useRef(new Animated.Value(0)).current;
 
