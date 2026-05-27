@@ -24,12 +24,14 @@ export interface SpotifyOauthProfile {
   refreshToken: string | null
   expiresAt: DateTime | null
   scopes: string | null
+  returnUrl?: string | null
 }
 
 export interface GoogleOauthProfile {
   email: string
   providerUserId: string
   name?: string | null
+  returnUrl?: string | null
 }
 
 export type OauthLoginResult =
@@ -96,7 +98,13 @@ export class AuthService {
       return { status: 'logged_in', ...(await this.issueTokens(existing)) }
     }
 
-    await this.startOAuthLinkConfirmation(existing, OauthProvider.GOOGLE, profile.providerUserId)
+    await this.startOAuthLinkConfirmation(
+      existing,
+      OauthProvider.GOOGLE,
+      profile.providerUserId,
+      null,
+      profile.returnUrl
+    )
     return { status: 'pending_confirmation', email: existing.email, provider: OauthProvider.GOOGLE }
   }
 
@@ -140,12 +148,18 @@ export class AuthService {
       return { status: 'logged_in', ...(await this.issueTokens(existing)) }
     }
 
-    await this.startOAuthLinkConfirmation(existing, OauthProvider.SPOTIFY, profile.providerUserId, {
-      accessToken: profile.accessToken,
-      refreshToken: profile.refreshToken,
-      expiresAt: profile.expiresAt ? profile.expiresAt.toISO() : null,
-      scopes: profile.scopes,
-    })
+    await this.startOAuthLinkConfirmation(
+      existing,
+      OauthProvider.SPOTIFY,
+      profile.providerUserId,
+      {
+        accessToken: profile.accessToken,
+        refreshToken: profile.refreshToken,
+        expiresAt: profile.expiresAt ? profile.expiresAt.toISO() : null,
+        scopes: profile.scopes,
+      },
+      profile.returnUrl
+    )
     return {
       status: 'pending_confirmation',
       email: existing.email,
@@ -410,7 +424,8 @@ export class AuthService {
     user: User,
     provider: OauthProvider,
     providerUserId: string,
-    payload: OAuthSpotifyPayload | null = null
+    payload: OAuthSpotifyPayload | null = null,
+    returnUrl: string | null | undefined = null
   ) {
     await OAuthLinkConfirmationToken.query()
       .where('userId', user.id)
@@ -431,18 +446,23 @@ export class AuthService {
       expiresAt: DateTime.now().plus({ hours: OAUTH_LINK_CONFIRMATION_TTL_HOURS }),
     })
 
-    await this.sendOAuthLinkConfirmationEmail(user, provider, selector, verifier)
+    await this.sendOAuthLinkConfirmationEmail(user, provider, selector, verifier, returnUrl)
   }
 
   private async sendOAuthLinkConfirmationEmail(
     user: User,
     provider: OauthProvider,
     selector: string,
-    verifier: string
+    verifier: string,
+    returnUrl: string | null | undefined = null
   ) {
     const fullToken = `${selector}.${verifier}`
     const frontendUrl = env.get('FRONTEND_URL')
-    const confirmationUrl = `${frontendUrl}/api/auth/oauth/confirm?token=${fullToken}`
+    const params = new URLSearchParams({ token: fullToken })
+    if (returnUrl) {
+      params.set('return', returnUrl)
+    }
+    const confirmationUrl = `${frontendUrl}/api/auth/oauth/confirm?${params.toString()}`
     const providerLabel = provider === OauthProvider.GOOGLE ? 'Google' : 'Spotify'
     const buttonColor = provider === OauthProvider.GOOGLE ? '#4285F4' : '#1DB954'
 

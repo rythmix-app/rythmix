@@ -103,6 +103,7 @@ export default class SpotifyLoginController {
         refreshToken: token.refreshToken,
         expiresAt: token.expiresAt,
         scopes: token.scopes,
+        returnUrl,
       })
 
       if (result.status === 'logged_in') {

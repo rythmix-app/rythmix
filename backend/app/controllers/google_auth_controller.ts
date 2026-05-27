@@ -90,6 +90,7 @@ export default class GoogleAuthController {
         email: googleUser.email,
         providerUserId: String(googleUser.id),
         name: googleUser.name,
+        returnUrl,
       })
 
       if (result.status === 'logged_in') {
