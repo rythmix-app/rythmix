@@ -2,6 +2,8 @@ import { searchDeezerArtists, startParkeurSession } from "../parkeurService";
 import { post } from "../api";
 import { deezerAPI } from "../deezer-api";
 
+process.env.EXPO_PUBLIC_API_URL = "https://api.rythmix.test";
+
 jest.mock("../api", () => ({
   post: jest.fn(),
 }));

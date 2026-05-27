@@ -3,6 +3,14 @@ import { inject } from '@adonisjs/core'
 import logger from '@adonisjs/core/services/logger'
 import { ApiOperation, ApiResponse } from '@foadonis/openapi/decorators'
 import { AuthService } from '#services/auth_service'
+import {
+  buildOauthRedirectUrl,
+  decodeOauthState,
+  defaultOauthReturnUrl,
+  encodeOauthState,
+  isAllowedReturnUrl,
+} from '#helpers/oauth_redirect'
+import { OauthProvider } from '#enums/oauth_provider'
 
 @inject()
 export default class GoogleAuthController {
@@ -10,50 +18,108 @@ export default class GoogleAuthController {
 
   @ApiOperation({
     summary: 'Redirect to Google OAuth consent',
-    description: 'Redirects the user to the Google sign-in consent page.',
+    description:
+      'Redirects the user to the Google sign-in consent page. Accepts a `returnUrl` query parameter (mobile deep link) that will be hit after the callback.',
   })
   @ApiResponse({ status: 302, description: 'Redirect to Google' })
-  async redirect({ ally, response }: HttpContext) {
-    const url = await ally.use('google').stateless().redirectUrl()
+  @ApiResponse({ status: 400, description: 'Invalid returnUrl' })
+  async redirect({ ally, request, response }: HttpContext) {
+    const requestedReturnUrl = request.qs().returnUrl as string | undefined
+    if (requestedReturnUrl && !isAllowedReturnUrl(requestedReturnUrl)) {
+      return response.badRequest({ message: 'Invalid returnUrl' })
+    }
+    const returnUrl = requestedReturnUrl ?? defaultOauthReturnUrl()
+    const state = encodeOauthState(OauthProvider.GOOGLE, returnUrl)
+
+    const url = await ally
+      .use('google')
+      .stateless()
+      .redirectUrl((req) => {
+        req.param('state', state)
+      })
+
     return response.redirect(url)
   }
 
   @ApiOperation({
     summary: 'Google OAuth callback',
     description:
-      'Handles the Google OAuth callback, creates the user if needed, and returns access and refresh tokens.',
+      'Handles the Google OAuth callback and redirects the mobile app via deep link with status / tokens / pending-confirmation params.',
   })
-  @ApiResponse({ status: 200, description: 'Authentication successful' })
-  @ApiResponse({ status: 400, description: 'Google returned an error or no email' })
-  @ApiResponse({ status: 401, description: 'User cancelled the Google sign-in' })
-  @ApiResponse({ status: 500, description: 'Unexpected failure during token exchange' })
-  async callback({ ally, response }: HttpContext) {
+  @ApiResponse({ status: 302, description: 'Redirect to the mobile deep-link' })
+  async callback({ ally, request, response }: HttpContext) {
+    const decoded = decodeOauthState(request.qs().state as string | undefined, OauthProvider.GOOGLE)
+    const returnUrl = decoded?.returnUrl ?? defaultOauthReturnUrl()
+
     const google = ally.use('google').stateless()
 
     if (google.accessDenied()) {
-      return response.unauthorized({ message: 'Google sign-in was cancelled' })
+      return response.redirect(
+        buildOauthRedirectUrl(returnUrl, {
+          status: 'error',
+          provider: OauthProvider.GOOGLE,
+          reason: 'oauth_denied',
+        })
+      )
     }
 
     if (google.hasError()) {
-      return response.badRequest({ message: 'Google sign-in failed' })
+      return response.redirect(
+        buildOauthRedirectUrl(returnUrl, {
+          status: 'error',
+          provider: OauthProvider.GOOGLE,
+          reason: 'oauth_error',
+        })
+      )
     }
 
     try {
       const googleUser = await google.user()
 
       if (!googleUser.email) {
-        return response.badRequest({ message: 'Google did not return an email' })
+        return response.redirect(
+          buildOauthRedirectUrl(returnUrl, {
+            status: 'error',
+            provider: OauthProvider.GOOGLE,
+            reason: 'oauth_no_email',
+          })
+        )
       }
 
-      const { accessToken, refreshToken } = await this.authService.loginOrCreateFromGoogle({
+      const result = await this.authService.loginOrCreateFromGoogle({
         email: googleUser.email,
+        providerUserId: String(googleUser.id),
         name: googleUser.name,
+        returnUrl,
       })
 
-      return response.ok({ accessToken, refreshToken })
+      if (result.status === 'logged_in') {
+        return response.redirect(
+          buildOauthRedirectUrl(returnUrl, {
+            status: 'ok',
+            provider: OauthProvider.GOOGLE,
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+          })
+        )
+      }
+
+      return response.redirect(
+        buildOauthRedirectUrl(returnUrl, {
+          status: 'pending_confirmation',
+          provider: OauthProvider.GOOGLE,
+          email: result.email,
+        })
+      )
     } catch (error: unknown) {
       logger.error({ err: error }, 'Google OAuth callback failed')
-      return response.internalServerError({ message: 'Google sign-in failed' })
+      return response.redirect(
+        buildOauthRedirectUrl(returnUrl, {
+          status: 'error',
+          provider: OauthProvider.GOOGLE,
+          reason: 'oauth_error',
+        })
+      )
     }
   }
 }

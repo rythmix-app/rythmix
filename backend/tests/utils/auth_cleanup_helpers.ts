@@ -1,6 +1,8 @@
 import User from '#models/user'
 import RefreshToken from '#models/refresh_token'
 import EmailVerificationToken from '#models/email_verification_token'
+import OAuthLinkConfirmationToken from '#models/oauth_link_confirmation_token'
+import UserIntegration from '#models/user_integration'
 import { Group } from '@japa/runner/core'
 import { DateTime } from 'luxon'
 
@@ -14,6 +16,10 @@ export function deleteAuthData(group: Group) {
   group.each.teardown(async () => {
     await RefreshToken.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
     await EmailVerificationToken.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
+    await OAuthLinkConfirmationToken.query()
+      .where('created_at', '>=', testStartTime.toSQL()!)
+      .delete()
+    await UserIntegration.query().where('created_at', '>=', testStartTime.toSQL()!).delete()
   })
 
   group.teardown(async () => {

@@ -48,6 +48,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   */
   FRONTEND_URL: Env.schema.string(),
   MOBILE_DEEP_LINK_SCHEME: Env.schema.string.optional(),
+  OAUTH_DEEP_LINK_SCHEME: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------
@@ -64,6 +65,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   SPOTIFY_CLIENT_ID: Env.schema.string(),
   SPOTIFY_CLIENT_SECRET: Env.schema.string(),
   SPOTIFY_CALLBACK_URL: Env.schema.string(),
+  SPOTIFY_LOGIN_CALLBACK_URL: Env.schema.string.optional(),
   SPOTIFY_DEEP_LINK_SCHEME: Env.schema.string.optional(),
 
   /*
