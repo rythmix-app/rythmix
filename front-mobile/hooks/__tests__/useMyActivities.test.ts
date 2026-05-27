@@ -7,6 +7,16 @@ jest.mock("@/services/userActivitiesService", () => ({
   getMyActivities: jest.fn(),
 }));
 
+jest.mock("expo-router", () => ({
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    const React = require("react");
+    React.useEffect(() => {
+      const cleanup = callback();
+      return typeof cleanup === "function" ? cleanup : undefined;
+    }, [callback]);
+  },
+}));
+
 const mockGetMyActivities = getMyActivities as jest.MockedFunction<
   typeof getMyActivities
 >;

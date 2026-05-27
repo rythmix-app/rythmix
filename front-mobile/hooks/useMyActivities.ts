@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { getMyActivities } from "@/services/userActivitiesService";
 import { UserActivity } from "@/types/userActivity";
 
@@ -47,9 +48,11 @@ export function useMyActivities(limit: number = 5): UseMyActivitiesResult {
     }
   }, [limit]);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   return { activities, isLoading, error, refresh };
 }
