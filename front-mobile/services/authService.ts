@@ -60,6 +60,10 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
   });
 };
 
+export const resendVerificationEmail = async (email: string): Promise<void> => {
+  await post("/api/auth/resend-verification", { email }, { skipAuth: true });
+};
+
 export const logout = async (): Promise<void> => {
   await clearAll();
 };
@@ -70,7 +74,7 @@ export const refreshAccessToken = async (
   const response = await post<RefreshTokenResponse>(
     "/api/auth/refresh",
     { refreshToken },
-    { skipAuth: true },
+    { skipAuth: true, skipRefresh: true },
   );
 
   if (!response.accessToken) {

@@ -8,6 +8,10 @@ import { useAuthStore } from "@/stores/authStore";
 import OnboardingBanner from "@/components/OnboardingBanner";
 import { ProfileRecentActivities } from "@/components/profile/ProfileRecentActivities";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
+import ProfileSpotifySection from "@/components/profile/ProfileSpotifySection";
+import ProfileAchievementsSection from "@/components/profile/ProfileAchievementsSection";
+import { useMyStats } from "@/hooks/useMyStats";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 // TODO: à modifier plus tard - remplacer par des données récupérées depuis l'APIii
 const MOCK_STATS = {
@@ -32,6 +36,7 @@ const MOCK_BADGES = [
 // TODO: à modifier plus tard - niveau et titre à récupérer depuis l'API
 const MOCK_LEVEL = { level: 7, title: "Mélomane" };
 
+
 function getMemberSince(createdAt?: string): string {
   if (!createdAt) return "membre récemment";
   const created = new Date(createdAt);
@@ -50,6 +55,7 @@ function getMemberSince(createdAt?: string): string {
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const { status } = useOnboardingStatus();
+  const { stats, loading, error, retry } = useMyStats();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
@@ -80,54 +86,43 @@ export default function ProfileScreen() {
           <Text style={styles.memberSince}>
             {getMemberSince(user?.createdAt)}
           </Text>
-
-          <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>
-              Niveau {MOCK_LEVEL.level} — {MOCK_LEVEL.title}
-            </Text>
-          </View>
         </View>
 
         {/* ── Statistiques ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Statistiques</Text>
           <View style={styles.statsRow}>
-            <StatCard label="Swipes" value={MOCK_STATS.swipes} />
-            <StatCard label="Matchs" value={MOCK_STATS.matchs} />
-            <StatCard label="Jeux joués" value={MOCK_STATS.gamesPlayed} />
+            <StatCard
+              label="Swipes"
+              value={stats?.totalSwipes ?? 0}
+              loading={loading}
+            />
+            <StatCard
+              label="Parties jouées"
+              value={stats?.gamesPlayed ?? 0}
+              loading={loading}
+            />
+            <StatCard
+              label="Streak"
+              value={stats?.streak ?? 0}
+              loading={loading}
+              suffix={stats?.streak ? " j" : ""}
+            />
           </View>
+          {error && (
+            <Pressable onPress={retry} style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error} - Réessayer</Text>
+            </Pressable>
+          )}
         </View>
 
-        {/* ── Succès & Récompenses ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitleCentered}>Succès & Récompenses</Text>
-          <View style={styles.badgesGrid}>
-            {MOCK_BADGES.map((badge) => (
-              <View
-                key={badge.id}
-                style={[
-                  styles.badgeItem,
-                  !badge.unlocked && styles.badgeLocked,
-                ]}
-              >
-                <Text style={styles.badgeIcon}>
-                  {badge.unlocked ? badge.icon : "🔒"}
-                </Text>
-                <Text
-                  style={[
-                    styles.badgeName,
-                    !badge.unlocked && styles.badgeNameLocked,
-                  ]}
-                >
-                  {badge.name}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
+        {/* ── Mes stats Spotify ── */}
+        <ProfileSpotifySection />
 
         {/* ── Activités récentes ── */}
         <ProfileRecentActivities />
+        {/* ── Succès & Récompenses ── */}
+        <ProfileAchievementsSection />
 
         {/* ── Mes artistes favoris ── */}
         <View style={styles.section}>
@@ -172,10 +167,26 @@ export default function ProfileScreen() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({
+  label,
+  value,
+  loading,
+  suffix = "",
+}: {
+  label: string;
+  value: number;
+  loading?: boolean;
+  suffix?: string;
+}) {
+  if (loading) {
+    return <Skeleton height={84} style={styles.statCardSkeleton} />;
+  }
   return (
     <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statValue}>
+        {value}
+        {suffix}
+      </Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -231,20 +242,6 @@ const styles = StyleSheet.create({
     color: Colors.dark.icon,
     marginBottom: 10,
   },
-  levelBadge: {
-    backgroundColor: Colors.primary.CTADark,
-    borderWidth: 1,
-    borderColor: Colors.primary.CTA,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    marginBottom: 16,
-  },
-  levelText: {
-    color: Colors.primary.survol,
-    fontSize: 13,
-    fontWeight: "600",
-  },
 
   // Sections
   section: {
@@ -280,6 +277,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#2A2A2A",
+  },
+  statCardSkeleton: {
+    flex: 1,
+    borderRadius: 12,
   },
   statValue: {
     fontSize: 26,
@@ -324,6 +325,13 @@ const styles = StyleSheet.create({
   },
   badgeNameLocked: {
     color: Colors.dark.icon,
+  errorContainer: {
+    marginTop: 12,
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#FF4D4D",
+    fontSize: 13,
   },
 
   // Favorite artists

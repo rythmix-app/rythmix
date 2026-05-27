@@ -54,6 +54,17 @@ class CacheManager {
         return null;
       }
 
+      // Auto-invalider les entrées polluées par un body d'erreur applicative
+      // (cas Deezer qui répond 200 OK avec { error: { ... } }).
+      if (
+        entry.data &&
+        typeof entry.data === "object" &&
+        "error" in (entry.data as object)
+      ) {
+        await this.remove(key);
+        return null;
+      }
+
       return entry.data;
     } catch (error) {
       console.error("Error getting cache entry:", error);

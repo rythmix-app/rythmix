@@ -14,6 +14,11 @@ import {
 import { useAuthStore } from "@/stores/authStore";
 import { ApiError } from "@/types/auth";
 import { useToast } from "@/components/Toast";
+import {
+  MIN_PASSWORD_LENGTH,
+  MIN_PASSWORD_STRENGTH,
+  evaluatePasswordStrength,
+} from "@/utils/password-strength";
 
 export default function RegisterScreen() {
   const [firstName, setFirstName] = useState("");
@@ -54,6 +59,21 @@ export default function RegisterScreen() {
       show({ type: "error", message: "Le mot de passe est requis" });
       return false;
     }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      show({
+        type: "error",
+        message: `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères`,
+      });
+      return false;
+    }
+    if (evaluatePasswordStrength(password).strength < MIN_PASSWORD_STRENGTH) {
+      show({
+        type: "error",
+        message:
+          "Mot de passe trop faible : ajoute une majuscule ou un chiffre",
+      });
+      return false;
+    }
 
     if (password !== confirmPassword) {
       show({
@@ -84,12 +104,17 @@ export default function RegisterScreen() {
         username,
         email,
         password,
+        password_confirmation: confirmPassword,
+        optInNewsletter: acceptNewsletter,
       });
       show({
         type: "success",
         message: "Votre compte a été créé avec succès !",
       });
-      router.replace("/auth/login");
+      router.replace({
+        pathname: "/auth/verify-email-pending",
+        params: { email },
+      });
     } catch (error) {
       const apiError = error as ApiError;
       show({

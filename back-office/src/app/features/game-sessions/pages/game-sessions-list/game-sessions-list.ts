@@ -6,6 +6,8 @@ import {
   GameSession,
   GameSessionStatus,
 } from '../../../../core/models/game-session.model';
+import { Game } from '../../../../core/models/game.model';
+import { GameService } from '../../../../core/services/game.service';
 import { GameSessionService } from '../../../../core/services/game-session.service';
 import { UserService } from '../../../../core/services/user.service';
 
@@ -24,9 +26,11 @@ export class GameSessionsList implements OnInit {
 
   gameSessionService = inject(GameSessionService);
   userService = inject(UserService);
+  gameService = inject(GameService);
   router = inject(Router);
 
   usernameByUserId = new Map<string, string>();
+  games: Game[] = [];
 
   currentPage = 0;
   pageSize = 10;
@@ -38,6 +42,7 @@ export class GameSessionsList implements OnInit {
   searchValue = '';
   statusFilter: GameSessionStatus | '' = '';
   statusOptions = GAME_SESSION_STATUSES;
+  gameFilter: number | '' = '';
 
   private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -50,9 +55,11 @@ export class GameSessionsList implements OnInit {
     forkJoin({
       sessions: this.gameSessionService.getGameSessions(),
       users: this.userService.getUsers({ includeDeleted: true }),
+      games: this.gameService.getGames(),
     }).subscribe({
-      next: ({ sessions, users }) => {
+      next: ({ sessions, users, games }) => {
         this.usernameByUserId = new Map(users.map((u) => [u.id, u.username]));
+        this.games = games.slice().sort((a, b) => a.name.localeCompare(b.name));
         this.allSessions = sessions;
         this.applyFilters();
         this.isLoading = false;
@@ -90,6 +97,12 @@ export class GameSessionsList implements OnInit {
     this.applyFilters();
   }
 
+  onGameFilterChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.gameFilter = value === '' ? '' : Number(value);
+    this.applyFilters();
+  }
+
   applyFilters(): void {
     let result = [...this.allSessions];
 
@@ -110,6 +123,10 @@ export class GameSessionsList implements OnInit {
 
     if (this.statusFilter) {
       result = result.filter((s) => s.status === this.statusFilter);
+    }
+
+    if (this.gameFilter !== '') {
+      result = result.filter((s) => s.gameId === this.gameFilter);
     }
 
     this.filteredSessions = result;

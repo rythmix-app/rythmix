@@ -11,6 +11,7 @@ const allyConfig = defineConfig({
       'user-top-read',
       'user-read-recently-played',
       'playlist-modify-private',
+      'playlist-read-private',
     ],
   }),
   google: services.google({

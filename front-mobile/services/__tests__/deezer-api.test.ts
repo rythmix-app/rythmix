@@ -420,6 +420,29 @@ describe("DeezerAPI", () => {
       await expect(deezerAPI.searchTracks("test")).rejects.toThrow();
     });
 
+    it("should throw QUOTA error on 200 OK body with Deezer quota error", async () => {
+      // Régression : Deezer répond parfois 200 OK avec { error: { ... } } lors
+      // d'un quota dépassé. Sans ce garde, l'objet pollue le cache 24h et fait
+      // crash genresResponse.data.forEach.
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          error: {
+            type: "Exception",
+            message: "Quota limit exceeded",
+            code: 4,
+          },
+        }),
+      });
+
+      await expect(deezerAPI.getGenres()).rejects.toMatchObject({
+        statusCode: 429,
+        type: "QUOTA",
+        message: "Quota limit exceeded",
+      });
+    });
+
     it("should handle response without parseable error message", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,

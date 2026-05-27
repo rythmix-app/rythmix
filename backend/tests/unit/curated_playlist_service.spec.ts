@@ -1,6 +1,6 @@
 import { test } from '@japa/runner'
 import CuratedPlaylist from '#models/curated_playlist'
-import { CuratedPlaylistService } from '#services/curated_playlist_service'
+import { CuratedPlaylistService, parseDeezerPlaylistUrl } from '#services/curated_playlist_service'
 import { deleteCuratedPlaylists } from '#tests/utils/curated_playlist_helpers'
 
 const sampleDeezerTracks = [
@@ -296,5 +296,557 @@ test.group('CuratedPlaylistService', (group) => {
     CuratedPlaylistService.clearCache()
     await service.getRandomTracks(playlist.id, 2)
     assert.isAbove(fetchCallCount, firstCallCount)
+  })
+
+  test('listAllTracks returns every unique track in catalogue order', async ({ assert }) => {
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 1090,
+      name: 'Full',
+      genreLabel: 'Hits',
+      coverUrl: null,
+    })
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ data: sampleDeezerTracks, total: sampleDeezerTracks.length }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    const tracks = await service.listAllTracks(playlist.id)
+    assert.deepEqual(
+      tracks.map((t) => t.id),
+      sampleDeezerTracks.map((t) => t.id)
+    )
+  })
+
+  test('listAllTracks throws PlaylistNotFoundError when missing', async ({ assert }) => {
+    await assert.rejects(async () => {
+      await service.listAllTracks(999_999)
+    }, /Curated playlist with id .* not found/)
+  })
+
+  test('invalidateCache evicts only the targeted Deezer playlist entry', async ({ assert }) => {
+    const a = await CuratedPlaylist.create({
+      deezerPlaylistId: 1080,
+      name: 'A',
+      genreLabel: 'Hits',
+      coverUrl: null,
+    })
+    const b = await CuratedPlaylist.create({
+      deezerPlaylistId: 1081,
+      name: 'B',
+      genreLabel: 'Hits',
+      coverUrl: null,
+    })
+
+    let fetchCallCount = 0
+    globalThis.fetch = async () => {
+      fetchCallCount += 1
+      return new Response(
+        JSON.stringify({ data: sampleDeezerTracks, total: sampleDeezerTracks.length }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    await service.getRandomTracks(a.id, 2)
+    await service.getRandomTracks(b.id, 2)
+    const baseline = fetchCallCount
+
+    CuratedPlaylistService.invalidateCache(a.deezerPlaylistId)
+
+    await service.getRandomTracks(b.id, 2)
+    assert.equal(fetchCallCount, baseline)
+    await service.getRandomTracks(a.id, 2)
+    assert.equal(fetchCallCount, baseline + 1)
+  })
+})
+
+test.group('parseDeezerPlaylistUrl', (group) => {
+  let originalFetch: typeof fetch
+
+  group.each.setup(() => {
+    originalFetch = globalThis.fetch
+  })
+
+  group.each.teardown(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('parses canonical deezer.com playlist URL', async ({ assert }) => {
+    assert.equal(
+      await parseDeezerPlaylistUrl('https://www.deezer.com/playlist/15223693943'),
+      15223693943
+    )
+  })
+
+  test('parses deezer.com URL with locale segment', async ({ assert }) => {
+    assert.equal(
+      await parseDeezerPlaylistUrl('https://www.deezer.com/fr/playlist/15223693943'),
+      15223693943
+    )
+    assert.equal(await parseDeezerPlaylistUrl('https://deezer.com/en/playlist/42'), 42)
+  })
+
+  test('parses api.deezer.com playlist URL', async ({ assert }) => {
+    assert.equal(
+      await parseDeezerPlaylistUrl('https://api.deezer.com/playlist/908622995'),
+      908622995
+    )
+  })
+
+  test('ignores trailing path segments and query parameters', async ({ assert }) => {
+    assert.equal(
+      await parseDeezerPlaylistUrl('https://www.deezer.com/fr/playlist/12345?utm_source=share'),
+      12345
+    )
+  })
+
+  test('resolves link.deezer.com short links via redirect', async ({ assert }) => {
+    let calledWith: string | null = null
+    globalThis.fetch = async (input, init) => {
+      calledWith = typeof input === 'string' ? input : (input as URL).toString()
+      assert.equal((init as RequestInit | undefined)?.redirect, 'follow')
+      const r = new Response(null, { status: 200 })
+      Object.defineProperty(r, 'url', { value: 'https://www.deezer.com/fr/playlist/77777' })
+      return r
+    }
+    assert.equal(await parseDeezerPlaylistUrl('https://link.deezer.com/s/abcdef'), 77777)
+    assert.equal(calledWith, 'https://link.deezer.com/s/abcdef')
+  })
+
+  test('resolves deezer.page.link short links via redirect', async ({ assert }) => {
+    globalThis.fetch = async () => {
+      const r = new Response(null, { status: 200 })
+      Object.defineProperty(r, 'url', { value: 'https://www.deezer.com/playlist/88888' })
+      return r
+    }
+    assert.equal(await parseDeezerPlaylistUrl('https://deezer.page.link/xyz'), 88888)
+  })
+
+  test('throws InvalidDeezerUrlError on garbage strings', async ({ assert }) => {
+    await assert.rejects(async () => {
+      await parseDeezerPlaylistUrl('not-a-url')
+    }, /Invalid Deezer playlist URL/)
+  })
+
+  test('throws InvalidDeezerUrlError when host is not Deezer', async ({ assert }) => {
+    await assert.rejects(async () => {
+      await parseDeezerPlaylistUrl('https://malicious.example/playlist/123')
+    }, /Invalid Deezer playlist URL/)
+  })
+
+  test('throws InvalidDeezerUrlError when short-link resolution returns a non-playlist URL', async ({
+    assert,
+  }) => {
+    globalThis.fetch = async () => {
+      const r = new Response(null, { status: 200 })
+      Object.defineProperty(r, 'url', { value: 'https://www.deezer.com/fr/artist/123' })
+      return r
+    }
+    await assert.rejects(async () => {
+      await parseDeezerPlaylistUrl('https://link.deezer.com/s/zzz')
+    }, /Invalid Deezer playlist URL/)
+  })
+
+  test('throws InvalidDeezerUrlError when short-link fetch fails', async ({ assert }) => {
+    globalThis.fetch = async () => {
+      throw new TypeError('network down')
+    }
+    await assert.rejects(async () => {
+      await parseDeezerPlaylistUrl('https://link.deezer.com/s/zzz')
+    }, /Invalid Deezer playlist URL/)
+  })
+
+  test('throws InvalidDeezerUrlError when path matches but id is not numeric (regex never matches)', async ({
+    assert,
+  }) => {
+    await assert.rejects(async () => {
+      await parseDeezerPlaylistUrl('https://www.deezer.com/fr/playlist/not-a-number')
+    }, /Invalid Deezer playlist URL/)
+  })
+
+  test('throws InvalidDeezerUrlError on absurdly long numeric ids that overflow Number', async ({
+    assert,
+  }) => {
+    await assert.rejects(async () => {
+      await parseDeezerPlaylistUrl(`https://www.deezer.com/playlist/${'9'.repeat(310)}`)
+    }, /Invalid Deezer playlist URL/)
+  })
+})
+
+test.group('CuratedPlaylistService - CRUD', (group) => {
+  deleteCuratedPlaylists(group)
+
+  let service: CuratedPlaylistService
+  let originalFetch: typeof fetch
+
+  const meta = (overrides: Partial<Record<string, unknown>> = {}) =>
+    new Response(
+      JSON.stringify({
+        id: 9001,
+        title: 'Deezer Title',
+        picture_xl: 'https://cdn/cover.jpg',
+        nb_tracks: 250,
+        ...overrides,
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+
+  group.each.setup(() => {
+    service = new CuratedPlaylistService()
+    originalFetch = globalThis.fetch
+    CuratedPlaylistService.clearCache()
+  })
+
+  group.each.teardown(() => {
+    globalThis.fetch = originalFetch
+    CuratedPlaylistService.clearCache()
+  })
+
+  test('createFromDeezerUrl persists Deezer metadata with nameOverridden false', async ({
+    assert,
+  }) => {
+    globalThis.fetch = async () =>
+      meta({
+        id: 2100,
+        title: 'Imported Playlist',
+        picture_xl: 'https://cdn/imported.jpg',
+        nb_tracks: 42,
+      })
+
+    const created = await service.createFromDeezerUrl({
+      url: 'https://www.deezer.com/fr/playlist/2100',
+      genreLabel: 'Pop',
+    })
+
+    assert.equal(created.deezerPlaylistId, 2100)
+    assert.equal(created.name, 'Imported Playlist')
+    assert.equal(created.genreLabel, 'Pop')
+    assert.equal(created.coverUrl, 'https://cdn/imported.jpg')
+    assert.equal(created.trackCount, 42)
+    assert.isFalse(created.nameOverridden)
+  })
+
+  test('createFromDeezerUrl throws DuplicateDeezerPlaylistError when the Deezer ID is already imported', async ({
+    assert,
+  }) => {
+    await CuratedPlaylist.create({
+      deezerPlaylistId: 2200,
+      name: 'Existing',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+
+    await assert.rejects(async () => {
+      await service.createFromDeezerUrl({
+        url: 'https://www.deezer.com/playlist/2200',
+        genreLabel: 'Pop',
+      })
+    }, /already in the catalogue/)
+  })
+
+  test('createFromDeezerUrl throws DeezerPlaylistNotFoundError when Deezer returns error code 800', async ({
+    assert,
+  }) => {
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({ error: { code: 800, type: 'DataException', message: 'no data' } }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+
+    await assert.rejects(async () => {
+      await service.createFromDeezerUrl({
+        url: 'https://www.deezer.com/playlist/2300',
+        genreLabel: 'Pop',
+      })
+    }, /does not exist/)
+  })
+
+  test('createFromDeezerUrl throws DeezerPlaylistFetchError when Deezer returns an unknown error code', async ({
+    assert,
+  }) => {
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ error: { code: 700, type: 'X', message: 'oops' } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+    await assert.rejects(async () => {
+      await service.createFromDeezerUrl({
+        url: 'https://www.deezer.com/playlist/2305',
+        genreLabel: 'Pop',
+      })
+    }, /Failed to fetch Deezer playlist/)
+  })
+
+  test('createFromDeezerUrl throws DeezerPlaylistFetchError on non-2xx', async ({ assert }) => {
+    globalThis.fetch = async () => new Response('boom', { status: 503 })
+
+    await assert.rejects(async () => {
+      await service.createFromDeezerUrl({
+        url: 'https://www.deezer.com/playlist/2400',
+        genreLabel: 'Pop',
+      })
+    }, /Failed to fetch Deezer playlist/)
+  })
+
+  test('createFromDeezerUrl throws DeezerPlaylistFetchError when fetch itself fails', async ({
+    assert,
+  }) => {
+    globalThis.fetch = async () => {
+      throw new TypeError('network down')
+    }
+    await assert.rejects(async () => {
+      await service.createFromDeezerUrl({
+        url: 'https://www.deezer.com/playlist/2410',
+        genreLabel: 'Pop',
+      })
+    }, /Failed to fetch Deezer playlist/)
+  })
+
+  test('createFromDeezerUrl throws DeezerPlaylistFetchError when response is not valid JSON', async ({
+    assert,
+  }) => {
+    globalThis.fetch = async () =>
+      new Response('not-json', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    await assert.rejects(async () => {
+      await service.createFromDeezerUrl({
+        url: 'https://www.deezer.com/playlist/2415',
+        genreLabel: 'Pop',
+      })
+    }, /Failed to fetch Deezer playlist/)
+  })
+
+  test('createFromDeezerUrl throws DeezerPlaylistFetchError when payload is missing fields', async ({
+    assert,
+  }) => {
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({ id: 1, title: 'No tracks' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    await assert.rejects(async () => {
+      await service.createFromDeezerUrl({
+        url: 'https://www.deezer.com/playlist/2420',
+        genreLabel: 'Pop',
+      })
+    }, /Failed to fetch Deezer playlist/)
+  })
+
+  test('createFromDeezerUrl propagates InvalidDeezerUrlError from the parser', async ({
+    assert,
+  }) => {
+    await assert.rejects(async () => {
+      await service.createFromDeezerUrl({
+        url: 'not-a-url',
+        genreLabel: 'Pop',
+      })
+    }, /Invalid Deezer playlist URL/)
+  })
+
+  test('renamePlaylist updates name and flips nameOverridden', async ({ assert }) => {
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 2500,
+      name: 'Original',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+
+    const updated = await service.renamePlaylist(playlist.id, 'Renamed by admin')
+
+    assert.equal(updated.name, 'Renamed by admin')
+    assert.isTrue(updated.nameOverridden)
+
+    const reloaded = await CuratedPlaylist.findOrFail(playlist.id)
+    assert.equal(reloaded.name, 'Renamed by admin')
+    assert.isTrue(reloaded.nameOverridden)
+  })
+
+  test('renamePlaylist throws PlaylistNotFoundError when missing', async ({ assert }) => {
+    await assert.rejects(async () => {
+      await service.renamePlaylist(987654, 'whatever')
+    }, /Curated playlist with id .* not found/)
+  })
+
+  test('refreshPlaylist updates cover, trackCount and name when not overridden', async ({
+    assert,
+  }) => {
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 2600,
+      name: 'Initial',
+      genreLabel: 'Pop',
+      coverUrl: 'https://old/cover.jpg',
+      trackCount: 10,
+    })
+
+    globalThis.fetch = async () =>
+      meta({
+        id: 2600,
+        title: 'Fresh from Deezer',
+        picture_xl: 'https://new/cover.jpg',
+        nb_tracks: 999,
+      })
+
+    const refreshed = await service.refreshPlaylist(playlist.id)
+    assert.equal(refreshed.name, 'Fresh from Deezer')
+    assert.equal(refreshed.coverUrl, 'https://new/cover.jpg')
+    assert.equal(refreshed.trackCount, 999)
+  })
+
+  test('refreshPlaylist preserves admin-overridden name', async ({ assert }) => {
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 2700,
+      name: 'Custom by admin',
+      genreLabel: 'Pop',
+      coverUrl: 'https://old/cover.jpg',
+      trackCount: 10,
+      nameOverridden: true,
+    })
+
+    globalThis.fetch = async () =>
+      meta({
+        id: 2700,
+        title: 'Deezer wants to rename me',
+        picture_xl: 'https://new/cover.jpg',
+        nb_tracks: 999,
+      })
+
+    const refreshed = await service.refreshPlaylist(playlist.id)
+    assert.equal(refreshed.name, 'Custom by admin')
+    assert.equal(refreshed.coverUrl, 'https://new/cover.jpg')
+    assert.equal(refreshed.trackCount, 999)
+  })
+
+  test('refreshPlaylist invalidates the in-memory track cache for that Deezer playlist', async ({
+    assert,
+  }) => {
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 2800,
+      name: 'Cached then refreshed',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+
+    let fetchCount = 0
+    globalThis.fetch = async (input) => {
+      fetchCount += 1
+      const url = typeof input === 'string' ? input : (input as URL).toString()
+      if (url.includes('/tracks')) {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: 1,
+                title: 't',
+                title_short: 't',
+                preview: '',
+                duration: 30,
+                artist: { id: 1, name: 'a' },
+                album: { id: 1, title: 'al' },
+              },
+            ],
+            total: 1,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      }
+      return meta({
+        id: 2800,
+        title: 'Refreshed',
+        picture_xl: 'https://new/cover.jpg',
+        nb_tracks: 5,
+      })
+    }
+
+    await service.getRandomTracks(playlist.id, 1)
+    const cachedFetchCount = fetchCount
+    await service.getRandomTracks(playlist.id, 1)
+    assert.equal(fetchCount, cachedFetchCount, 'cache must hit before refresh')
+
+    await service.refreshPlaylist(playlist.id)
+
+    const afterRefresh = fetchCount
+    await service.getRandomTracks(playlist.id, 1)
+    assert.isAbove(fetchCount, afterRefresh, 'cache must be invalidated after refresh')
+  })
+
+  test('refreshPlaylist throws PlaylistNotFoundError when missing', async ({ assert }) => {
+    await assert.rejects(async () => {
+      await service.refreshPlaylist(987654)
+    }, /Curated playlist with id .* not found/)
+  })
+
+  test('refreshPlaylist propagates DeezerPlaylistFetchError on Deezer failure', async ({
+    assert,
+  }) => {
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 2900,
+      name: 'Fails to refresh',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+
+    globalThis.fetch = async () => new Response('boom', { status: 500 })
+
+    await assert.rejects(async () => {
+      await service.refreshPlaylist(playlist.id)
+    }, /Failed to fetch Deezer playlist/)
+  })
+
+  test('deletePlaylist hard-deletes and invalidates the cache', async ({ assert }) => {
+    const playlist = await CuratedPlaylist.create({
+      deezerPlaylistId: 3000,
+      name: 'To be deleted',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+
+    let fetchCount = 0
+    globalThis.fetch = async () => {
+      fetchCount += 1
+      return new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: 1,
+              title: 't',
+              title_short: 't',
+              preview: '',
+              duration: 30,
+              artist: { id: 1, name: 'a' },
+              album: { id: 1, title: 'al' },
+            },
+          ],
+          total: 1,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    await service.getRandomTracks(playlist.id, 1)
+    const cachedFetchCount = fetchCount
+
+    await service.deletePlaylist(playlist.id)
+
+    const reloaded = await CuratedPlaylist.query().where('id', playlist.id).first()
+    assert.isNull(reloaded)
+
+    const fresh = await CuratedPlaylist.create({
+      deezerPlaylistId: 3000,
+      name: 'Recreated',
+      genreLabel: 'Pop',
+      coverUrl: null,
+    })
+    await service.getRandomTracks(fresh.id, 1)
+    assert.isAbove(fetchCount, cachedFetchCount)
+  })
+
+  test('deletePlaylist throws PlaylistNotFoundError when missing', async ({ assert }) => {
+    await assert.rejects(async () => {
+      await service.deletePlaylist(987654)
+    }, /Curated playlist with id .* not found/)
   })
 })

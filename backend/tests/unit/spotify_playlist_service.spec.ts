@@ -19,7 +19,7 @@ async function createUser(tag: string) {
 async function linkSpotify(
   service: SpotifyService,
   userId: string,
-  scopes: string = 'user-read-email playlist-modify-private'
+  scopes: string = 'user-read-email playlist-modify-private playlist-read-private'
 ) {
   await service.upsertIntegration(userId, {
     providerUserId: `sp_${userId.slice(0, 6)}`,
@@ -101,9 +101,26 @@ test.group('SpotifyPlaylistService - getOrCreateLikedPlaylist', (group) => {
     }, /SPOTIFY_SCOPE_UPGRADE_REQUIRED/)
   })
 
-  test('creates the playlist via POST and stores the returned id', async ({ assert }) => {
+  test('throws scope upgrade required when scopes lack playlist-read-private', async ({
+    assert,
+  }) => {
+    const user = await createUser('no_read_scope')
+    const { service, spotify } = buildPlaylistService(async () => ({}))
+    await linkSpotify(spotify, user.id, 'user-read-email playlist-modify-private')
+
+    await assert.rejects(async () => {
+      await service.getOrCreateLikedPlaylist(user.id)
+    }, /SPOTIFY_SCOPE_UPGRADE_REQUIRED/)
+  })
+
+  test('creates the playlist via POST when no existing Rythmix Likes is found', async ({
+    assert,
+  }) => {
     const user = await createUser('create_ok')
     const { service, spotify, calls } = buildPlaylistService(async (record) => {
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return { items: [], next: null }
+      }
       if (record.path.includes('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_new' }
       }
@@ -113,11 +130,98 @@ test.group('SpotifyPlaylistService - getOrCreateLikedPlaylist', (group) => {
 
     const id = await service.getOrCreateLikedPlaylist(user.id)
     assert.equal(id, 'pl_new')
-    assert.equal(calls.length, 1)
-    assert.equal(calls[0].options.method, 'POST')
+    assert.equal(calls.length, 2)
+    assert.equal(calls[0].path, '/me/playlists')
+    assert.equal(calls[1].options.method, 'POST')
 
     const integration = await spotify.findByUserId(user.id)
     assert.equal(integration!.spotifyLikedPlaylistId, 'pl_new')
+  })
+
+  test('reuses existing Rythmix Likes playlist instead of creating a duplicate', async ({
+    assert,
+  }) => {
+    const user = await createUser('reuse_existing')
+    const providerUserId = `sp_${user.id.slice(0, 6)}`
+    const { service, spotify, calls } = buildPlaylistService(async (record) => {
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return {
+          items: [
+            { id: 'pl_other', name: 'Other', owner: { id: providerUserId } },
+            { id: 'pl_reused', name: 'Rythmix Likes', owner: { id: providerUserId } },
+          ],
+          next: null,
+        }
+      }
+      return {}
+    })
+    await linkSpotify(spotify, user.id)
+
+    const id = await service.getOrCreateLikedPlaylist(user.id)
+    assert.equal(id, 'pl_reused')
+    assert.isUndefined(
+      calls.find((c) => c.options.method === 'POST'),
+      'must not POST a new playlist when one already exists on Spotify'
+    )
+
+    const integration = await spotify.findByUserId(user.id)
+    assert.equal(integration!.spotifyLikedPlaylistId, 'pl_reused')
+  })
+
+  test('ignores Rythmix Likes playlists owned by another Spotify user', async ({ assert }) => {
+    const user = await createUser('ignore_other_owner')
+    const providerUserId = `sp_${user.id.slice(0, 6)}`
+    const { service, spotify, calls } = buildPlaylistService(async (record) => {
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return {
+          items: [{ id: 'pl_collab', name: 'Rythmix Likes', owner: { id: 'someone_else' } }],
+          next: null,
+        }
+      }
+      if (record.path.includes('/playlists') && record.options.method === 'POST') {
+        return { id: 'pl_fresh' }
+      }
+      return {}
+    })
+    await linkSpotify(spotify, user.id)
+
+    const id = await service.getOrCreateLikedPlaylist(user.id)
+    assert.equal(id, 'pl_fresh')
+    assert.exists(calls.find((c) => c.options.method === 'POST'))
+    assert.equal(providerUserId, providerUserId)
+  })
+
+  test('paginates /me/playlists when the existing playlist is on a later page', async ({
+    assert,
+  }) => {
+    const user = await createUser('paginate_lookup')
+    const providerUserId = `sp_${user.id.slice(0, 6)}`
+    let page = 0
+    const { service, spotify, calls } = buildPlaylistService(async (record) => {
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        page++
+        if (page === 1) {
+          return {
+            items: [{ id: 'pl_a', name: 'Other', owner: { id: providerUserId } }],
+            next: 'https://api.spotify.com/v1/me/playlists?offset=50&limit=50',
+          }
+        }
+        return {
+          items: [{ id: 'pl_target', name: 'Rythmix Likes', owner: { id: providerUserId } }],
+          next: null,
+        }
+      }
+      return {}
+    })
+    await linkSpotify(spotify, user.id)
+
+    const id = await service.getOrCreateLikedPlaylist(user.id)
+    assert.equal(id, 'pl_target')
+    assert.equal(page, 2)
+    assert.isUndefined(calls.find((c) => c.options.method === 'POST'))
+    const secondPage = calls[1]
+    assert.equal(secondPage.path, '/me/playlists')
+    assert.equal(secondPage.options.query!.offset, '50')
   })
 
   test('throws SpotifyNotConnectedError when integration missing', async ({ assert }) => {
@@ -142,7 +246,10 @@ test.group('SpotifyPlaylistService - getOrCreateLikedPlaylist', (group) => {
 
   test('translates 403 from playlist creation into scope upgrade required', async ({ assert }) => {
     const user = await createUser('forbidden')
-    const { service, spotify } = buildPlaylistService(async () => {
+    const { service, spotify } = buildPlaylistService(async (record) => {
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return { items: [], next: null }
+      }
       throw new SpotifyApiError(403, '/users/x/playlists')
     })
     await linkSpotify(spotify, user.id)
@@ -150,6 +257,21 @@ test.group('SpotifyPlaylistService - getOrCreateLikedPlaylist', (group) => {
     await assert.rejects(async () => {
       await service.getOrCreateLikedPlaylist(user.id)
     }, /SPOTIFY_SCOPE_UPGRADE_REQUIRED/)
+  })
+
+  test('propagates non-403 SpotifyApiError from playlist creation', async ({ assert }) => {
+    const user = await createUser('create_500')
+    const { service, spotify } = buildPlaylistService(async (record) => {
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return { items: [], next: null }
+      }
+      throw new SpotifyApiError(500, '/users/x/playlists', 'boom')
+    })
+    await linkSpotify(spotify, user.id)
+
+    await assert.rejects(async () => {
+      await service.getOrCreateLikedPlaylist(user.id)
+    }, /Spotify API error 500/)
   })
 })
 
@@ -162,6 +284,9 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
     const { service, spotify, calls } = buildPlaylistService(async (record) => {
       if (record.path === '/search') {
         return { tracks: { items: [{ uri: 'spotify:track:abc123' }] } }
+      }
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return { items: [], next: null }
       }
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_test' }
@@ -196,6 +321,9 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
           return { tracks: { items: [] } }
         }
         return { tracks: { items: [{ uri: 'spotify:track:fallback' }] } }
+      }
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return { items: [], next: null }
       }
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_fb' }
@@ -238,6 +366,9 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
       if (record.path === '/search') {
         return { tracks: { items: [{ uri: 'spotify:track:dup' }] } }
       }
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return { items: [], next: null }
+      }
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_idem' }
       }
@@ -273,6 +404,9 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
       if (record.path === '/search') {
         return { tracks: { items: [{ uri: 'spotify:track:dup' }] } }
       }
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return { items: [], next: null }
+      }
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_paged' }
       }
@@ -298,18 +432,6 @@ test.group('SpotifyPlaylistService - addTrack', (group) => {
       (c) => c.path === '/playlists/pl_paged/items' && c.options.method === 'POST'
     )
     assert.isUndefined(addCall)
-  })
-
-  test('rethrows non-403 errors from playlist creation', async ({ assert }) => {
-    const user = await createUser('create_error')
-    const { service, spotify } = buildPlaylistService(async () => {
-      throw new SpotifyApiError(500, '/users/x/playlists')
-    })
-    await linkSpotify(spotify, user.id)
-
-    await assert.rejects(async () => {
-      await service.getOrCreateLikedPlaylist(user.id)
-    }, /500/)
   })
 
   test('returns null when interaction has neither isrc nor title+artist', async ({ assert }) => {
@@ -418,6 +540,9 @@ test.group('SpotifyPlaylistService - syncAllLikes', (group) => {
         if (q.includes('USXX22222222')) return { tracks: { items: [] } }
         return { tracks: { items: [{ uri: 'spotify:track:dup' }] } }
       }
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return { items: [], next: null }
+      }
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_sync' }
       }
@@ -464,6 +589,9 @@ test.group('SpotifyPlaylistService - syncAllLikes', (group) => {
     const { service, spotify } = buildPlaylistService(async (record) => {
       if (record.path === '/search') {
         return { tracks: { items: [{ uri: 'spotify:track:1' }] } }
+      }
+      if (record.path === '/me/playlists' && record.options.method === 'GET') {
+        return { items: [], next: null }
       }
       if (record.path.endsWith('/playlists') && record.options.method === 'POST') {
         return { id: 'pl_skip' }

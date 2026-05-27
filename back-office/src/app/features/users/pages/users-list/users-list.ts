@@ -31,6 +31,9 @@ export class UsersList implements OnInit {
   sortColumn = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
+  searchValue = '';
+  roleFilter: '' | 'user' | 'admin' = '';
+
   private snackbarTimeout: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
@@ -42,9 +45,7 @@ export class UsersList implements OnInit {
     this.userService.getUsers(this.filters).subscribe({
       next: (users) => {
         this.allUsers = users;
-        this.filteredUsers = [...users];
-        this.currentPage = 0;
-        this.updatePagination();
+        this.applyFilters();
         this.isLoading = false;
       },
       error: (error) => {
@@ -58,21 +59,39 @@ export class UsersList implements OnInit {
     });
   }
 
-  applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value
+  onSearch(event: Event): void {
+    this.searchValue = (event.target as HTMLInputElement).value
       .toLowerCase()
       .trim();
+    this.applyFilters();
+  }
 
-    if (!filterValue) {
-      this.filteredUsers = [...this.allUsers];
-    } else {
-      this.filteredUsers = this.allUsers.filter(
+  onRoleFilterChange(event: Event): void {
+    this.roleFilter = (event.target as HTMLSelectElement).value as
+      | ''
+      | 'user'
+      | 'admin';
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let result = [...this.allUsers];
+
+    if (this.searchValue) {
+      result = result.filter(
         (user) =>
-          user.username.toLowerCase().includes(filterValue) ||
-          user.email.toLowerCase().includes(filterValue),
+          user.username.toLowerCase().includes(this.searchValue) ||
+          user.email.toLowerCase().includes(this.searchValue),
       );
     }
 
+    if (this.roleFilter) {
+      result = result.filter(
+        (user) => (user.role ?? 'user') === this.roleFilter,
+      );
+    }
+
+    this.filteredUsers = result;
     this.currentPage = 0;
     this.updatePagination();
   }

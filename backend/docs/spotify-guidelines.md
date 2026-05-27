@@ -30,6 +30,8 @@ Scopes actuellement utilisés (voir `config/ally.ts`) :
 - `user-read-email`
 - `user-top-read`
 - `user-read-recently-played`
+- `playlist-modify-private` — création/édition de la playlist `Rythmix Likes`
+- `playlist-read-private` — recherche d'une playlist `Rythmix Likes` existante avant d'en recréer une (évite les doublons après un relink ou un reset DB)
 
 Doc : https://developer.spotify.com/documentation/web-api/concepts/scopes
 

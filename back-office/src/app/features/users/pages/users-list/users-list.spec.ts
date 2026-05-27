@@ -122,7 +122,7 @@ describe('UsersList', () => {
     });
   });
 
-  describe('applyFilter', () => {
+  describe('onSearch', () => {
     beforeEach(() => {
       component.allUsers = mockUsers;
       component.filteredUsers = mockUsers;
@@ -131,7 +131,7 @@ describe('UsersList', () => {
     it('should filter users by username', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: 'admin' } } as any;
-      component.applyFilter(event);
+      component.onSearch(event);
 
       expect(component.filteredUsers.length).toBe(1);
       expect(component.filteredUsers[0].username).toBe('admin');
@@ -140,7 +140,7 @@ describe('UsersList', () => {
     it('should filter users by email', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: 'john@' } } as any;
-      component.applyFilter(event);
+      component.onSearch(event);
 
       expect(component.filteredUsers.length).toBe(1);
       expect(component.filteredUsers[0].email).toBe('john@example.com');
@@ -151,7 +151,7 @@ describe('UsersList', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: '' } } as any;
 
-      component.applyFilter(event);
+      component.onSearch(event);
 
       expect(component.filteredUsers.length).toBe(3);
     });
@@ -159,7 +159,7 @@ describe('UsersList', () => {
     it('should be case insensitive', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: 'ADMIN' } } as any;
-      component.applyFilter(event);
+      component.onSearch(event);
 
       expect(component.filteredUsers.length).toBe(1);
       expect(component.filteredUsers[0].username).toBe('admin');
@@ -170,7 +170,7 @@ describe('UsersList', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const event = { target: { value: 'test' } } as any;
 
-      component.applyFilter(event);
+      component.onSearch(event);
 
       expect(component.currentPage).toBe(0);
     });

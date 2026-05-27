@@ -9,7 +9,7 @@ import { Game } from "@/types/games";
 import * as gameService from "@/services/gameService";
 import { GameCard } from "@/components/games/GameCard";
 import { useToast } from "@/components/Toast";
-import { hasGameState } from "@/services/gameStorageService";
+import { getMyActiveSession } from "@/services/gameSessionService";
 import { usePlayedGamesStore } from "@/stores/playedGamesStore";
 import { SkeletonRectangle, SkeletonSquare } from "@/components/ui/Skeleton";
 
@@ -39,16 +39,24 @@ export default function GamesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const checkSavedGames = async () => {
+      const checkActiveSessions = async () => {
+        const enabledGames = games.filter((g) => g.isEnabled);
+        const results = await Promise.allSettled(
+          enabledGames.map((g) => getMyActiveSession(g.id)),
+        );
         const status: Record<string, boolean> = {};
-        for (const game of games) {
-          status[game.id] = await hasGameState(game.id.toString());
-        }
+        results.forEach((result, index) => {
+          const game = enabledGames[index];
+          status[game.id] =
+            result.status === "fulfilled" &&
+            result.value !== null &&
+            result.value.status === "active";
+        });
         setSavedGames(status);
       };
 
       if (games.length > 0) {
-        checkSavedGames();
+        checkActiveSessions();
       }
     }, [games]),
   );

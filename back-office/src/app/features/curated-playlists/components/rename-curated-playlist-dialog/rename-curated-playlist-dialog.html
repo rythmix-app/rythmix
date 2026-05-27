@@ -1,0 +1,42 @@
+<div
+  class="dialog-backdrop"
+  (click)="onCancel()"
+  (keydown.escape)="onCancel()"
+  role="button"
+  tabindex="-1"
+>
+  <div
+    class="dialog-card"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <div class="dialog-header">
+      <h2>Renommer la playlist</h2>
+      <button class="close-btn" (click)="onCancel()" aria-label="Fermer">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="dialog-body">
+      <p>
+        Le nom personnalisé sera préservé lors des prochains rafraîchissements
+        depuis Deezer.
+      </p>
+      <div class="field">
+        <label for="rename-name">Nom affiché</label>
+        <input id="rename-name" type="text" [(ngModel)]="name" />
+        @if (nameError) {
+          <span class="field-error">{{ nameError }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <button class="secondary-btn" (click)="onCancel()">Annuler</button>
+      <button class="primary-btn" (click)="onConfirm()">Enregistrer</button>
+    </div>
+  </div>
+</div>
