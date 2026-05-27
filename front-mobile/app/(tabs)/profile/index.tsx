@@ -6,11 +6,35 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import { useAuthStore } from "@/stores/authStore";
 import OnboardingBanner from "@/components/OnboardingBanner";
+import { ProfileRecentActivities } from "@/components/profile/ProfileRecentActivities";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import ProfileSpotifySection from "@/components/profile/ProfileSpotifySection";
 import ProfileAchievementsSection from "@/components/profile/ProfileAchievementsSection";
-import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { useMyStats } from "@/hooks/useMyStats";
 import { Skeleton } from "@/components/ui/Skeleton";
+
+// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'APIii
+const MOCK_STATS = {
+  swipes: 142,
+  matchs: 87,
+  gamesPlayed: 23,
+};
+
+// TODO: à modifier plus tard - remplacer par des données récupérées depuis l'API
+const MOCK_BADGES = [
+  { id: "1", name: "Bienvenue dans l'arène", icon: "🏟️", unlocked: true },
+  { id: "2", name: "Premier pas", icon: "👣", unlocked: true },
+  { id: "3", name: "Première victoire", icon: "🥇", unlocked: true },
+  { id: "4", name: "Oreille d'or", icon: "🎧", unlocked: true },
+  { id: "5", name: "Éclair", icon: "⚡", unlocked: true },
+  { id: "6", name: "Perfectionniste", icon: "💎", unlocked: false },
+  { id: "7", name: "Vétéran", icon: "🏆", unlocked: false },
+  { id: "8", name: "Légende", icon: "👑", unlocked: false },
+  { id: "9", name: "Mélomane absolu", icon: "🎵", unlocked: false },
+];
+
+// TODO: à modifier plus tard - niveau et titre à récupérer depuis l'API
+const MOCK_LEVEL = { level: 7, title: "Mélomane" };
 
 function getMemberSince(createdAt?: string): string {
   if (!createdAt) return "membre récemment";
@@ -94,6 +118,8 @@ export default function ProfileScreen() {
         {/* ── Mes stats Spotify ── */}
         <ProfileSpotifySection />
 
+        {/* ── Activités récentes ── */}
+        <ProfileRecentActivities />
         {/* ── Succès & Récompenses ── */}
         <ProfileAchievementsSection />
 
@@ -265,6 +291,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.dark.icon,
     textAlign: "center",
+  },
+
+  // Badges
+  badgesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  badgeItem: {
+    width: "31%",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: Colors.primary.CTA,
+  },
+  badgeLocked: {
+    borderColor: "#2A2A2A",
+    opacity: 0.5,
+  },
+  badgeIcon: {
+    fontSize: 28,
+  },
+  badgeName: {
+    fontSize: 11,
+    color: Colors.dark.text,
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  badgeNameLocked: {
+    color: Colors.dark.icon,
   },
   errorContainer: {
     marginTop: 12,
